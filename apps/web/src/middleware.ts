@@ -27,22 +27,13 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
+        getAll() {
+          return request.cookies.getAll();
         },
-        set(name: string, value: string, options: any) {
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-        },
-        remove(name: string, options: any) {
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
         },
       },
     }
@@ -51,14 +42,10 @@ export async function middleware(request: NextRequest) {
   try {
     const { data: { session }, error } = await supabase.auth.getSession();
 
-    if (error) {
-      console.error('[Middleware] Session check failed:', error);
-      // 에러 발생 시 안전하게 로그아웃 상태로 처리
-      if (request.nextUrl.pathname.startsWith('/game')) {
-        const redirectUrl = new URL('/login', request.url);
-        redirectUrl.searchParams.set('redirect', request.nextUrl.pathname);
-        return NextResponse.redirect(redirectUrl);
-      }
+    if (error && request.nextUrl.pathname.startsWith('/game')) {
+      const redirectUrl = new URL('/login', request.url);
+      redirectUrl.searchParams.set('redirect', request.nextUrl.pathname);
+      return NextResponse.redirect(redirectUrl);
     }
 
     // 보호 경로 (/game) 접근 시 인증 확인
@@ -77,8 +64,6 @@ export async function middleware(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('[Middleware] Unexpected error:', error);
-    // 예외 발생 시 안전하게 처리
     if (request.nextUrl.pathname.startsWith('/game')) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
