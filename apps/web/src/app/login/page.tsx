@@ -12,10 +12,29 @@ export default function LoginPage() {
   const router = useRouter();
 
   const handleGoogleLogin = async () => {
-    const { error } = await signInWithGoogle();
-    if (error) {
-      console.error('Google login failed:', error);
-      alert('Google 로그인 실패. Kakao를 시도해보세요.');
+    console.log('🔵 Google 로그인 버튼 클릭됨');
+    console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log('Supabase Key exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
+    try {
+      const result = await signInWithGoogle();
+      console.log('✅ signInWithGoogle 결과:', result);
+      console.log('📦 data 객체:', result.data);
+      console.log('🔗 OAuth URL:', result.data?.url);
+
+      if (result.error) {
+        console.error('❌ Google login failed:', result.error);
+        alert(`Google 로그인 실패: ${result.error.message}`);
+      } else if (result.data?.url) {
+        console.log('🚀 리다이렉트 시작:', result.data.url);
+        // 수동 리다이렉트
+        window.location.href = result.data.url;
+      } else {
+        console.log('✅ Google login initiated successfully');
+      }
+    } catch (err) {
+      console.error('❌ Exception during Google login:', err);
+      alert(`Google 로그인 에러: ${err}`);
     }
   };
 

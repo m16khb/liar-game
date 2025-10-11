@@ -36,8 +36,17 @@ export async function createServerClient() {
 
   return _createServerClient(url, key, {
     cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        } catch {
+          // Server Component에서 setAll이 호출될 수 있음 (무시)
+        }
       },
     },
   });
