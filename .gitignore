@@ -23,6 +23,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Local env files
+.env
 .env*.local
 
 # Vercel
@@ -30,3 +31,6 @@ pnpm-debug.log*
 
 # Turbo
 .turbo
+
+# Docker volumes (인프라 데이터)
+docker/volumes/
