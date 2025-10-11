@@ -2,6 +2,7 @@
 import { createServerClient } from '@/lib/supabase-server';
 import { Button } from '@liar-game/ui';
 import { LogoutButton } from '@/components/LogoutButton';
+import { JwtDebugger } from '@/components/JwtDebugger';
 
 /**
  * 게임 대기실 페이지
@@ -26,6 +27,9 @@ export default async function GamePage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
+      {/* JWT 디버거 (개발용 - 브라우저 콘솔에만 출력) */}
+      <JwtDebugger />
+
       <div className="max-w-2xl w-full p-8">
         {/* 헤더 */}
         <div className="flex justify-between items-center mb-8">
