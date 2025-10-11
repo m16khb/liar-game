@@ -38,32 +38,57 @@ Liar Game은 6명의 플레이어가 참여하는 실시간 추리 게임입니�
 ### 사전 요구사항
 - Node.js 20.x LTS
 - pnpm 9.x
-- PostgreSQL 16.x
-- Redis 7.x
+- **Docker 24.x+ & Docker Compose V2** (인프라 자동 구성)
 - Git 2.x
 
-### 설치 및 실행
+### 1. 인프라 시작 (Docker Compose)
+
+Docker Compose로 전체 인프라를 한 번에 시작합니다:
+
+```bash
+# 환경 변수 설정 (.env.example 복사)
+cp .env.example .env
+# → POSTGRES_PASSWORD, REDIS_PASSWORD, MINIO_ROOT_PASSWORD 변경 필수
+
+# 전체 인프라 시작 (PostgreSQL, Redis, Nginx, MinIO)
+docker compose up -d
+
+# 인프라 상태 확인
+docker compose ps
+
+# 서비스별 로그 확인
+docker compose logs -f postgres
+docker compose logs -f redis
+```
+
+**인프라 구성**:
+- **PostgreSQL 16**: `localhost:5432` (게임 데이터, 사용자 정보)
+- **Redis 7**: `localhost:6379` (세션 관리, 캐싱)
+- **Nginx 1.25**: `localhost:80/443` (리버스 프록시, API 라우팅)
+- **MinIO**: `localhost:9000` (S3 스토리지), `localhost:9001` (콘솔)
+
+**데이터 영속성**: `docker/volumes/` 디렉토리에 모든 데이터 저장
+
+### 2. 애플리케이션 실행
 
 ```bash
 # 의존성 설치
 pnpm install
 
-# PostgreSQL 및 Redis 실행 (Docker 권장)
-docker-compose up -d postgres redis
-
-# 환경 변수 설정
-cp apps/api/.env.example apps/api/.env
-# → DATABASE_URL, REDIS_URL, JWT_SECRET 등 설정
-
-# 데이터베이스 마이그레이션
+# 데이터베이스 마이그레이션 (PostgreSQL 준비 완료 후)
 cd apps/api
 pnpm migration:run
 
 # 개발 서버 실행 (병렬)
+cd ../..
 pnpm turbo dev
 # → web: http://localhost:3000
-# → api: http://localhost:4000
+# → api: http://localhost:4000 (Nginx를 통해 http://localhost/api로도 접근 가능)
+```
 
+### 3. 개발 워크플로우
+
+```bash
 # 프로덕션 빌드
 pnpm turbo build
 
@@ -73,6 +98,12 @@ pnpm test
 # 린트 및 타입 체크
 pnpm turbo lint
 pnpm turbo type-check
+
+# 인프라 종료 (데이터 유지)
+docker compose stop
+
+# 인프라 완전 삭제 (볼륨 포함)
+docker compose down -v
 ```
 
 ### 개별 앱 실행
@@ -139,6 +170,7 @@ liar-game/
 - **[SPEC 문서](.moai/specs/)**:
   - [SPEC-SETUP-001](.moai/specs/SPEC-SETUP-001/spec.md): 모노레포 기반 구조
   - [SPEC-AUTH-001](.moai/specs/SPEC-AUTH-001/spec.md): 사용자 인증 및 세션 관리
+  - [SPEC-INFRA-001](.moai/specs/SPEC-INFRA-001/spec.md): Docker Compose 기반 인프라 통합
 
 ### 프로젝트 관리
 - **[프로젝트 정의](.moai/project/product.md)**: 제품 미션, 사용자, 문제 정의
