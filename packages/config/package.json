@@ -1,0 +1,6 @@
+{
+  "name": "@liar-game/config",
+  "version": "0.1.0",
+  "description": "Shared configuration files (ESLint, TSConfig)",
+  "main": "./index.js"
+}

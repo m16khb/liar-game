@@ -1,0 +1,28 @@
+{
+  "name": "api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "nest build",
+    "start": "nest start",
+    "dev": "nest start --watch",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@liar-game/types": "workspace:*",
+    "@liar-game/constants": "workspace:*",
+    "@nestjs/common": "^11.0.11",
+    "@nestjs/core": "^11.0.11",
+    "@nestjs/platform-fastify": "^11.0.11",
+    "fastify": "^5.2.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.1",
+    "@nestjs/schematics": "^11.0.1",
+    "@types/node": "^20.17.9",
+    "typescript": "^5.7.2"
+  }
+}
