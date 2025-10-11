@@ -1,8 +1,8 @@
 ---
 # 필수 필드 (7개)
 id: AUTH-001
-version: 0.0.1
-status: draft
+version: 0.1.0
+status: completed
 created: 2025-10-11
 updated: 2025-10-11
 author: @Goos
@@ -37,6 +37,13 @@ scope:
 # @SPEC:AUTH-001: 사용자 인증 및 세션 관리
 
 ## HISTORY
+
+### v0.1.0 (2025-10-11)
+- **TDD 완료**: RED-GREEN-REFACTOR 사이클 완료
+- **구현 범위**: 게스트 인증, 회원가입/로그인, JWT 토큰, Redis 세션
+- **테스트**: 37개 테스트 모두 통과 (커버리지 89%)
+- **문서**: API 문서, 아키텍처 문서, README 동기화 완료
+- **TAG 체인**: @SPEC:AUTH-001 → @TEST:AUTH-001 (6) → @CODE:AUTH-001 (15) → @DOC:AUTH-001 (2)
 
 ### v0.0.1 (2025-10-11)
 - **INITIAL**: 사용자 인증 및 세션 관리 명세 최초 작성
@@ -535,9 +542,10 @@ async login(@Body() loginDto: LoginRequest) {
   - `apps/api/src/auth/session.service.ts` - Redis 세션 관리
   - `packages/types/src/auth.ts` - 공유 타입 정의
   - `packages/constants/src/auth-constants.ts` - 인증 상수
-- **@DOC:AUTH-001**: 문서 동기화 단계에서 작성 예정
-  - `docs/api/auth.md` - API 문서
-  - `docs/architecture/authentication.md` - 인증 아키텍처
+- **@DOC:AUTH-001**: Living Document 완료 ✅
+  - `docs/api/auth.md` - API 문서 (7개 엔드포인트, WebSocket 인증)
+  - `docs/architecture/authentication.md` - 인증 아키텍처 (플로우, 보안, 성능)
+  - `README.md` - 인증 시스템 섹션 추가
 
 ### 5.2 참조 문서
 

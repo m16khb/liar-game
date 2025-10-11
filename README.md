@@ -23,7 +23,9 @@ Liar Game은 6명의 플레이어가 참여하는 실시간 추리 게임입니�
 - **프레임워크**: NestJS 11.x
 - **HTTP 어댑터**: Fastify (고성능)
 - **실시간 통신**: Socket.IO (WebSocket)
-- **인증**: JWT (예정)
+- **데이터베이스**: PostgreSQL 16.x (영구 저장)
+- **캐싱**: Redis 7.x (세션 관리)
+- **인증**: JWT + bcrypt (게스트/회원 2단계)
 
 ### 공유 패키지 (packages/*)
 - **types**: TypeScript 타입 정의 (프론트-백엔드 공유)
@@ -36,6 +38,8 @@ Liar Game은 6명의 플레이어가 참여하는 실시간 추리 게임입니�
 ### 사전 요구사항
 - Node.js 20.x LTS
 - pnpm 9.x
+- PostgreSQL 16.x
+- Redis 7.x
 - Git 2.x
 
 ### 설치 및 실행
@@ -43,6 +47,17 @@ Liar Game은 6명의 플레이어가 참여하는 실시간 추리 게임입니�
 ```bash
 # 의존성 설치
 pnpm install
+
+# PostgreSQL 및 Redis 실행 (Docker 권장)
+docker-compose up -d postgres redis
+
+# 환경 변수 설정
+cp apps/api/.env.example apps/api/.env
+# → DATABASE_URL, REDIS_URL, JWT_SECRET 등 설정
+
+# 데이터베이스 마이그레이션
+cd apps/api
+pnpm migration:run
 
 # 개발 서버 실행 (병렬)
 pnpm turbo dev
@@ -116,13 +131,43 @@ liar-game/
 
 ### 개발 문서
 - **[개발 가이드](.moai/memory/development-guide.md)**: TRUST 원칙, TDD 워크플로우, @TAG 시스템
-- **[아키텍처 문서](docs/architecture/monorepo.md)**: Turborepo 모노레포 아키텍처 상세
-- **[SPEC 문서](.moai/specs/SPEC-SETUP-001/spec.md)**: 모노레포 기반 구조 설정 명세
+- **[아키텍처 문서](docs/architecture/)**:
+  - [모노레포 아키텍처](docs/architecture/monorepo.md)
+  - [인증 시스템 아키텍처](docs/architecture/authentication.md)
+- **[API 문서](docs/api/)**:
+  - [인증 API](docs/api/auth.md): 게스트/회원 인증, JWT 토큰 관리
+- **[SPEC 문서](.moai/specs/)**:
+  - [SPEC-SETUP-001](.moai/specs/SPEC-SETUP-001/spec.md): 모노레포 기반 구조
+  - [SPEC-AUTH-001](.moai/specs/SPEC-AUTH-001/spec.md): 사용자 인증 및 세션 관리
 
 ### 프로젝트 관리
 - **[프로젝트 정의](.moai/project/product.md)**: 제품 미션, 사용자, 문제 정의
 - **[기술 스택](.moai/project/tech.md)**: 언어, 프레임워크, 품질 게이트, 배포 전략
 - **[프로젝트 구조](.moai/project/structure.md)**: 디렉토리 구조, 모듈 의존성
+
+## 🔐 인증 시스템
+
+### 2단계 인증 전략
+
+**1. 게스트 인증 (제로 프릭션)**:
+- 닉네임만 입력 → 즉시 게임 시작 (3초)
+- 임시 세션 ID + JWT 발급
+- Redis 세션 관리 (7일 TTL)
+
+**2. 회원 인증 (선택적 전환)**:
+- 이메일 + 비밀번호 회원가입
+- 게스트 프로그레스 100% 유지
+- PostgreSQL 영구 저장
+
+### 보안 특징
+- **bcrypt 해싱**: Salt rounds 12 (OWASP 권장)
+- **JWT 토큰**: 액세스(15분) + 리프레시(7일)
+- **Rate Limiting**: 엔드포인트별 차등 제한
+- **Redis 세션**: <10ms 고속 조회
+
+**자세한 내용**: [인증 API 문서](docs/api/auth.md) | [아키텍처 설계](docs/architecture/authentication.md)
+
+---
 
 ## 🧪 테스트
 
