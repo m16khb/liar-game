@@ -1,7 +1,7 @@
 ---
 id: AUTH-002
-version: 0.0.1
-status: draft
+version: 0.1.0
+status: completed
 created: 2025-10-11
 updated: 2025-10-11
 author: @Goos
@@ -39,6 +39,24 @@ scope:
 # @SPEC:AUTH-002: Supabase 소셜 로그인 통합 (Google, Kakao) + Anonymous Auth
 
 ## HISTORY
+
+### v0.1.0 (2025-10-11)
+- **COMPLETED**: TDD 구현 완료 (RED → GREEN → REFACTOR)
+- **SCOPE**: Supabase OAuth, Anonymous Auth, JWT 검증
+- **TESTS**: 4개 테스트 파일 작성
+  - tests/auth/supabase-oauth.test.ts (Google/GitHub/Discord OAuth)
+  - tests/auth/anonymous.test.ts (Anonymous Auth)
+  - tests/auth/jwt-validation.test.ts (JWT 검증)
+  - tests/auth/profile-sync.test.ts (프로필 동기화)
+- **CODE**: 7개 구현 파일 완료
+  - apps/api/src/auth/supabase-auth.service.ts
+  - apps/api/src/auth/supabase-jwt.guard.ts
+  - apps/api/src/auth/supabase-auth.controller.ts
+  - apps/web/src/lib/supabase.ts
+  - apps/web/src/app/login/page.tsx
+  - apps/web/src/app/auth/callback/route.ts
+  - packages/types/src/supabase-auth.ts
+- **AUTHOR**: @Goos
 
 ### v0.0.1 (2025-10-11)
 - **INITIAL**: Supabase 소셜 로그인 통합 명세 최초 작성

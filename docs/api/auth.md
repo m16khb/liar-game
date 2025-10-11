@@ -508,12 +508,211 @@ pnpm test:cov    # 커버리지 리포트
 
 ---
 
+---
+
+## Supabase 소셜 로그인 (AUTH-002)
+
+@DOC:AUTH-002:API | SPEC: SPEC-AUTH-002.md
+
+### OAuth 프로바이더
+
+지원되는 소셜 로그인:
+- **Google OAuth 2.0**: Gmail 계정 로그인
+- **GitHub OAuth 2.0**: GitHub 계정 로그인
+- **Discord OAuth 2.0**: Discord 계정 로그인
+
+### 프론트엔드 통합
+
+#### 소셜 로그인 시작
+
+```typescript
+// @CODE:AUTH-002:UI | SPEC: SPEC-AUTH-002.md
+
+import { supabase } from '@/lib/supabase';
+
+// Google 로그인
+const { data, error } = await supabase.auth.signInWithOAuth({
+  provider: 'google',
+  options: {
+    redirectTo: `${window.location.origin}/auth/callback`,
+  },
+});
+
+// GitHub 로그인
+await supabase.auth.signInWithOAuth({
+  provider: 'github',
+  options: {
+    redirectTo: `${window.location.origin}/auth/callback`,
+  },
+});
+
+// Discord 로그인
+await supabase.auth.signInWithOAuth({
+  provider: 'discord',
+  options: {
+    redirectTo: `${window.location.origin}/auth/callback`,
+  },
+});
+```
+
+#### Anonymous 인증
+
+```typescript
+// 익명 로그인 (게스트 플레이)
+const { data, error } = await supabase.auth.signInAnonymously();
+
+if (!error) {
+  console.log('게스트 세션 ID:', data.session?.user.id);
+  // 게임 입장 가능
+}
+```
+
+### API 엔드포인트
+
+#### GET /auth/callback
+
+OAuth 콜백 처리 (프론트엔드 Route Handler)
+
+**Parameters**:
+- `code`: OAuth 인증 코드 (query)
+
+**Response**:
+```json
+{
+  "access_token": "eyJhbGc...",
+  "refresh_token": "v1.MR5m...",
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "user_metadata": {
+      "username": "플레이어123",
+      "avatar_url": "https://..."
+    }
+  }
+}
+```
+
+**구현 예시**:
+```typescript
+// @CODE:AUTH-002:UI | SPEC: SPEC-AUTH-002.md
+
+// apps/web/src/app/auth/callback/route.ts
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
+
+export async function GET(request: Request) {
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get('code');
+
+  if (code) {
+    const supabase = createRouteHandlerClient({ cookies });
+    await supabase.auth.exchangeCodeForSession(code);
+  }
+
+  return NextResponse.redirect(`${requestUrl.origin}/game`);
+}
+```
+
+#### POST /api/auth/session (백엔드)
+
+현재 세션 조회 (Supabase JWT 검증)
+
+**Request**:
+```bash
+curl -X GET http://localhost:4000/api/auth/session \
+  -H "Authorization: Bearer <supabase_access_token>"
+```
+
+**Response**:
+```typescript
+{
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "user_metadata": {
+      "username": "플레이어123",
+      "level": 5
+    },
+    "app_metadata": {
+      "provider": "google",
+      "providers": ["google"]
+    }
+  },
+  "session": {
+    "access_token": "eyJhbGc...",
+    "refresh_token": "v1.MR5m...",
+    "expires_in": 3600
+  }
+}
+```
+
+### Supabase JWT 검증 (백엔드)
+
+```typescript
+// @CODE:AUTH-002:API | SPEC: SPEC-AUTH-002.md
+
+// apps/api/src/auth/supabase-jwt.guard.ts
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { SupabaseAuthService } from './supabase-auth.service';
+
+@Injectable()
+export class SupabaseJwtGuard implements CanActivate {
+  constructor(private authService: SupabaseAuthService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const token = request.headers.authorization?.split(' ')[1];
+
+    if (!token) return false;
+
+    try {
+      const user = await this.authService.verifyToken(token);
+      request.user = user;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+```
+
+**사용 예시**:
+```typescript
+@UseGuards(SupabaseJwtGuard)
+@Get('profile')
+async getProfile(@Request() req) {
+  return req.user; // Supabase 사용자 정보
+}
+```
+
+### Anonymous → 소셜 계정 연동
+
+Anonymous 사용자를 소셜 계정으로 업그레이드:
+
+```typescript
+// 게스트 상태에서 Google 계정 연동
+const { data, error } = await supabase.auth.updateUser({
+  email: 'user@example.com',
+  password: 'new_password' // 선택적
+});
+
+// 또는 linkIdentity 사용 (Supabase v2.x)
+await supabase.auth.linkIdentity({
+  provider: 'google'
+});
+```
+
+**중요**: 기존 게임 프로그레스는 자동으로 유지됩니다.
+
+---
+
 ## 다음 단계
 
-- **AUTH-002**: 비밀번호 재설정 (이메일 인증)
-- **AUTH-003**: 다중 기기 세션 관리
-- **AUTH-004**: 2FA (이중 인증)
-- **AUTH-005**: OAuth 통합 (Google, Kakao, Discord)
+- **AUTH-003**: 비밀번호 재설정 (이메일 인증)
+- **AUTH-004**: 다중 기기 세션 관리
+- **AUTH-005**: 2FA (이중 인증)
+- **AUTH-006**: Apple Sign-In 추가
 
 ---
 
