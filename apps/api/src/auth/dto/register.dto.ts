@@ -19,5 +19,5 @@ export class RegisterDto {
 
   @IsOptional()
   @IsString()
-  guestSessionId?: string; // 게스트 전환 시 (REQ-008)
+  supabaseId?: string; // OAuth 연동 시 Supabase UID
 }

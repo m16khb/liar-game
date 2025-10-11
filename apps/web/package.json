@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -16,9 +16,9 @@
     "@liar-game/constants": "workspace:*",
     "@liar-game/types": "workspace:*",
     "@liar-game/ui": "workspace:*",
-    "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.75.0",
+    "dotenv": "^17.2.3",
     "next": "^15.3.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
