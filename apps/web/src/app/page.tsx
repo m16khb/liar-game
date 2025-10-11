@@ -1,13 +1,47 @@
-// @CODE:SETUP-001 | SPEC: .moai/specs/SPEC-SETUP-001/spec.md
+// @CODE:UI-001:UI | SPEC: SPEC-UI-001.md | TEST: tests/pages/home.test.tsx
+import { createServerClient } from '@/lib/supabase-server';
+import { redirect } from 'next/navigation';
 import { Button } from '@liar-game/ui';
-import { GAME_RULES } from '@liar-game/constants';
 
-export default function Home() {
+/**
+ * 메인 페이지 (Landing Page)
+ *
+ * @description
+ * 앱의 진입점으로, 사용자 인증 상태에 따라 다른 동작을 수행합니다.
+ *
+ * @flow
+ * 1. 세션 확인 (Server Component)
+ * 2. 로그인 상태
+ *    - Yes: `/game` 페이지로 자동 리다이렉트
+ *    - No: 로그인 CTA 표시 (OAuth + Anonymous 로그인)
+ *
+ * @see SPEC-UI-001.md
+ */
+export default async function HomePage() {
+  // 세션 확인 (Server Component)
+  const supabase = await createServerClient();
+  const { data: { session } } = await supabase.auth.getSession();
+
+  // 로그인된 사용자는 게임 페이지로 리다이렉트
+  if (session) {
+    redirect('/game');
+  }
+
+  // 비로그인 사용자에게 로그인 CTA 표시
   return (
-    <main style={{ padding: '2rem' }}>
-      <h1>Liar Game</h1>
-      <p>플레이어 수: {GAME_RULES.MIN_PLAYERS} - {GAME_RULES.MAX_PLAYERS}명</p>
-      <Button variant="primary">게임 시작</Button>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-4">라이어 게임</h1>
+        <p className="text-gray-600 mb-8">친구들과 함께 즐기는 추리 게임</p>
+        <div className="flex gap-4 justify-center">
+          <a href="/login">
+            <Button variant="primary">로그인하기</Button>
+          </a>
+          <a href="/login?mode=anonymous">
+            <Button variant="secondary">게스트로 플레이</Button>
+          </a>
+        </div>
+      </div>
     </main>
   );
 }
