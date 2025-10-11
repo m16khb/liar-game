@@ -5,7 +5,9 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "types": ["node", "jest"],
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "test"]
