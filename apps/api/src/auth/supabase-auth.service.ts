@@ -1,5 +1,5 @@
 // @CODE:AUTH-002 | SPEC: SPEC-AUTH-002.md | TEST: test/auth/supabase-*.test.ts
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 
 /**
@@ -8,6 +8,7 @@ import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
  */
 @Injectable()
 export class SupabaseAuthService {
+  private readonly logger = new Logger(SupabaseAuthService.name);
   private supabase: SupabaseClient;
 
   constructor() {
