@@ -1,8 +1,8 @@
 ---
 # 필수 필드 (7개)
 id: SETUP-001
-version: 0.0.1
-status: draft
+version: 0.1.0
+status: completed
 created: 2025-10-11
 updated: 2025-10-11
 author: @Goos
@@ -37,6 +37,13 @@ scope:
 - **AUTHOR**: @Goos
 - **SCOPE**: apps/web (Next.js 15), apps/api (NestJS 11), 공유 패키지 (types, config, ui, constants)
 - **CONTEXT**: liar-game 웹 기반 실시간 게임 프로젝트의 기반 인프라 설정
+
+### v0.1.0 (2025-10-11)
+- **COMPLETED**: TDD 구현 완료 (RED → GREEN → REFACTOR)
+- **TESTS**: 26개 테스트 케이스 100% 통과
+- **TRUST**: 92점 (PASS)
+- **SCOPE**: 모노레포 구조, Turborepo 파이프라인, apps/web (Next.js 15), apps/api (NestJS 11), 공유 패키지 (types, config, ui, constants)
+- **TAG CHAIN**: @SPEC:SETUP-001 → @TEST:SETUP-001 (5 files) → @CODE:SETUP-001 (19 files) → @DOC:SETUP-001 (Living Document)
 
 ---
 
