@@ -4,17 +4,10 @@ import { SupabaseAuthService } from '../../src/auth/supabase-auth.service';
 import { UnauthorizedException } from '@nestjs/common';
 
 describe('@TEST:AUTH-002:OAUTH - Supabase OAuth 인증', () => {
-  let service: SupabaseAuthService;
-
-  const mockSupabaseClient = {
-    auth: {
-      signInWithOAuth: jest.fn(),
-      getUser: jest.fn(),
-      admin: {
-        signOut: jest.fn(),
-      },
-    },
-    from: jest.fn(),
+  let service: {
+    verifyToken: jest.Mock;
+    getUserProfile: jest.Mock;
+    signOut: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -31,14 +24,14 @@ describe('@TEST:AUTH-002:OAUTH - Supabase OAuth 인증', () => {
       ],
     }).compile();
 
-    service = module.get<SupabaseAuthService>(SupabaseAuthService);
+    service = module.get(SupabaseAuthService);
     jest.clearAllMocks();
   });
 
   describe('REQ-002: Google OAuth 로그인', () => {
     it('Google OAuth URL 생성 성공', async () => {
       const mockOAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth?client_id=xxx';
-      (service as any).verifyToken = jest.fn().mockResolvedValue(mockOAuthUrl);
+      service.verifyToken.mockResolvedValue(mockOAuthUrl);
 
       const result = await service.verifyToken('google-oauth-init');
 
@@ -56,7 +49,7 @@ describe('@TEST:AUTH-002:OAUTH - Supabase OAuth 인증', () => {
         },
       };
 
-      (service as any).verifyToken = jest.fn().mockResolvedValue(mockUser);
+      service.verifyToken.mockResolvedValue(mockUser);
 
       const result = await service.verifyToken('google-oauth-token');
 
@@ -68,7 +61,7 @@ describe('@TEST:AUTH-002:OAUTH - Supabase OAuth 인증', () => {
   describe('REQ-003: Kakao OAuth 로그인', () => {
     it('Kakao OAuth URL 생성 성공', async () => {
       const mockOAuthUrl = 'https://kauth.kakao.com/oauth/authorize?client_id=xxx';
-      (service as any).verifyToken = jest.fn().mockResolvedValue(mockOAuthUrl);
+      service.verifyToken.mockResolvedValue(mockOAuthUrl);
 
       const result = await service.verifyToken('kakao-oauth-init');
 
@@ -86,7 +79,7 @@ describe('@TEST:AUTH-002:OAUTH - Supabase OAuth 인증', () => {
         },
       };
 
-      (service as any).verifyToken = jest.fn().mockResolvedValue(mockUser);
+      service.verifyToken.mockResolvedValue(mockUser);
 
       const result = await service.verifyToken('kakao-oauth-token');
 
@@ -97,16 +90,16 @@ describe('@TEST:AUTH-002:OAUTH - Supabase OAuth 인증', () => {
 
   describe('REQ-005: Supabase JWT 자동 발급', () => {
     it('OAuth 성공 시 JWT 자동 발급', async () => {
-      const mockSession: any = {
+      const mockSession = {
         access_token: 'supabase-jwt-access-token',
         refresh_token: 'supabase-jwt-refresh-token',
         expires_in: 3600,
         user: { id: 'user-id', email: 'user@example.com' },
       };
 
-      (service as any).verifyToken = jest.fn().mockResolvedValue(mockSession);
+      service.verifyToken.mockResolvedValue(mockSession);
 
-      const result: any = await service.verifyToken('oauth-success-token');
+      const result = await service.verifyToken('oauth-success-token');
 
       expect(result).toHaveProperty('access_token');
       expect(result).toHaveProperty('refresh_token');
@@ -115,7 +108,7 @@ describe('@TEST:AUTH-002:OAUTH - Supabase OAuth 인증', () => {
 
     it('JWT 형식 검증 (Bearer 토큰)', async () => {
       const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWlkIn0.xxx';
-      (service as any).verifyToken = jest.fn().mockResolvedValue({ id: 'user-id' });
+      service.verifyToken.mockResolvedValue({ id: 'user-id' });
 
       await service.verifyToken(mockToken);
 
@@ -129,8 +122,7 @@ describe('@TEST:AUTH-002:OAUTH - Supabase OAuth 인증', () => {
       const mockGoogleUser = { id: 'unified-user-id', email, provider: 'google' };
       const mockKakaoUser = { id: 'unified-user-id', email, provider: 'kakao' };
 
-      (service as any).verifyToken = jest
-        .fn()
+      service.verifyToken
         .mockResolvedValueOnce(mockGoogleUser)
         .mockResolvedValueOnce(mockKakaoUser);
 
@@ -144,15 +136,21 @@ describe('@TEST:AUTH-002:OAUTH - Supabase OAuth 인증', () => {
 
   describe('보안 및 오류 처리', () => {
     it('유효하지 않은 토큰으로 검증 실패', async () => {
-      (service as any).verifyToken = jest.fn().mockRejectedValue(new UnauthorizedException('Invalid token'));
+      service.verifyToken.mockRejectedValue(new UnauthorizedException('Invalid token'));
 
       await expect(service.verifyToken('invalid-token')).rejects.toThrow('Invalid token');
     });
 
     it('OAuth 콜백 오류 처리', async () => {
-      (service as any).verifyToken = jest.fn().mockRejectedValue(new Error('OAuth callback failed'));
+      service.verifyToken.mockRejectedValue(new Error('OAuth callback failed'));
 
       await expect(service.verifyToken('error-callback')).rejects.toThrow('OAuth callback failed');
     });
   });
 });
+
+// TDD History:
+// - REFACTOR: 타입 안전성 개선 (jest.Mocked 사용)
+// - REFACTOR: 불필요한 mockSupabaseClient 제거
+// - REFACTOR: (service as any) 타입 캐스팅 제거
+// - REFACTOR: mockSession의 any 타입 제거
