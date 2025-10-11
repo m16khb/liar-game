@@ -846,27 +846,248 @@ jest --coverage
 
 ---
 
+---
+
+## Supabase 인증 아키텍처 (AUTH-002)
+
+@DOC:AUTH-002:ARCHITECTURE | SPEC: SPEC-AUTH-002.md
+
+### 시스템 다이어그램
+
+```
+┌─────────────┐
+│   사용자    │
+└──────┬──────┘
+       │
+       ▼
+┌──────────────────┐
+│   Next.js App    │
+│   (Frontend)     │
+└────────┬─────────┘
+         │
+         ├─── Supabase Client ───┐
+         │                        │
+         ▼                        ▼
+┌─────────────────┐      ┌───────────────┐
+│   NestJS API    │      │  Supabase     │
+│   (Backend)     │◄─────│  Auth Service │
+└─────────────────┘      └───────────────┘
+         │                        │
+         ▼                        ▼
+┌─────────────────┐      ┌───────────────┐
+│   PostgreSQL    │◄─────│  Auth Tables  │
+│   (Game Data)   │      │  (Supabase)   │
+└─────────────────┘      └───────────────┘
+```
+
+### OAuth 플로우
+
+1. 사용자가 소셜 로그인 버튼 클릭
+2. Supabase가 OAuth 프로바이더로 리디렉트
+3. 사용자가 프로바이더에서 인증
+4. 프로바이더가 `/auth/callback`으로 리디렉트
+5. Supabase가 JWT 토큰 발급
+6. 프론트엔드가 토큰 저장 및 자동 갱신
+
+**지원 프로바이더**:
+- Google OAuth 2.0
+- GitHub OAuth 2.0
+- Discord OAuth 2.0
+
+### Anonymous Auth 플로우
+
+```
+사용자 행동: "게스트로 시작" 버튼 클릭
+        ↓
+[프론트엔드]
+  await supabase.auth.signInAnonymously()
+        ↓
+[Supabase Auth]
+  1. Anonymous 사용자 생성 (auth.users)
+  2. JWT 발급 (user.is_anonymous = true)
+  3. 세션 저장
+        ↓
+[응답]
+  { session, user: { id, is_anonymous: true } }
+        ↓
+[프론트엔드]
+  localStorage에 세션 저장 → 게임 입장
+```
+
+**Anonymous → 회원 전환**:
+```typescript
+// 게임 종료 후 "진행 상황 저장" 프롬프트
+await supabase.auth.updateUser({
+  email: 'user@example.com',
+  password: 'new_password'
+});
+// → is_anonymous: false로 전환, 기존 데이터 유지
+```
+
+### RLS(Row Level Security) 정책
+
+Supabase는 PostgreSQL RLS를 사용하여 데이터 접근 제어:
+
+```sql
+-- @CODE:AUTH-002:DATA | SPEC: SPEC-AUTH-002.md
+
+-- 사용자는 자신의 게임 데이터만 조회 가능
+CREATE POLICY "Users can view own games"
+ON games FOR SELECT
+USING (auth.uid() = user_id);
+
+-- 사용자는 자신의 프로필만 수정 가능
+CREATE POLICY "Users can update own profile"
+ON profiles FOR UPDATE
+USING (auth.uid() = id);
+
+-- Anonymous 사용자는 프로필 생성 불가
+CREATE POLICY "Only authenticated users can create profiles"
+ON profiles FOR INSERT
+WITH CHECK (auth.jwt() ->> 'is_anonymous' = 'false');
+```
+
+**보안 장점**:
+- 백엔드 권한 검증 코드 불필요
+- SQL 인젝션 방어 (PostgreSQL 네이티브)
+- 감사 로그 자동 생성
+
+### Supabase JWT 구조
+
+```json
+{
+  "sub": "uuid-user-id",
+  "email": "user@example.com",
+  "role": "authenticated",
+  "aal": "aal1",
+  "amr": [
+    {
+      "method": "oauth",
+      "timestamp": 1696000000
+    }
+  ],
+  "session_id": "uuid-session-id",
+  "is_anonymous": false,
+  "app_metadata": {
+    "provider": "google",
+    "providers": ["google"]
+  },
+  "user_metadata": {
+    "username": "플레이어123",
+    "avatar_url": "https://...",
+    "level": 5
+  },
+  "exp": 1696003600
+}
+```
+
+**핵심 필드**:
+- `sub`: 사용자 고유 ID (UUID)
+- `is_anonymous`: Anonymous 여부 (true/false)
+- `app_metadata.provider`: 로그인 방법 (google, github, discord, anonymous)
+- `user_metadata`: 커스텀 프로필 정보
+
+### 백엔드 통합 (NestJS)
+
+```typescript
+// @CODE:AUTH-002:API | SPEC: SPEC-AUTH-002.md
+
+// apps/api/src/auth/supabase-auth.service.ts
+import { Injectable } from '@nestjs/common';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+@Injectable()
+export class SupabaseAuthService {
+  private supabase: SupabaseClient;
+
+  constructor() {
+    this.supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY! // 서버용 키
+    );
+  }
+
+  async verifyToken(token: string) {
+    const { data: { user }, error } = await this.supabase.auth.getUser(token);
+    if (error) throw new UnauthorizedException('Invalid token');
+    return user;
+  }
+
+  async getUserProfile(userId: string) {
+    const { data } = await this.supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    return data;
+  }
+
+  async signOut(token: string) {
+    await this.supabase.auth.admin.signOut(token);
+  }
+}
+```
+
+### 프론트엔드 통합 (Next.js)
+
+```typescript
+// @CODE:AUTH-002:UI | SPEC: SPEC-AUTH-002.md
+
+// apps/web/src/lib/supabase.ts
+import { createClient } from '@supabase/supabase-js';
+
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+// 자동 토큰 갱신 활성화 (기본 설정)
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'TOKEN_REFRESHED') {
+    console.log('토큰 자동 갱신됨:', session?.expires_in);
+  }
+});
+```
+
+### 성능 특징
+
+| 메트릭 | AUTH-001 (JWT) | AUTH-002 (Supabase) |
+|--------|----------------|---------------------|
+| 로그인 시간 | ~150ms | ~200ms (OAuth) |
+| 토큰 갱신 | 수동 (API 호출) | 자동 (SDK) |
+| 세션 조회 | Redis (<10ms) | Supabase RPC (~20ms) |
+| Anonymous Auth | 커스텀 구현 | 네이티브 지원 |
+| OAuth | 미지원 | Google, GitHub, Discord |
+
+### 보안 강화
+
+1. **PKCE (Proof Key for Code Exchange)**: Supabase가 자동으로 PKCE 플로우 적용 (중간자 공격 방어)
+2. **자동 토큰 갱신**: 만료 5분 전 자동 갱신 (사용자 재로그인 불필요)
+3. **RLS 정책**: PostgreSQL 레벨에서 권한 자동 제어
+4. **감사 로그**: Supabase 대시보드에서 모든 인증 이벤트 확인
+
+---
+
 ## 다음 단계
 
-### AUTH-002: 비밀번호 재설정
+### AUTH-003: 비밀번호 재설정
 - 이메일 인증 링크 발송
 - 토큰 기반 재설정 페이지
 - 비밀번호 변경 이력 관리
 
-### AUTH-003: 다중 기기 세션 관리
+### AUTH-004: 다중 기기 세션 관리
 - 세션 목록 조회
 - 원격 로그아웃 (다른 기기 세션 종료)
 - 활동 로그 (마지막 접속 시간, IP, User-Agent)
 
-### AUTH-004: 2FA (이중 인증)
+### AUTH-005: 2FA (이중 인증)
 - TOTP (Time-based OTP) - Google Authenticator
 - SMS 인증 (Twilio 연동)
 - 백업 코드 생성
 
-### AUTH-005: OAuth 통합
-- Google OAuth 2.0
-- Kakao OAuth 2.0
-- Discord OAuth 2.0
+### AUTH-006: Apple Sign-In 추가
+- iOS 앱 요구사항 준수
+- Apple OAuth 2.0 연동
 
 ---
 

@@ -180,25 +180,85 @@ liar-game/
 
 ## 🔐 인증 시스템
 
-### 2단계 인증 전략
+liar-game은 **Supabase Auth**를 사용한 안전하고 확장 가능한 인증 시스템을 제공합니다.
 
-**1. 게스트 인증 (제로 프릭션)**:
-- 닉네임만 입력 → 즉시 게임 시작 (3초)
-- 임시 세션 ID + JWT 발급
-- Redis 세션 관리 (7일 TTL)
+### 지원되는 인증 방식
 
-**2. 회원 인증 (선택적 전환)**:
-- 이메일 + 비밀번호 회원가입
-- 게스트 프로그레스 100% 유지
-- PostgreSQL 영구 저장
+**1. 소셜 로그인 (추천)**:
+- **Google OAuth 2.0**: Gmail 계정으로 빠른 로그인
+- **GitHub OAuth 2.0**: 개발자 친화적 인증
+- **Discord OAuth 2.0**: 게이머 커뮤니티 통합
+
+**2. Anonymous 인증 (게스트 플레이)**:
+- 닉네임 입력 없이 즉시 게임 시작
+- 게임 종료 후 소셜 계정 연동 옵션
+- 진행 상황 100% 유지
+
+**3. 기존 JWT 인증 (레거시)**:
+- 이메일 + 비밀번호 로그인
+- 게스트 → 회원 전환 지원
+- 마이그레이션 가이드: [auth-v1-to-v2.md](docs/migration/auth-v1-to-v2.md)
+
+### 환경 변수 설정
+
+.env 파일에 다음 변수를 추가하세요:
+
+```bash
+# Supabase 설정
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Next.js 프론트엔드용
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### 빠른 시작
+
+#### Supabase 프로젝트 생성
+
+1. https://supabase.com 접속
+2. "New Project" 클릭
+3. 프로젝트 이름 및 데이터베이스 비밀번호 설정
+4. API Settings에서 URL과 Key 복사
+
+#### OAuth 프로바이더 설정
+
+**Google OAuth**:
+1. Google Cloud Console에서 OAuth Client ID 생성
+2. Supabase 대시보드 → Authentication → Providers → Google
+3. Client ID와 Secret 입력
+
+**GitHub/Discord**:
+- 동일한 방식으로 Supabase 대시보드에서 설정
+
+#### 애플리케이션 실행
+
+```bash
+# 환경 변수 설정
+cp .env.example .env
+# → SUPABASE_URL, SUPABASE_ANON_KEY 입력
+
+# 인프라 시작 (Docker Compose)
+docker compose up -d
+
+# 애플리케이션 실행
+pnpm install
+pnpm turbo dev
+```
 
 ### 보안 특징
-- **bcrypt 해싱**: Salt rounds 12 (OWASP 권장)
-- **JWT 토큰**: 액세스(15분) + 리프레시(7일)
-- **Rate Limiting**: 엔드포인트별 차등 제한
-- **Redis 세션**: <10ms 고속 조회
 
-**자세한 내용**: [인증 API 문서](docs/api/auth.md) | [아키텍처 설계](docs/architecture/authentication.md)
+- **RLS (Row Level Security)**: PostgreSQL 레벨에서 자동 권한 제어
+- **자동 토큰 갱신**: Supabase SDK가 만료 전 자동 갱신
+- **PKCE 플로우**: 중간자 공격 방어 (OAuth)
+- **감사 로그**: Supabase 대시보드에서 모든 인증 이벤트 확인
+
+**자세한 내용**:
+- [인증 API 문서](docs/api/auth.md)
+- [아키텍처 설계](docs/architecture/authentication.md)
+- [마이그레이션 가이드](docs/migration/auth-v1-to-v2.md)
 
 ---
 
