@@ -1,34 +1,49 @@
 // @CODE:AUTH-001:DATA | SPEC: SPEC-AUTH-001.md
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
+
+export enum UserRole {
+  USER = 'user',
+  PREMIUM = 'premium',
+  ADMIN = 'admin',
+}
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  id: number;
 
-  @Column({ type: 'varchar', length: 255, unique: true })
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
   @Index('idx_users_email')
-  email: string;
+  email: string | null;
 
-  @Column({ type: 'varchar', length: 255, name: 'password_hash' })
-  passwordHash: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  passwordHash: string | null;
 
   @Column({ type: 'varchar', length: 50 })
   username: string;
 
-  @Column({ type: 'boolean', default: false, name: 'is_guest' })
-  isGuest: boolean;
+  // OAuth 관련 필드
+  @Column({ type: 'varchar', length: 255, nullable: true, unique: true })
+  @Index('idx_users_supabase_id')
+  supabaseId: string | null; // Supabase user.id
 
-  @Column({ type: 'uuid', nullable: true, name: 'guest_session_id' })
-  @Index('idx_users_guest_session')
-  guestSessionId: string | null;
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  oauthProvider: string | null; // 'google', 'kakao'
 
-  @Column({ type: 'int', default: 1 })
-  level: number;
+  // Role 필드
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+  role: UserRole;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn()
   updatedAt: Date;
 }

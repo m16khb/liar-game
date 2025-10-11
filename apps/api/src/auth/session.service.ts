@@ -6,14 +6,9 @@ import { Cache } from 'cache-manager';
 export interface SessionData {
   id: string;
   username: string;
-  role: 'GUEST' | 'USER' | 'ADMIN';
+  role: 'USER' | 'PREMIUM' | 'ADMIN';
   lastActivity: number;
   currentRoomId?: string;
-}
-
-export interface GuestSessionData {
-  username: string;
-  createdAt: number;
 }
 
 @Injectable()
@@ -31,16 +26,6 @@ export class SessionService {
   }
 
   /**
-   * 게스트 세션 생성
-   * TTL: 7일 (604800초)
-   */
-  async createGuestSession(sessionId: string, data: GuestSessionData): Promise<void> {
-    const key = `guest:session:${sessionId}`;
-    const TTL = 7 * 24 * 60 * 60; // 7일
-    await this.cacheManager.set(key, data, TTL);
-  }
-
-  /**
    * 세션 조회
    */
   async getSession(userId: string): Promise<SessionData | null> {
@@ -50,28 +35,10 @@ export class SessionService {
   }
 
   /**
-   * 게스트 세션 조회
-   */
-  async getGuestSession(sessionId: string): Promise<GuestSessionData | null> {
-    const key = `guest:session:${sessionId}`;
-    const session = await this.cacheManager.get<GuestSessionData>(key);
-    return session ?? null;
-  }
-
-  /**
    * 세션 삭제
    */
   async deleteSession(userId: string): Promise<boolean> {
     const key = `session:${userId}`;
-    await this.cacheManager.del(key);
-    return true;
-  }
-
-  /**
-   * 게스트 세션 삭제
-   */
-  async deleteGuestSession(sessionId: string): Promise<boolean> {
-    const key = `guest:session:${sessionId}`;
     await this.cacheManager.del(key);
     return true;
   }

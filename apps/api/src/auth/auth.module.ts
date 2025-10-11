@@ -11,13 +11,12 @@ import { AuthController } from './auth.controller';
 import { SessionService } from './session.service';
 import { JwtStrategy } from './jwt.strategy';
 import { User } from './entities/user.entity';
-import { RefreshToken } from './entities/refresh-token.entity';
 import { SupabaseAuthService } from './supabase-auth.service';
 import { SupabaseJwtGuard } from './guards/supabase-jwt.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, RefreshToken]),
+    TypeOrmModule.forFeature([User]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: process.env.JWT_ACCESS_SECRET || 'test-secret',

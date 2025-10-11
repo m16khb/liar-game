@@ -1,10 +1,15 @@
 // @CODE:SETUP-001 | SPEC: .moai/specs/SPEC-SETUP-001/spec.md
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '../../.env',
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -14,6 +19,7 @@ import { AuthModule } from './auth/auth.module';
       database: process.env.DB_NAME || 'liar_game',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: process.env.NODE_ENV !== 'production',
+      logging: process.env.NODE_ENV !== 'production',
     }),
     AuthModule,
   ],
