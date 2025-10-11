@@ -1,8 +1,8 @@
 ---
 # 필수 필드 (7개)
 id: INFRA-001
-version: 0.0.1
-status: draft
+version: 0.1.0
+status: completed
 created: 2025-10-11
 updated: 2025-10-11
 author: m16khb
@@ -36,6 +36,25 @@ scope:
 # @SPEC:INFRA-001: Docker Compose 기반 인프라 통합
 
 ## HISTORY
+
+### v0.1.0 (2025-10-11)
+- **COMPLETED**: TDD 구현 완료 (RED → GREEN → REFACTOR)
+- **AUTHOR**: m16khb
+- **TESTS**: Docker Compose 통합 테스트 완료
+  - 8개 테스트 그룹, 모든 서비스 검증
+  - Health Check 동작 확인 (PostgreSQL, Redis, Nginx, MinIO)
+- **SCOPE**: PostgreSQL, Redis, Nginx, MinIO 컨테이너화
+- **TAG CHAIN**:
+  - @SPEC:INFRA-001 (1) → @TEST:INFRA-001 (1) → @CODE:INFRA-001 (3) → @DOC:INFRA-001 (1)
+- **IMPLEMENTATION**:
+  - docker-compose.yml: Compose V2 사양 준수
+  - nginx/nginx.conf: 리버스 프록시 설정
+  - .env.example: 환경 변수 템플릿
+  - docs/infrastructure.md: 아키텍처 문서
+- **NOTES**:
+  - Health Check 통합 (PostgreSQL, Redis, Nginx, MinIO)
+  - 리소스 제한 설정 (메모리, CPU)
+  - Named Volumes로 데이터 영속성 보장
 
 ### v0.0.1 (2025-10-11)
 - **INITIAL**: Docker Compose 기반 인프라 통합 명세 작성
@@ -323,18 +342,25 @@ http {
 
 ### TAG 관계도
 ```
-@SPEC:INFRA-001 (이 문서)
+@SPEC:INFRA-001 (이 문서) ✅
 ├─ depends_on: @SPEC:SETUP-001 (프로젝트 초기 설정)
-├─ @TEST:INFRA-001 → tests/infra/docker-compose.test.ts
-├─ @CODE:INFRA-001 → docker-compose.yml
-└─ @DOC:INFRA-001 → docs/infrastructure.md
+├─ @TEST:INFRA-001 → tests/infra/docker-compose.test.ts ✅
+├─ @CODE:INFRA-001 → docker-compose.yml ✅
+├─ @CODE:INFRA-001 → nginx/nginx.conf ✅
+├─ @CODE:INFRA-001 → .env.example ✅
+└─ @DOC:INFRA-001 → docs/infrastructure.md ✅
 ```
 
 ### 파일 매핑
-- **SPEC**: `.moai/specs/SPEC-INFRA-001/spec.md` (이 문서)
-- **구현**: `docker-compose.yml`, `.env.example`, `nginx/nginx.conf`
-- **테스트**: `tests/infra/docker-compose.test.ts`
-- **문서**: `README.md#인프라`, `docs/infrastructure.md`
+- **SPEC**: `.moai/specs/SPEC-INFRA-001/spec.md` (이 문서) ✅
+- **구현**:
+  - `docker-compose.yml` ✅
+  - `.env.example` ✅
+  - `nginx/nginx.conf` ✅
+- **테스트**: `tests/infra/docker-compose.test.ts` ✅
+- **문서**:
+  - `README.md#Infrastructure` ✅
+  - `docs/infrastructure.md` ✅
 
 ### 관련 이슈
 - GitHub Issue: TBD (Team 모드 시 자동 생성)
@@ -343,5 +369,5 @@ http {
 
 **작성일**: 2025-10-11
 **작성자**: m16khb
-**버전**: v0.0.1 (INITIAL)
-**상태**: draft
+**버전**: v0.1.0 (COMPLETED)
+**상태**: completed

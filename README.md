@@ -165,6 +165,7 @@ liar-game/
 - **[아키텍처 문서](docs/architecture/)**:
   - [모노레포 아키텍처](docs/architecture/monorepo.md)
   - [인증 시스템 아키텍처](docs/architecture/authentication.md)
+  - [인프라 아키텍처](docs/infrastructure.md): Docker Compose 기반 인프라 통합 (PostgreSQL, Redis, Nginx, MinIO)
 - **[API 문서](docs/api/)**:
   - [인증 API](docs/api/auth.md): 게스트/회원 인증, JWT 토큰 관리
 - **[SPEC 문서](.moai/specs/)**:
