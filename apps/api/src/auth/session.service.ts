@@ -11,6 +11,11 @@ export interface SessionData {
   currentRoomId?: string;
 }
 
+export interface GuestSessionData {
+  username: string;
+  createdAt: number;
+}
+
 @Injectable()
 export class SessionService {
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
@@ -63,5 +68,33 @@ export class SessionService {
     const key = `session:${userId}`;
     const session = await this.cacheManager.get(key);
     return session ? 1 : 0;
+  }
+
+  /**
+   * 게스트 세션 생성
+   * TTL: 7일 (604800초)
+   */
+  async createGuestSession(sessionId: string, data: GuestSessionData): Promise<void> {
+    const key = `guest:session:${sessionId}`;
+    const TTL = 7 * 24 * 60 * 60; // 7일
+    await this.cacheManager.set(key, data, TTL);
+  }
+
+  /**
+   * 게스트 세션 조회
+   */
+  async getGuestSession(sessionId: string): Promise<GuestSessionData | null> {
+    const key = `guest:session:${sessionId}`;
+    const session = await this.cacheManager.get<GuestSessionData>(key);
+    return session ?? null;
+  }
+
+  /**
+   * 게스트 세션 삭제
+   */
+  async deleteGuestSession(sessionId: string): Promise<boolean> {
+    const key = `guest:session:${sessionId}`;
+    await this.cacheManager.del(key);
+    return true;
   }
 }

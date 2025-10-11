@@ -97,7 +97,7 @@ describe('@TEST:AUTH-002:OAUTH - Supabase OAuth 인증', () => {
 
   describe('REQ-005: Supabase JWT 자동 발급', () => {
     it('OAuth 성공 시 JWT 자동 발급', async () => {
-      const mockSession = {
+      const mockSession: any = {
         access_token: 'supabase-jwt-access-token',
         refresh_token: 'supabase-jwt-refresh-token',
         expires_in: 3600,
@@ -106,7 +106,7 @@ describe('@TEST:AUTH-002:OAUTH - Supabase OAuth 인증', () => {
 
       (service as any).verifyToken = jest.fn().mockResolvedValue(mockSession);
 
-      const result = await service.verifyToken('oauth-success-token');
+      const result: any = await service.verifyToken('oauth-success-token');
 
       expect(result).toHaveProperty('access_token');
       expect(result).toHaveProperty('refresh_token');
