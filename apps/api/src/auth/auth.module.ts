@@ -1,4 +1,5 @@
 // @CODE:AUTH-001 | SPEC: .moai/specs/SPEC-AUTH-001/spec.md | TEST: apps/api/test/auth/
+// @CODE:AUTH-002 | SPEC: .moai/specs/SPEC-AUTH-002/spec.md | Supabase Auth 통합
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -11,6 +12,8 @@ import { SessionService } from './session.service';
 import { JwtStrategy } from './jwt.strategy';
 import { User } from './entities/user.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { SupabaseAuthService } from './supabase-auth.service';
+import { SupabaseJwtGuard } from './guards/supabase-jwt.guard';
 
 @Module({
   imports: [
@@ -28,8 +31,8 @@ import { RefreshToken } from './entities/refresh-token.entity';
     ]),
     CacheModule.register(),
   ],
-  providers: [AuthService, SessionService, JwtStrategy],
+  providers: [AuthService, SessionService, JwtStrategy, SupabaseAuthService, SupabaseJwtGuard],
   controllers: [AuthController],
-  exports: [AuthService, SessionService],
+  exports: [AuthService, SessionService, SupabaseAuthService, SupabaseJwtGuard],
 })
 export class AuthModule {}

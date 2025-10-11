@@ -13,8 +13,9 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@liar-game/types": "workspace:*",
     "@liar-game/constants": "workspace:*",
+    "@liar-game/types": "workspace:*",
+    "@nestjs/cache-manager": "^3.0.1",
     "@nestjs/common": "^11.0.11",
     "@nestjs/core": "^11.0.11",
     "@nestjs/jwt": "^11.0.1",
@@ -22,8 +23,9 @@
     "@nestjs/platform-fastify": "^11.0.11",
     "@nestjs/throttler": "^6.4.0",
     "@nestjs/typeorm": "^11.0.0",
-    "@nestjs/cache-manager": "^3.0.1",
+    "@supabase/supabase-js": "^2.75.0",
     "bcrypt": "^6.0.0",
+    "cache-manager": "^7.2.4",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "fastify": "^5.2.1",
@@ -33,19 +35,18 @@
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "typeorm": "^0.3.27",
-    "cache-manager": "^7.2.4"
+    "typeorm": "^0.3.27"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.1",
     "@nestjs/schematics": "^11.0.1",
     "@nestjs/testing": "^11.1.6",
     "@types/bcrypt": "^6.0.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.17.9",
     "@types/passport-jwt": "^4.0.1",
-    "@types/jest": "^30.0.0",
-    "typescript": "^5.7.2",
     "jest": "^30.2.0",
-    "ts-jest": "^29.4.5"
+    "ts-jest": "^29.4.5",
+    "typescript": "^5.7.2"
   }
 }
