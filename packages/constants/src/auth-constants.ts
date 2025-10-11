@@ -1,0 +1,7 @@
+// @CODE:AUTH-001
+export const AUTH_CONSTANTS = {
+  JWT_EXPIRY: '1h',
+  REFRESH_EXPIRY: '7d',
+  SESSION_TTL: 604800, // 7일 (초)
+  BCRYPT_ROUNDS: 10,
+};
