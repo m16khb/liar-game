@@ -1,30 +1,85 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
-// @CODE:AUTH-001:API
+// @CODE:AUTH-001:API | SPEC: SPEC-AUTH-001.md | TEST: test/auth/*.test.ts
+import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { AuthService } from './auth.service';
+import { GuestAuthDto } from './dto/guest-auth.dto';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
+/**
+ * 인증 컨트롤러
+ * REST API 엔드포인트 7개
+ */
 @Controller('auth')
+@UseGuards(ThrottlerGuard)
 export class AuthController {
-  @Throttle(10, 60) // 10회/60초
+  constructor(private readonly authService: AuthService) {}
+
+  /**
+   * POST /api/auth/guest - 게스트 인증 (REQ-001)
+   * Rate Limit: 10회/60초
+   */
   @Post('guest')
-  async guestAuth() { /* ... */ }
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async guestAuth(@Body() dto: GuestAuthDto) {
+    return this.authService.createGuestToken(dto.username);
+  }
 
-  @Throttle(3, 60) // 3회/60초 (SPEC CON-004)
+  /**
+   * POST /api/auth/register - 회원가입 (REQ-002)
+   * Rate Limit: 3회/60초 (SPEC CON-004)
+   */
   @Post('register')
-  async register(@Body() dto: RegisterDto) { /* ... */ }
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  async register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto.email, dto.password, dto.username, dto.guestSessionId);
+  }
 
-  @Throttle(5, 60) // 5회/60초 (SPEC CON-004)
+  /**
+   * POST /api/auth/login - 로그인 (REQ-006)
+   * Rate Limit: 5회/60초 (SPEC CON-004)
+   */
   @Post('login')
-  async login(@Body() dto: LoginDto) { /* ... */ }
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async login(@Body() dto: LoginDto) {
+    return this.authService.login(dto.email, dto.password);
+  }
 
+  /**
+   * POST /api/auth/refresh - 토큰 갱신 (REQ-007)
+   * Rate Limit: 10회/60초
+   */
   @Post('refresh')
-  async refreshToken(@Body() dto: RefreshTokenDto) { /* ... */ }
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async refreshToken(@Body() dto: RefreshTokenDto) {
+    return this.authService.refreshToken(dto.refreshToken);
+  }
 
+  /**
+   * POST /api/auth/logout - 로그아웃
+   */
   @Post('logout')
-  async logout() { /* ... */ }
+  @UseGuards(JwtAuthGuard)
+  async logout(@Req() req: any) {
+    return this.authService.logout(req.user.id);
+  }
 
+  /**
+   * GET /api/auth/me - 현재 사용자 정보 (REQ-009)
+   */
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async getCurrentUser(@Req() req: any) {
+    return req.user;
+  }
+
+  /**
+   * POST /api/auth/verify - JWT 검증
+   */
   @Post('verify')
-  async verifyToken() { /* ... */ }
-
-  @Post('session')
-  async getSession() { /* ... */ }
+  async verifyToken(@Body('token') token: string) {
+    return this.authService.verifyJWT(token);
+  }
 }
