@@ -44,34 +44,42 @@ Liar Game은 6명의 플레이어가 참여하는 실시간 추리 게임입니�
 ### 사전 요구사항
 - Node.js 25.1.0+
 - pnpm 10.x+
-- **Docker & Docker Compose** (인프라 자동 구성)
+- **Docker** (Kubernetes 클러스터)
+- **kubectl** (Kubernetes CLI)
 - Git 2.x
 
-### 1. 인프라 시작 (Docker Compose)
+### 1. 인프라 시작 (Kubernetes)
 
-Docker Compose로 전체 인프라를 한 번에 시작합니다:
+Kubernetes로 전체 인프라를 배포합니다:
 
 ```bash
 # 환경 변수 설정
 cp .env.example .env
 # → DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 변경 필수
 
-# 전체 인프라 시작 (MySQL, Redis, Nginx)
-docker compose up -d
+# k8s 네임스페이스 생성
+kubectl create namespace liar-game
+
+# 데이터베이스 배포 (MySQL + Redis)
+kubectl apply -f k8s/databases/
 
 # 인프라 상태 확인
-docker compose ps
+kubectl get pods -n liar-game
+kubectl get services -n liar-game
+
+# 데이터베이스 연결 테스트
+kubectl port-forward -n liar-game svc/mysql 3306:3306
+kubectl port-forward -n liar-game svc/redis 6379:6379
 
 # 데이터베이스 마이그레이션
 cd apps/api && pnpm migration:run && cd ../..
 ```
 
 **인프라 구성**:
-- **MySQL v8 LTS**: `localhost:3306` (게임 데이터, 사용자 정보)
-- **Redis v8 LTS**: `localhost:6379` (세션 관리, 캐싱)
-- **Nginx**: `localhost:80` (리버스 프록시, API 라우팅)
+- **MySQL v8 LTS**: ClusterIP 서비스, `liar-game` 네임스페이스
+- **Redis v8 LTS**: ClusterIP 서비스, `liar-game` 네임스페이스
+- **PersistentVolume**: 데이터 영속성 보장 (MySQL 10Gi, Redis 5Gi)
 
-**데이터 영속성**: `docker/volumes/` 디렉토리에 모든 데이터 저장
 
 ### 2. 애플리케이션 실행
 
@@ -103,11 +111,11 @@ pnpm test
 pnpm turbo lint
 pnpm turbo type-check
 
-# 인프라 종료 (데이터 유지)
-docker compose stop
+# 인프라 중지
+kubectl delete -f k8s/databases/
 
-# 인프라 완전 삭제 (볼륨 포함)
-docker compose down -v
+# 인프라 완전 삭제 (PVC 포함)
+kubectl delete namespace liar-game --ignore-not-found=true
 ```
 
 ### 개별 앱 실행
@@ -241,7 +249,7 @@ cp .env.example .env
 # → DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 변경 필수
 
 # 인프라 시작 (MySQL, Redis)
-docker compose up -d
+kubectl apply -f k8s/databases/
 
 # 데이터베이스 마이그레이션
 cd apps/api && pnpm migration:run && cd ../..
