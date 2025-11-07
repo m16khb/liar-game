@@ -43,3 +43,5 @@ k8s/secrets/
 infra/production/
 k8s/infra.yaml
 nginx/nginx.conf
+
+tmp/
