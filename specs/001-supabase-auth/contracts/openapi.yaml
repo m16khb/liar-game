@@ -1,0 +1,645 @@
+openapi: 3.0.3
+info:
+  title: 라이어 게임 인증 API
+  description: Supabase 기반 사용자 인증 시스템 API 명세
+  version: 1.0.0
+  contact:
+    name: 라이어 게임 개발팀
+
+servers:
+  - url: http://localhost:4000
+    description: 개발 서버
+  - url: https://api.liar-game.com
+    description: 프로덕션 서버
+
+tags:
+  - name: Authentication
+    description: 사용자 인증 관련 API
+  - name: User Profile
+    description: 사용자 프로필 관리 API
+  - name: User Search
+    description: 사용자 검색 API
+
+paths:
+  # 인증 관련 API
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: 이메일 로그인
+      description: 이메일과 비밀번호로 로그인하여 JWT 토큰 발급
+      operationId: loginWithEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              validCredentials:
+                summary: 유효한 자격증명
+                value:
+                  email: "user@example.com"
+                  password: "securePassword123"
+      responses:
+        '200':
+          description: 로그인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              examples:
+                successLogin:
+                  summary: 로그인 성공 응답
+                  value:
+                    success: true
+                    data:
+                      accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      expiresIn: 3600
+                      user:
+                        id: 1
+                        email: "user@example.com"
+                        nickname: "게이머123"
+                        tier: "MEMBER"
+                        role: "USER"
+                        avatarUrl: "https://example.com/avatar.jpg"
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidCredentials:
+                  summary: 잘못된 자격증명
+                  value:
+                    success: false
+                    error:
+                      code: "INVALID_CREDENTIALS"
+                      message: "이메일 또는 비밀번호가 올바르지 않습니다"
+        '429':
+          description: 요청 횟수 초과
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                rateLimited:
+                  summary: 요청 횟수 초과
+                  value:
+                    success: false
+                    error:
+                      code: "RATE_LIMIT_EXCEEDED"
+                      message: "너무 많은 요청을 보내셨습니다. 1분 후 다시 시도해주세요"
+
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: 회원가입
+      description: 새로운 사용자 계정 생성
+      operationId: signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: 회원가입 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emailExists:
+                  summary: 이메일 중복
+                  value:
+                    success: false
+                    error:
+                      code: "EMAIL_EXISTS"
+                      message: "이미 가입된 이메일 주소입니다"
+
+  /auth/oauth-url:
+    get:
+      tags:
+        - Authentication
+      summary: OAuth 인증 URL 발급
+      description: 소셜 로그인을 위한 인증 URL 생성
+      operationId: getOAuthUrl
+      parameters:
+        - name: provider
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/OAuthProvider'
+          description: OAuth 제공업체
+        - name: redirectUrl
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+          description: 리디렉션 URL
+      responses:
+        '200':
+          description: OAuth URL 발급 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthUrlResponse'
+
+  /auth/oauth-callback:
+    get:
+      tags:
+        - Authentication
+      summary: OAuth 콜백 처리
+      description: OAuth 인증 후 콜백 처리 및 토큰 발급
+      operationId: handleOAuthCallback
+      parameters:
+        - name: provider
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/OAuthProvider'
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: OAuth 인증 코드
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+          description: CSRF 방지 상태값
+      responses:
+        '200':
+          description: OAuth 로그인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: OAuth 처리 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: 토큰 갱신
+      description: Refresh Token으로 새로운 Access Token 발급
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: 토큰 갱신 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefreshResponse'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: 로그아웃
+      description: 사용자 로그아웃 처리 및 토큰 무효화
+      operationId: logout
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 로그아웃 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # 프로필 관리 API
+  /auth/me:
+    get:
+      tags:
+        - User Profile
+      summary: 현재 사용자 정보 조회
+      description: 인증된 사용자의 현재 정보 조회
+      operationId: getCurrentUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 사용자 정보 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /auth/profile:
+    get:
+      tags:
+        - User Profile
+      summary: 프로필 조회
+      description: 특정 사용자의 프로필 정보 조회
+      operationId: getProfile
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: 조회할 사용자 ID (없을 경우 현재 사용자)
+      responses:
+        '200':
+          description: 프로필 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+    put:
+      tags:
+        - User Profile
+      summary: 프로필 수정
+      description: 사용자 프로필 정보 수정
+      operationId: updateProfile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: 프로필 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /auth/account:
+    delete:
+      tags:
+        - User Profile
+      summary: 계정 삭제
+      description: 사용자 계정 비활성화 (소프트 딜리트)
+      operationId: deleteAccount
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 계정 삭제 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # 사용자 검색 API
+  /auth/search:
+    get:
+      tags:
+        - User Search
+      summary: 사용자 검색
+      description: 닉네임 또는 이메일로 사용자 검색
+      operationId: searchUsers
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 20
+          description: 검색어 (닉네임 또는 이메일)
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [nickname, email]
+            default: nickname
+          description: 검색 유형
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 10
+          description: 결과 개수 제한
+      responses:
+        '200':
+          description: 사용자 검색 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSearchResponse'
+
+components:
+  schemas:
+    # 요청 스키마
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: 이메일 주소
+          example: "user@example.com"
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          description: 비밀번호
+          example: "securePassword123"
+
+    SignupRequest:
+      type: object
+      required:
+        - email
+        - password
+        - nickname
+      properties:
+        email:
+          type: string
+          format: email
+          description: 이메일 주소
+          example: "newuser@example.com"
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          description: 비밀번호
+          example: "securePassword123"
+        nickname:
+          type: string
+          minLength: 2
+          maxLength: 20
+          pattern: '^[가-힣a-zA-Z0-9_-]+$'
+          description: 닉네임
+          example: "게이머123"
+
+    OAuthProvider:
+      type: string
+      enum: [google, github, discord]
+      description: OAuth 제공업체
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          description: 리프레시 토큰
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+          minLength: 2
+          maxLength: 20
+          pattern: '^[가-힣a-zA-Z0-9_-]+$'
+          description: 새 닉네임
+          example: "게이머456"
+        avatarUrl:
+          type: string
+          format: uri
+          maxLength: 500
+          description: 새 프로필 이미지 URL
+          example: "https://example.com/new-avatar.jpg"
+
+    # 응답 스키마
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          required:
+            - accessToken
+            - refreshToken
+            - expiresIn
+            - user
+          properties:
+            accessToken:
+              type: string
+              description: 액세스 토큰
+              example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            refreshToken:
+              type: string
+              description: 리프레시 토큰
+              example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            expiresIn:
+              type: integer
+              description: 토큰 만료 시간 (초)
+              example: 3600
+            user:
+              $ref: '#/components/schemas/User'
+
+    OAuthUrlResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          required:
+            - authUrl
+            - state
+          properties:
+            authUrl:
+              type: string
+              format: uri
+              description: OAuth 인증 URL
+              example: "https://accounts.google.com/oauth/authorize?..."
+            state:
+              type: string
+              description: CSRF 방지 상태값
+              example: "random_state_string"
+
+    TokenRefreshResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          required:
+            - accessToken
+            - refreshToken
+            - expiresIn
+          properties:
+            accessToken:
+              type: string
+              description: 새 액세스 토큰
+            refreshToken:
+              type: string
+              description: 새 리프레시 토큰
+            expiresIn:
+              type: integer
+              description: 새 토큰 만료 시간 (초)
+
+    UserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/User'
+
+    UserSearchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          required:
+            - users
+            - total
+          properties:
+            users:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+            total:
+              type: integer
+              description: 전체 검색 결과 수
+              example: 15
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          description: 성공 메시지
+          example: "요청이 성공적으로 처리되었습니다"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: 에러 코드
+              example: "INVALID_CREDENTIALS"
+            message:
+              type: string
+              description: 사용자 친화적인 에러 메시지
+              example: "이메일 또는 비밀번호가 올바르지 않습니다"
+
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - nickname
+        - tier
+        - role
+      properties:
+        id:
+          type: integer
+          description: 사용자 ID
+          example: 1
+        email:
+          type: string
+          format: email
+          description: 이메일 주소
+          example: "user@example.com"
+        nickname:
+          type: string
+          description: 닉네임
+          example: "게이머123"
+        tier:
+          type: string
+          enum: [MEMBER, PREMIUM, VIP]
+          description: 사용자 등급
+          example: "MEMBER"
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          description: 사용자 역할
+          example: "USER"
+        avatarUrl:
+          type: string
+          format: uri
+          description: 프로필 이미지 URL
+          example: "https://example.com/avatar.jpg"
+        oauthProvider:
+          type: string
+          enum: [google, github, discord]
+          description: OAuth 제공업체
+          example: "google"
+        createdAt:
+          type: string
+          format: date-time
+          description: 가입일시 (UTC)
+          example: "2025-01-01T00:00:00Z"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase 발급 JWT 토큰
+
+# 전체 보안 설정
+security:
+  - BearerAuth: []
+
+# Rate Limiting 설정
+x-rate-limit:
+  requests-per-minute: 100
+  requests-per-hour: 1000
+
+# 캐싱 설정
+x-cache-ttl:
+  user-profile: 300  # 5분
+  user-search: 60    # 1분

@@ -1,6 +1,6 @@
 # 🎭 Liar Game
 
-웹 기반 실시간 멀티플레이어 추리 게임 - MoAI-ADK로 구축된 모노레포 프로젝트
+웹 기반 실시간 멀티플레이어 추리 게임 - Turborepo 기반 모노레포 프로젝트
 
 ## 📖 프로젝트 소개
 
@@ -14,14 +14,14 @@ Liar Game은 6명의 플레이어가 참여하는 실시간 추리 게임입니�
 - **워크스페이스**: apps (애플리케이션) + packages (공유 라이브러리)
 
 ### 프론트엔드 (apps/web)
-- **프레임워크**: Next.js 15.5 (App Router)
+- **프레임워크**: React 18 + Compiler
+- **번들러**: Vite
 - **런타임**: Node.js 20.x LTS
 - **스타일링**: CSS Modules / Tailwind CSS (예정)
 - **상태 관리**: React Context API / Zustand (예정)
 
 ### 백엔드 (apps/api)
-- **프레임워크**: NestJS 11.x
-- **HTTP 어댑터**: Fastify (고성능)
+- **프레임워크**: NestJS 11.x + Fastify (고성능 HTTP 서버)
 - **실시간 통신**: Socket.IO (WebSocket)
 - **데이터베이스**: PostgreSQL 16.x (영구 저장)
 - **캐싱**: Redis 7.x (세션 관리)
@@ -123,14 +123,16 @@ pnpm start:dev
 ```
 liar-game/
 ├── apps/
-│   ├── web/                    # Next.js 15 프론트엔드
+│   ├── web/                    # React 18 + Compiler 프론트엔드
 │   │   ├── src/
-│   │   │   ├── app/           # App Router (페이지)
 │   │   │   ├── components/    # React 컴포넌트
 │   │   │   ├── hooks/         # 커스텀 훅
+│   │   │   ├── pages/         # 페이지 컴포넌트
 │   │   │   └── lib/           # 유틸리티 함수
+│   │   ├── index.html         # HTML 템플릿
+│   │   ├── vite.config.ts     # Vite 설정
 │   │   └── package.json
-│   └── api/                    # NestJS 11 백엔드
+│   └── api/                    # NestJS 11 + Fastify 백엔드
 │       ├── src/
 │       │   ├── main.ts
 │       │   ├── app.module.ts
@@ -144,12 +146,6 @@ liar-game/
 │   ├── config/                 # ESLint, TSConfig, Prettier
 │   ├── ui/                     # 공유 React 컴포넌트
 │   └── constants/              # 게임 상수, 이벤트 정의
-├── .moai/                      # MoAI-ADK 설정 및 문서
-│   ├── specs/                  # SPEC 문서 (EARS 방식)
-│   ├── memory/                 # 개발 가이드, TRUST 원칙
-│   ├── project/                # 프로젝트 메타 정보
-│   ├── indexes/                # TAG 인덱스
-│   └── reports/                # 동기화 보고서
 ├── docs/                       # 프로젝트 문서
 │   └── architecture/           # 아키텍처 다이어그램
 ├── tests/                      # 통합 테스트
@@ -161,22 +157,12 @@ liar-game/
 ## 📚 문서
 
 ### 개발 문서
-- **[개발 가이드](.moai/memory/development-guide.md)**: TRUST 원칙, TDD 워크플로우, @TAG 시스템
 - **[아키텍처 문서](docs/architecture/)**:
   - [모노레포 아키텍처](docs/architecture/monorepo.md)
   - [인증 시스템 아키텍처](docs/architecture/authentication.md)
   - [인프라 아키텍처](docs/infrastructure.md): Docker Compose 기반 인프라 통합 (PostgreSQL, Redis, Nginx, MinIO)
 - **[API 문서](docs/api/)**:
   - [인증 API](docs/api/auth.md): 게스트/회원 인증, JWT 토큰 관리
-- **[SPEC 문서](.moai/specs/)**:
-  - [SPEC-SETUP-001](.moai/specs/SPEC-SETUP-001/spec.md): 모노레포 기반 구조
-  - [SPEC-AUTH-001](.moai/specs/SPEC-AUTH-001/spec.md): 사용자 인증 및 세션 관리
-  - [SPEC-INFRA-001](.moai/specs/SPEC-INFRA-001/spec.md): Docker Compose 기반 인프라 통합
-
-### 프로젝트 관리
-- **[프로젝트 정의](.moai/project/product.md)**: 제품 미션, 사용자, 문제 정의
-- **[기술 스택](.moai/project/tech.md)**: 언어, 프레임워크, 품질 게이트, 배포 전략
-- **[프로젝트 구조](.moai/project/structure.md)**: 디렉토리 구조, 모듈 의존성
 
 ## 🔐 인증 시스템
 
@@ -282,42 +268,7 @@ pnpm --filter @liar-game/types test
 pnpm turbo test -- --coverage
 ```
 
-## 🔄 MoAI-ADK 워크플로우
-
-본 프로젝트는 **MoAI-Agentic Development Kit (MoAI-ADK)**를 사용하여 개발됩니다.
-
-### 3단계 개발 사이클
-
-```bash
-# 1단계: SPEC 작성 (EARS 방식)
-/alfred:1-spec "새로운 기능"
-
-# 2단계: TDD 구현 (RED → GREEN → REFACTOR)
-/alfred:2-build SPEC-{ID}
-
-# 3단계: 문서 동기화 (Living Document)
-/alfred:3-sync
-```
-
-### @TAG 추적 시스템
-- **@SPEC**: 요구사항 명세
-- **@TEST**: 테스트 케이스
-- **@CODE**: 구현 코드
-- **@DOC**: 문서화
-
-**예시**:
-```
-@SPEC:SETUP-001 → @TEST:SETUP-001 → @CODE:SETUP-001 → @DOC:SETUP-001
-```
-
 ## 🧑‍💻 개발 가이드
-
-### TRUST 5원칙
-- **T**est First: 테스트 우선 개발 (TDD)
-- **R**eadable: 읽기 쉬운 코드 (린터 적용)
-- **U**nified: 통합된 타입 시스템 (TypeScript strict mode)
-- **S**ecured: 보안 취약점 제로
-- **T**rackable: @TAG 기반 추적성
 
 ### 코드 규칙
 - 파일 ≤300 LOC
@@ -325,14 +276,6 @@ pnpm turbo test -- --coverage
 - 매개변수 ≤5개
 - 복잡도 ≤10
 - 테스트 커버리지 ≥85%
-
-### Git 커밋 메시지
-```bash
-🔴 RED: [테스트 설명]
-🟢 GREEN: [구현 설명]
-♻️ REFACTOR: [개선 설명]
-📝 DOCS: [문서 설명]
-```
 
 ## 📦 배포
 
@@ -343,22 +286,21 @@ pnpm turbo test -- --coverage
 pnpm turbo build
 
 # 빌드 결과 확인
-ls -la apps/web/.next/
+ls -la apps/web/dist/
 ls -la apps/api/dist/
 ```
 
 ### 배포 환경
-- **프론트엔드**: Custom Node.js 서버 (Vercel 불가 - WebSocket 제약)
-- **백엔드**: Dockerized NestJS + Fastify
+- **프론트엔드**: 정적 파일 배포 (Vite 빌드) 또는 Custom Node.js 서버
+- **백엔드**: Dockerized NestJS + Fastify API 서버
 - **권장 플랫폼**: AWS Fargate, Railway, Fly.io
 
 ## 🤝 기여 가이드
 
-1. 이슈 생성 또는 SPEC 문서 작성
-2. 브랜치 생성: `feature/SPEC-{ID}`
+1. 이슈 생성 또는 기능 제안
+2. 브랜치 생성: `feature/feature-name`
 3. TDD 구현 (RED → GREEN → REFACTOR)
-4. 문서 동기화 (`/alfred:3-sync`)
-5. Pull Request 생성
+4. Pull Request 생성
 
 ## 📄 라이선스
 
@@ -372,4 +314,4 @@ ls -la apps/api/dist/
 
 ---
 
-**Built with MoAI-ADK** 🚀 | SPEC-First TDD Development
+**Built with Turborepo, React 18 + Compiler & NestJS + Fastify** 🚀 | Real-time Web Game

@@ -1,8 +1,0 @@
-{
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "outDir": "./dist"
-  },
-  "include": ["typescript/**/*", "eslint/**/*"],
-  "exclude": ["node_modules", "dist"]
-}

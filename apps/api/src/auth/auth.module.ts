@@ -1,37 +1,46 @@
-// @CODE:AUTH-001 | SPEC: .moai/specs/SPEC-AUTH-001/spec.md | TEST: apps/api/test/auth/
-// @CODE:AUTH-002 | SPEC: .moai/specs/SPEC-AUTH-002/spec.md | Supabase Auth 통합
-import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { ThrottlerModule } from '@nestjs/throttler';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { CacheModule } from '@nestjs/cache-manager';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { SessionService } from './session.service';
-import { JwtStrategy } from './jwt.strategy';
-import { User } from './entities/user.entity';
-import { SupabaseAuthService } from './supabase-auth.service';
-import { SupabaseJwtGuard } from './guards/supabase-jwt.guard';
+// 인증 모듈
+// Supabase Auth 기반의 인증 기능 및 사용자 관리
+
+import { Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { User } from './entities/user.entity'
+import { SupabaseService } from './services/supabase.service'
+import { UserService } from './services/user.service'
+import { UserRepository } from './repositories/user.repository'
+import { JwtAuthGuard } from './guards/jwt-auth.guard'
+import { AuthController } from './controllers/auth.controller'
+import { RedisSessionService } from '../session/redis-session.service'
+import { AppLoggerService } from '../logger/app.logger.service'
+import { SupabaseModule } from './supabase.module'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-      secret: process.env.JWT_ACCESS_SECRET || 'test-secret',
-      signOptions: { expiresIn: '15m' },
-    }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000, // 60초
-        limit: 10, // 기본 10회
-      },
-    ]),
-    CacheModule.register(),
+    ConfigModule,
+    TypeOrmModule.forFeature([User]), // User 엔티티 등록
+    SupabaseModule, // Supabase 인증 모듈
   ],
-  providers: [AuthService, SessionService, JwtStrategy, SupabaseAuthService, SupabaseJwtGuard],
+  providers: [
+    // 서비스들
+    SupabaseService,
+    UserService,
+    RedisSessionService,
+    AppLoggerService,
+
+    // 리포지토리
+    UserRepository,
+
+    // 가드
+    JwtAuthGuard,
+  ],
   controllers: [AuthController],
-  exports: [AuthService, SessionService, SupabaseAuthService, SupabaseJwtGuard],
+  exports: [
+    // 다른 모듈에서 사용할 수 있도록 export
+    SupabaseService,
+    UserService,
+    UserRepository,
+    JwtAuthGuard,
+    RedisSessionService,
+  ],
 })
 export class AuthModule {}

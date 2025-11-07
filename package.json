@@ -13,8 +13,7 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
-    "clean": "turbo run clean && rm -rf node_modules",
-    "setup:auth-hook": "tsx scripts/setup-auth-hook.ts"
+    "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
@@ -27,7 +26,7 @@
   },
   "packageManager": "pnpm@10.17.1",
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=24.0.0",
     "pnpm": ">=9.0.0"
   }
 }

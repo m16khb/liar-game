@@ -1,27 +1,37 @@
-// @CODE:SETUP-001 | SPEC: .moai/specs/SPEC-SETUP-001/spec.md
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './auth/auth.module';
+// NestJS 애플리케이션 루트 모듈
+// 모든 기능 모듈을 통합하는 최상위 모듈
+
+import { Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { databaseConfig } from './config/database.config'
+
+// 구현된 모듈들 임포트
+import { AuthModule } from './auth/auth.module'
+
+// TODO: 향후 추가할 모듈들
+// import { RoomModule } from './room/room.module'
+// import { GameModule } from './game/game.module'
 
 @Module({
   imports: [
+    // 환경 설정 모듈 - 루트 .env 파일 로드
     ConfigModule.forRoot({
-      isGlobal: true,
+      isGlobal: true, // 전역에서 환경 변수 접근 가능
       envFilePath: '../../.env',
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432', 10),
-      username: process.env.DB_USERNAME || 'postgres',
-      password: process.env.DB_PASSWORD || 'postgres',
-      database: process.env.DB_NAME || 'liar_game',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: process.env.NODE_ENV !== 'production',
-      logging: process.env.NODE_ENV !== 'production',
+
+    // TypeORM 데이터베이스 연결 활성화
+    TypeOrmModule.forRootAsync({
+      useFactory: () => databaseConfig,
     }),
+
+    // 기능 모듈들
     AuthModule,
+
+    // TODO: 향후 추가할 모듈들
+    // RoomModule,
+    // GameModule,
   ],
   controllers: [],
   providers: [],

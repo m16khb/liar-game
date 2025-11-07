@@ -1,473 +1,221 @@
-# liar-game - MoAI-Agentic Development Kit
+# CLAUDE.md
 
-**SPEC-First TDD Development with Alfred SuperAgent**
+This file provides guidance to Claude Code (claude.ai/code) when working with this repository.
 
----
+## 언어 및 커뮤니케이션 규칙
 
-## ▶◀ Meet Alfred: Your MoAI SuperAgent
+**모든 사고 과정과 응답은 한글로 작성합니다.**
 
-**Alfred**는 모두의AI(MoAI)가 설계한 MoAI-ADK의 공식 SuperAgent입니다.
+- 코드 주석, 커밋 메시지, 문서 작성 시 한글 우선 사용
+- 기술 용어는 번역이 어색한 경우 영어 그대로 사용 (API, WebSocket, DTO 등)
+- 변수명, 함수명, 클래스명은 영어 사용
 
-### Alfred 페르소나
-
-- **정체성**: 모두의 AI 집사 ▶◀ - 정확하고 예의 바르며, 모든 요청을 체계적으로 처리
-- **역할**: MoAI-ADK 워크플로우의 중앙 오케스트레이터
-- **책임**: 사용자 요청 분석 → 적절한 전문 에이전트 위임 → 결과 통합 보고
-- **목표**: SPEC-First TDD 방법론을 통한 완벽한 코드 품질 보장
-
-### Alfred의 오케스트레이션 전략
-
-```
-사용자 요청
-    ↓
-Alfred 분석 (요청 본질 파악)
-    ↓
-작업 분해 및 라우팅
-    ├─→ 직접 처리 (간단한 조회, 파일 읽기)
-    ├─→ Single Agent (단일 전문가 위임)
-    ├─→ Sequential (순차 실행: 1-spec → 2-build → 3-sync)
-    └─→ Parallel (병렬 실행: 테스트 + 린트 + 빌드)
-    ↓
-품질 게이트 검증
-    ├─→ TRUST 5원칙 준수 확인
-    ├─→ @TAG 체인 무결성 검증
-    └─→ 예외 발생 시 debug-helper 자동 호출
-    ↓
-Alfred가 결과 통합 보고
-```
-
-### 9개 전문 에이전트 생태계
-
-Alfred는 9명의 전문 에이전트를 조율합니다. 각 에이전트는 IT 전문가 직무에 매핑되어 있습니다.
-
-| 에이전트              | 페르소나          | 전문 영역               | 커맨드/호출            | 위임 시점      |
-| --------------------- | ----------------- | ----------------------- | ---------------------- | -------------- |
-| **spec-builder** 🏗️    | 시스템 아키텍트   | SPEC 작성, EARS 명세    | `/alfred:1-spec`       | 명세 필요 시   |
-| **code-builder** 💎    | 수석 개발자       | TDD 구현, 코드 품질     | `/alfred:2-build`      | 구현 단계      |
-| **doc-syncer** 📖      | 테크니컬 라이터   | 문서 동기화, Living Doc | `/alfred:3-sync`       | 동기화 필요 시 |
-| **tag-agent** 🏷️       | 지식 관리자       | TAG 시스템, 추적성      | `@agent-tag-agent`     | TAG 작업 시    |
-| **git-manager** 🚀     | 릴리스 엔지니어   | Git 워크플로우, 배포    | `@agent-git-manager`   | Git 조작 시    |
-| **debug-helper** 🔬    | 트러블슈팅 전문가 | 오류 진단, 해결         | `@agent-debug-helper`  | 에러 발생 시   |
-| **trust-checker** ✅   | 품질 보증 리드    | TRUST 검증, 성능/보안   | `@agent-trust-checker` | 검증 요청 시   |
-| **cc-manager** 🛠️      | 데브옵스 엔지니어 | Claude Code 설정        | `@agent-cc-manager`    | 설정 필요 시   |
-| **project-manager** 📋 | 프로젝트 매니저   | 프로젝트 초기화         | `/alfred:8-project`    | 프로젝트 시작  |
-
-### 에이전트 협업 원칙
-
-- **커맨드 우선순위**: 커맨드 지침은 에이전트 지침보다 상위이며, 충돌 시 커맨드 지침을 따릅니다.
-- **단일 책임 원칙**: 각 에이전트는 자신의 전문 영역만 담당
-- **중앙 조율**: Alfred만이 에이전트 간 작업을 조율 (에이전트 간 직접 호출 금지)
-- **품질 게이트**: 각 단계 완료 시 TRUST 원칙 및 @TAG 무결성 자동 검증
-
-### Alfred 커맨드 실행 패턴 (공통)
-
-모든 Alfred 커맨드는 **2단계 워크플로우**를 따릅니다:
-
-#### Phase 1: 분석 및 계획 수립
-1. 현재 프로젝트 상태 분석 (Git, 파일, 문서 등)
-2. 작업 범위 및 전략 결정
-3. 계획 보고서 생성 및 사용자 확인 대기
-
-#### Phase 2: 실행 (사용자 승인 후)
-1. 승인된 계획에 따라 작업 수행
-2. 품질 검증 (선택적 - 커맨드별 상이)
-3. 최종 보고 및 다음 단계 안내
-
-**사용자 응답 패턴**:
-- **"진행"** 또는 **"시작"**: Phase 2로 진행
-- **"수정 [내용]"**: 계획 재수립
-- **"중단"**: 작업 취소
-
-**커맨드별 세부사항**:
-- `/alfred:1-spec`: Phase 1에서 프로젝트 문서 분석 및 SPEC 후보 제안 → Phase 2에서 SPEC 문서 작성 및 Git 작업
-- `/alfred:2-build`: Phase 1에서 SPEC 분석 및 TDD 계획 수립 → Phase 2에서 RED-GREEN-REFACTOR 구현
-- `/alfred:3-sync`: Phase 1에서 동기화 범위 분석 → Phase 2에서 Living Document 동기화 및 TAG 업데이트
-
-### 에러 메시지 표준 (공통)
-
-모든 Alfred 커맨드와 에이전트는 일관된 심각도 표시를 사용합니다:
-
-#### 심각도별 아이콘
-- **❌ Critical**: 작업 중단, 즉시 조치 필요
-- **⚠️ Warning**: 주의 필요, 계속 진행 가능
-- **ℹ️ Info**: 정보성 메시지, 참고용
-
-#### 메시지 형식
-```
-[아이콘] [컨텍스트]: [문제 설명]
-  → [권장 조치]
-```
-
-**예시**:
-```
-❌ SPEC 문서 작성 실패: .moai/specs/ 디렉토리 권한 거부
-  → chmod 755 .moai/specs 실행 후 재시도
-
-⚠️ 테스트 커버리지 부족: 현재 78% (목표 85%)
-  → 추가 테스트 케이스 작성 권장
-
-ℹ️ product.md는 이미 프로젝트 정보가 작성되어 있어서 건너뜁니다
-  → 최신 템플릿 참조: {npm_root}/moai-adk/templates/.moai/project/product.md
-```
-
-### Git 커밋 메시지 표준 (Locale 기반)
-
-git-manager 에이전트는 `.moai/config.json`의 `locale` 설정에 따라 커밋 메시지를 생성합니다.
-
-#### TDD 단계별 커밋 메시지 템플릿
-
-**한국어 (ko)**:
-```bash
-🔴 RED: [테스트 설명]
-🟢 GREEN: [구현 설명]
-♻️ REFACTOR: [개선 설명]
-📝 DOCS: [문서 설명]
-```
-
-**영어 (en)**:
-```bash
-🔴 RED: [Test description]
-🟢 GREEN: [Implementation description]
-♻️ REFACTOR: [Improvement description]
-📝 DOCS: [Documentation description]
-```
-
-**일본어 (ja)**:
-```bash
-🔴 RED: [テスト説明]
-🟢 GREEN: [実装説明]
-♻️ REFACTOR: [改善説明]
-📝 DOCS: [ドキュメント説明]
-```
-
-**중국어 (zh)**:
-```bash
-🔴 RED: [测试说明]
-🟢 GREEN: [实现说明]
-♻️ REFACTOR: [改进说明]
-📝 DOCS: [文档说明]
-```
-
-#### 커밋 메시지 구조
-```
-[아이콘] [단계]: [설명]
-
-@TAG:[SPEC-ID]-[단계]
-```
-
-**locale 자동 감지**:
-git-manager는 커밋 생성 시 자동으로 `.moai/config.json`의 `project.locale` 값을 읽어 해당 언어로 커밋 메시지를 생성합니다.
-
----
-
-## Context Engineering 전략
-
-> 본 지침군은 **컨텍스트 엔지니어링**(JIT Retrieval, Compaction)을 핵심 원리로 한다. 아래 원칙으로 일관성/성능을 확보한다.
-
-Alfred는 효율적인 컨텍스트 관리를 위해 다음 2가지 전략을 사용합니다:
-
-### 1. JIT (Just-in-Time) Retrieval
-필요한 순간에만 문서를 로드하여 초기 컨텍스트 부담을 최소화:
-- 전체 문서를 선로딩하지 말고, **식별자(파일경로/링크/쿼리)**만 보유 후 필요 시 조회→요약 주입
-- `/alfred:1-spec` → `product.md` 참조
-- `/alfred:2-build` → `SPEC-XXX/spec.md` + `development-guide.md` 참조
-- `/alfred:3-sync` → `sync-report.md` + TAG 인덱스 참조
-
-### 2. Compaction
-긴 세션(>70% 토큰 사용)은 요약 후 새 세션으로 재시작:
-- 대화/로그가 길어지면 **결정/제약/상태** 중심으로 요약하고 **새 컨텍스트로 재시작**
-- 핵심 결정사항 요약
-- 다음 세션에 컨텍스트 전달
-- 권장: `/clear` 또는 `/new` 명령 활용
-
-상세: `.moai/memory/development-guide.md` - "Context Engineering" 챕터 참조
-
-**핵심 참조 문서**:
-- `CLAUDE.md` → `development-guide.md` (상세 규칙)
-- `CLAUDE.md` → `product/structure/tech.md` (프로젝트 컨텍스트)
-- `development-guide.md` ↔ `product/structure/tech.md` (상호 참조)
-
----
-
-## 핵심 철학
-
-- **SPEC-First**: 명세 없이는 코드 없음
-- **TDD-First**: 테스트 없이는 구현 없음
-- **GitFlow 지원**: Git 작업 자동화, Living Document 동기화, @TAG 추적성
-- **다중 언어 지원**: Python, TypeScript, Java, Go, Rust, Dart, Swift, Kotlin 등 모든 주요 언어
-- **모바일 지원**: Flutter, React Native, iOS (Swift), Android (Kotlin)
-- **CODE-FIRST @TAG**: 코드 직접 스캔 방식 (중간 캐시 없음)
-
----
-
-## 3단계 개발 워크플로우
-
-Alfred가 조율하는 핵심 개발 사이클:
+## 개발 환경 설정
 
 ```bash
-/alfred:1-spec     # SPEC 작성 (EARS 방식, develop 기반 브랜치/Draft PR 생성)
-/alfred:2-build    # TDD 구현 (RED → GREEN → REFACTOR)
-/alfred:3-sync     # 문서 동기화 (PR Ready/자동 머지, TAG 체인 검증)
+# 의존성 설치
+pnpm install
+
+# 인프라 시작 (PostgreSQL, Redis, Nginx, MinIO)
+docker compose up -d
+
+# 데이터베이스 마이그레이션
+cd apps/api && pnpm migration:run
 ```
 
-**EARS (Easy Approach to Requirements Syntax)**: 체계적인 요구사항 작성 방법론
-- **Ubiquitous**: 시스템은 [기능]을 제공해야 한다
-- **Event-driven**: WHEN [조건]이면, 시스템은 [동작]해야 한다
-- **State-driven**: WHILE [상태]일 때, 시스템은 [동작]해야 한다
-- **Optional**: WHERE [조건]이면, 시스템은 [동작]할 수 있다
-- **Constraints**: IF [조건]이면, 시스템은 [제약]해야 한다
+## 핵심 개발 명령어
 
-**반복 사이클**: 1-spec → 2-build → 3-sync → 1-spec (다음 기능)
-
-### 완전 자동화된 GitFlow 워크플로우
-
-**Team 모드 (권장)**:
 ```bash
-# 1단계: SPEC 작성 (develop에서 분기)
-/alfred:1-spec "새 기능"
-→ feature/SPEC-{ID} 브랜치 생성
-→ Draft PR 생성 (feature → develop)
+# 전체 개발 서버 실행
+pnpm turbo dev
+# → API: http://localhost:4000 (Swagger: /api/docs)
+# → Web: http://localhost:3000
 
-# 2단계: TDD 구현
-/alfred:2-build SPEC-{ID}
-→ RED → GREEN → REFACTOR 커밋
+# 빌드
+pnpm turbo build
 
-# 3단계: 문서 동기화 + 자동 머지
-/alfred:3-sync --auto-merge
-→ 문서 동기화
-→ PR Ready 전환
-→ CI/CD 확인
-→ PR 자동 머지 (squash)
-→ develop 체크아웃
-→ 다음 작업 준비 완료 ✅
+# 테스트 (unit test only)
+pnpm turbo test
+pnpm turbo test -- --coverage
+
+# 개별 패키지 테스트
+pnpm --filter @liar-game/api test
+
+# 코드 품질 검사
+pnpm turbo lint
+pnpm turbo type-check
 ```
 
-**Personal 모드**:
-```bash
-/alfred:1-spec "새 기능"     # main/develop에서 분기
-/alfred:2-build SPEC-{ID}    # TDD 구현
-/alfred:3-sync               # 문서 동기화 + 로컬 머지
-```
+## 아키텍처 개요
 
----
+### 기술 스택
+- **모노레포**: Turborepo + pnpm
+- **백엔드**: NestJS 11 + Fastify (Socket.IO는 향후 확장 예정)
+- **데이터베이스**: MySQL v8 LTS + TypeORM (영속 데이터) + Redis v8 LTS (세션/캐시)
+- **인증**: Supabase 기반 소셜 로그인 + Email 로그인
 
-## 온디맨드 에이전트 활용
+### 핵심 모듈 구조
+- **auth**: Supabase 인증 시스템 (Google, GitHub, Discord OAuth + Email/Password)
+- **room**: 게임 방 관리 및 실시간 WebSocket 통신
+- **게임 로직**: 서버 권한 방식의 실시간 게임 상태 관리
 
-Alfred가 필요 시 즉시 호출하는 전문 에이전트들:
+### 데이터베이스 아키텍처 (TypeORM)
+- **Entity 기반**: `apps/api/src/auth/entities/` - User, RefreshToken 등
+- **Repository Pattern**: TypeORM Repository 추상화 계층
+- **Migration 관리**: MySQL 스키마 버전 관리
+- **연결 풀링**: 동시 게임 세션 대비 최적화
 
-### 디버깅 & 분석
-```bash
-@agent-debug-helper "TypeError: 'NoneType' object has no attribute 'name'"
-@agent-debug-helper "TAG 체인 검증을 수행해주세요"
-@agent-debug-helper "TRUST 원칙 준수 여부 확인"
-```
+### 인증 시스템 (Supabase)
+- **소셜 로그인**: Google, GitHub, Discord OAuth 2.0
+- **Email 로그인**: 비밀번호 기반 전통 인증
+- **JWT 토큰**: Supabase에서 발급/관리
+- **세션 관리**: Redis 기반 세션 저장소
+- **보안**: Row Level Security (RLS) + PKCE flow
 
-### TAG 시스템 관리
-```bash
-@agent-tag-agent "AUTH 도메인 TAG 목록 조회"
-@agent-tag-agent "고아 TAG 및 끊어진 링크 감지"
-```
+### 실시간 통신 아키텍처
+- **Socket.IO Gateway**: 방 기반 격리 통신 채널
+- **서버 권한 모델**: 게임 상태는 서버에서 관리
+- **Optimistic Updates**: 낙관적 업데이트와 롤백 지원
 
-### Git 작업 (특수 케이스)
-```bash
-@agent-git-manager "체크포인트 생성"
-@agent-git-manager "특정 커밋으로 롤백"
-```
+## 테스트 전략 (Unit Test Only)
 
-**Git 브랜치 정책**: 모든 브랜치 생성/머지는 사용자 확인 필수
+**프로젝트 헌법**: 단위 테스트만 허용, 통합 테스트는 WebSocket 시나리오로 제한
 
----
+### NestJS 단위 테스트 모범 사례
 
-## @TAG Lifecycle
-
-### 핵심 설계 철학
-
-- **TDD 완벽 정렬**: RED (테스트) → GREEN (구현) → REFACTOR (문서)
-- **단순성**: 4개 TAG로 전체 라이프사이클 관리
-- **추적성**: 코드 직접 스캔 (CODE-FIRST 원칙)
-
-### TAG 체계
-
-```
-@SPEC:ID → @TEST:ID → @CODE:ID → @DOC:ID
-```
-
-| TAG        | 역할                 | TDD 단계         | 위치         | 필수 |
-| ---------- | -------------------- | ---------------- | ------------ | ---- |
-| `@SPEC:ID` | 요구사항 명세 (EARS) | 사전 준비        | .moai/specs/ | ✅    |
-| `@TEST:ID` | 테스트 케이스        | RED              | tests/       | ✅    |
-| `@CODE:ID` | 구현 코드            | GREEN + REFACTOR | src/         | ✅    |
-| `@DOC:ID`  | 문서화               | REFACTOR         | docs/        | ⚠️    |
-
-### TAG BLOCK 템플릿
-
-**SPEC 문서 (.moai/specs/)** - **HISTORY 섹션 필수**:
-```markdown
----
-# 필수 필드 (7개)
-id: AUTH-001                    # SPEC 고유 ID
-version: 0.0.1                  # Semantic Version (v0.0.1 = INITIAL)
-status: draft                   # draft|active|completed|deprecated
-created: 2025-09-15            # 생성일 (YYYY-MM-DD)
-updated: 2025-09-15            # 최종 수정일 (YYYY-MM-DD)
-author: MoAI Developer              # 작성자 (GitHub ID)
-priority: high                  # low|medium|high|critical
-
-# 선택 필드 - 분류/메타
-category: security              # feature|bugfix|refactor|security|docs|perf
-labels:                         # 분류 태그 (검색용)
-  - authentication
-  - jwt
-
-# 선택 필드 - 관계 (의존성 그래프)
-depends_on:                     # 의존하는 SPEC (선택)
-  - USER-001
-related_issue: "/issues/123"
-
-# 선택 필드 - 범위 (영향 분석)
-scope:
-  packages:                     # 영향받는 패키지
-    - src/core/auth
-  files:                        # 핵심 파일 (선택)
-    - auth-service.ts
-    - jwt-manager.ts
----
-
-# @SPEC:AUTH-001: JWT 인증 시스템
-
-## HISTORY
-
-### v0.0.1 (2025-09-15)
-- **INITIAL**: JWT 기반 인증 시스템 명세 작성
-- **AUTHOR**: MoAI Developer
-- **SCOPE**: 토큰 발급, 검증, 갱신 로직
-- **CONTEXT**: 사용자 인증 강화 요구사항 반영
-
-## EARS 요구사항
-...
-```
-
-**소스 코드 (src/)**:
+**Service Layer 테스트**:
 ```typescript
-// @CODE:AUTH-001 | SPEC: SPEC-AUTH-001.md | TEST: tests/auth/service.test.ts
+// apps/api/test/auth/auth.service.test.ts
+describe('AuthService', () => {
+  let service: AuthService;
+  let mockRepository: jest.Mocked<Repository<User>>;
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [
+        AuthService,
+        { provide: getRepositoryToken(User), useValue: mockRepository }
+      ]
+    }).compile();
+
+    service = module.get(AuthService);
+  });
+
+  describe('validateUser', () => {
+    it('유효한 자격증명 시 사용자 반환', async () => {
+      // 🔴 RED: 실패하는 테스트 작성
+      // 🟢 GREEN: 최소한의 통과 코드 작성
+      // ♻️ REFACTOR: 코드 품질 개선
+    });
+  });
+});
 ```
 
-**테스트 코드 (tests/)**:
+**Controller 테스트 (Fastify)**:
 ```typescript
-// @TEST:AUTH-001 | SPEC: SPEC-AUTH-001.md
+// apps/api/test/auth/auth.controller.test.ts
+describe('AuthController', () => {
+  let controller: AuthController;
+  let mockService: jest.Mocked<AuthService>;
+
+  beforeEach(async () => {
+    controller = new AuthController(mockService);
+  });
+
+  it('POST /auth/login - JWT 반환', async () => {
+    const mockReply = {
+      code: jest.fn().mockReturnThis(),
+      send: jest.fn()
+    } as any;
+
+    await controller.login(mockLoginDto, mockReply);
+    expect(mockReply.send).toHaveBeenCalledWith(
+      expect.objectContaining({ access_token: expect.any(String) })
+    );
+  });
+});
 ```
 
-### TAG 핵심 원칙
+**Gateway 테스트**:
+```typescript
+// apps/api/test/room/room.gateway.test.ts
+describe('RoomGateway', () => {
+  let gateway: RoomGateway;
+  let mockService: jest.Mocked<RoomService>;
 
-- **TAG ID**: `<도메인>-<3자리>` (예: `AUTH-003`) - 영구 불변
-- **TAG 내용**: 자유롭게 수정 가능 (HISTORY에 기록 필수)
-- **버전 관리**: 0.x.y 기반 개발 버전 체계
-  - **v0.0.1**: INITIAL - SPEC 최초 작성 (모든 SPEC 시작 버전, status: draft)
-  - **v0.0.x**: Draft 수정/개선 (SPEC 문서 수정 시 패치 버전 증가)
-  - **v0.1.0**: TDD 구현 완료 (첫 번째 구현, status: completed)
-  - **v0.1.x**: 버그 수정, 문서 개선, 경미한 변경
-  - **v0.x.0**: 기능 추가, 주요 개선 (마이너 버전 증가)
-  - **v1.0.0**: 정식 안정화 버전 (프로덕션 준비 완료, 사용자 명시적 승인 필수)
-- **TAG 참조**: 버전 없이 파일명만 사용 (예: `SPEC-AUTH-001.md`)
-- **중복 확인**: `rg "@SPEC:AUTH" -n` 또는 `rg "AUTH-001" -n`
-- **CODE-FIRST**: TAG의 진실은 코드 자체에만 존재
+  beforeEach(async () => {
+    gateway = new RoomGateway(mockService);
+  });
 
-### @CODE 서브 카테고리 (주석 레벨)
+  it('handleJoinRoom - 방 참가 처리', async () => {
+    const mockClient = {
+      join: jest.fn(),
+      emit: jest.fn()
+    } as any;
 
-구현 세부사항은 `@CODE:ID` 내부에 주석으로 표기:
-- `@CODE:ID:API` - REST API, GraphQL 엔드포인트
-- `@CODE:ID:UI` - 컴포넌트, 뷰, 화면
-- `@CODE:ID:DATA` - 데이터 모델, 스키마, 타입
-- `@CODE:ID:DOMAIN` - 비즈니스 로직, 도메인 규칙
-- `@CODE:ID:INFRA` - 인프라, 데이터베이스, 외부 연동
+    await gateway.handleJoinRoom(mockClient, { roomCode: 'ABC123' });
+    expect(mockClient.join).toHaveBeenCalledWith('ABC123');
+  });
+});
+```
 
-### TAG 검증 및 무결성
+### 테스트 설정 가이드라인
+- **위치**: `apps/api/test/**/*.test.ts`
+- **프레임워크**: Jest + ts-jest
+- **목 패턴**: `jest.Mocked<T>` 사용
+- **데이터베이스**: SQLite 메모리 또는 Repository 모킹
+- **커버리지 목표**: 85%+
 
-**중복 방지**:
+## 주요 패턴
+
+### Service Layer Pattern
+- `apps/api/src/auth/auth.service.ts`: JWT + Supabase 이중 인증
+- `apps/api/src/auth/session.service.ts`: Redis 세션 관리
+- `apps/api/src/room/room.service.ts`: 게임 방 생명주기
+
+### Repository Pattern
+- Entity: `apps/api/src/auth/entities/`
+- TypeORM Repository 추상화
+
+### Gateway Pattern
+- `apps/api/src/room/room.gateway.ts`: WebSocket 이벤트 처리
+- 방 기반 메시징 격리
+
+### DTO Pattern
+- `apps/api/src/auth/dto/`, `apps/api/src/room/dto/`
+- class-validator 자동 검증
+
+## 성능 요구사항
+- API 응답시간: <50ms
+- WebSocket 지연시간: <10ms
+- 메모리 제한: MySQL 1GB, Redis 512MB
+
+## 환경 변수 필수 설정
 ```bash
-rg "@SPEC:AUTH" -n          # SPEC 문서에서 AUTH 도메인 검색
-rg "@CODE:AUTH-001" -n      # 특정 ID 검색
-rg "AUTH-001" -n            # ID 전체 검색
+# Database
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=liaruser
+DB_PASSWORD=change-this-password
+DB_NAME=liardb
+
+# Redis
+REDIS_URL=redis://localhost:6379
+REDIS_PASSWORD=change-this-redis-password
+
+# JWT
+JWT_SECRET=your-jwt-secret
+
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-**TAG 체인 검증** (`/alfred:3-sync` 실행 시 자동):
-```bash
-rg '@(SPEC|TEST|CODE|DOC):' -n .moai/specs/ tests/ src/ docs/
+## Active Technologies
+- TypeScript 5.7.x (Node.js 25.1.0) + React 18 + Compiler, NestJS 11.x + Fastify, Socket.IO, Supabase Auth (001-project-foundation)
+- MySQL v8 LTS (영구 저장), Redis v8 LTS (세션/캐싱) (001-project-foundation)
+- TypeScript 5.7.x (Node.js 25.1.0) + React 18 + Compiler, NestJS 11.x + Fastify, Socket.IO, Supabase Auth, TypeORM (FK 제약 조건 없음, 마이그레이션 필수) (001-supabase-auth)
 
-# 고아 TAG 탐지
-rg '@CODE:AUTH-001' -n src/          # CODE는 있는데
-rg '@SPEC:AUTH-001' -n .moai/specs/  # SPEC이 없으면 고아
-```
-
----
-
-## TRUST 5원칙 (범용 언어 지원)
-
-Alfred가 모든 코드에 적용하는 품질 기준:
-
-- **T**est First: 언어별 최적 도구
-  - 백엔드: Jest/Vitest, pytest, go test, cargo test, JUnit
-  - 모바일: flutter test, XCTest, JUnit + Espresso, React Native Testing Library
-- **R**eadable: 언어별 린터
-  - 백엔드: ESLint/Biome, ruff, golint, clippy
-  - 모바일: dart analyze, SwiftLint, detekt
-- **U**nified: 타입 안전성 (TypeScript, Go, Rust, Java, Dart, Swift, Kotlin) 또는 런타임 검증
-- **S**ecured: 언어별 보안 도구 및 정적 분석
-- **T**rackable: CODE-FIRST @TAG 시스템 (코드 직접 스캔)
-
-상세 내용: `.moai/memory/development-guide.md` 참조
-
----
-
-## 언어별 코드 규칙
-
-**공통 제약**:
-- 파일 ≤300 LOC
-- 함수 ≤50 LOC
-- 매개변수 ≤5개
-- 복잡도 ≤10
-
-**품질 기준**:
-- 테스트 커버리지 ≥85%
-- 의도 드러내는 이름 사용
-- 가드절 우선 사용
-- 언어별 표준 도구 활용
-
-**테스트 전략**:
-- 언어별 표준 프레임워크
-- 독립적/결정적 테스트
-- SPEC 기반 테스트 케이스
-
----
-
-## TDD 워크플로우 체크리스트
-
-**1단계: SPEC 작성** (`/alfred:1-spec`)
-- [ ] `.moai/specs/SPEC-<ID>/spec.md` 생성 (디렉토리 구조)
-- [ ] YAML Front Matter 추가 (id, version: 0.0.1, status: draft, created)
-- [ ] `@SPEC:ID` TAG 포함
-- [ ] **HISTORY 섹션 작성** (v0.0.1 INITIAL 항목)
-- [ ] EARS 구문으로 요구사항 작성
-- [ ] 중복 ID 확인: `rg "@SPEC:<ID>" -n`
-
-**2단계: TDD 구현** (`/alfred:2-build`)
-- [ ] **RED**: `tests/` 디렉토리에 `@TEST:ID` 작성 및 실패 확인
-- [ ] **GREEN**: `src/` 디렉토리에 `@CODE:ID` 작성 및 테스트 통과
-- [ ] **REFACTOR**: 코드 품질 개선, TDD 이력 주석 추가
-- [ ] TAG BLOCK에 SPEC/TEST 파일 경로 명시
-
-**3단계: 문서 동기화** (`/alfred:3-sync`)
-- [ ] 전체 TAG 스캔: `rg '@(SPEC|TEST|CODE):' -n`
-- [ ] 고아 TAG 없음 확인
-- [ ] Living Document 자동 생성 확인
-- [ ] PR 상태 Draft → Ready 전환
-
----
-
-## 프로젝트 정보
-
-- **이름**: liar-game
-- **설명**: A liar-game project built with MoAI-ADK
-- **버전**: 0.1.0
-- **모드**: personal
-- **개발 도구**: 프로젝트 언어에 최적화된 도구 체인 자동 선택
+## Recent Changes
+- 001-project-foundation: Added TypeScript 5.7.x (Node.js 25.1.0) + React 18 + Compiler, NestJS 11.x + Fastify, Socket.IO, Supabase Auth

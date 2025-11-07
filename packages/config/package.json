@@ -1,6 +1,24 @@
 {
   "name": "@liar-game/config",
   "version": "0.1.0",
-  "description": "Shared configuration files (ESLint, TSConfig)",
-  "main": "./index.js"
+  "private": true,
+  "description": "공유 TypeScript 및 코드 품질 설정 패키지",
+  "main": "index.js",
+  "files": [
+    "base.json",
+    "nextjs.json",
+    "nestjs.json",
+    "eslint-base.js",
+    "prettier.json"
+  ],
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.17.0",
+    "@typescript-eslint/parser": "^8.17.0",
+    "eslint": "^9.16.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2"
+  }
 }
