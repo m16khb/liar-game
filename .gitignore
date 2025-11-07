@@ -34,3 +34,12 @@ pnpm-debug.log*
 
 # Docker volumes (인프라 데이터)
 docker/volumes/
+
+# 민감한 인프라 설정 - 배포 환경에서만 사용
+k8s/secrets/
+*.key
+*.crt
+*.pem
+infra/production/
+k8s/infra.yaml
+nginx/nginx.conf

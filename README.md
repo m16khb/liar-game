@@ -314,20 +314,31 @@ pnpm turbo test -- --coverage
 
 ### 쿠버네티스 배포 준비
 
-프로젝트는 쿠버네티스 배포를 위한 설정을 포함하고 있습니다:
+프로젝트는 쿠버네티스 배포를 위한 템플릿을 포함하고 있습니다:
 
 ```bash
 # 전체 빌드
 pnpm turbo build
 
-# 쿠버네티스 배포 설정 확인
-ls -la k8s/
+# 배포 템플릿 확인
+ls -la k8s/*.template
+ls -la nginx/*.template
 ```
 
+**보안 설정 (중요)**:
+- `k8s/infra.yaml`와 `nginx/nginx.conf`는 민감 정보 포함
+- `.gitignore`에 추가되어 Git에 올리지 않음
+- 배포 시 템플릿 복사 후 실제 환경에 맞게 수정 필요
+
 **배포 구성**:
-- **k8s/infra.yaml**: 쿠버네티스 인프라 설정
-- **nginx/**: 리버스 프록시 설정
+- **k8s/infra.yaml.template**: MySQL v8 + Redis v8 쿠버네티스 설정
+- **nginx/nginx.conf.template**: 리버스 프록시 설정 템플릿
 - **권장 플랫폼**: AWS EKS, Google GKE, Azure AKS
+
+**배포 절차**:
+1. 템플릿 복사: `cp k8s/infra.yaml.template k8s/infra.yaml`
+2. 비밀번호 설정: Base64 인코딩으로 비밀번호 업데이트
+3. 환경별 설정 적용 후 배포
 
 ### 프로덕션 환경
 - **프론트엔드**: Vite 빌드 결과물 (정적 파일)
