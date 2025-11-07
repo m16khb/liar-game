@@ -6,26 +6,32 @@
 
 Liar Game은 6명의 플레이어가 참여하는 실시간 추리 게임입니다. 한 명의 Liar를 제외한 모든 플레이어는 제시어를 받고, Liar는 제시어를 모르는 상태로 토론에 참여합니다. 플레이어들은 대화를 통해 Liar를 찾아내거나, Liar는 제시어를 추리하여 승리합니다.
 
+## 🎯 현재 상태
+
+**✅ 기반 기술 스택 완료**: Turborepo 기반 모노레포 구조, TypeScript 5.7.x, NestJS 11 + Fastify, React 18 + Compiler
+**✅ 인증 시스템 명세화 완료**: Supabase 기반 인증 시스템 역설계 및 완전한 기술 명서 작성
+**🔧 개발 준비 완료**: 70개 구체적인 개발 태스크로 즉시 개발 시작 가능
+
 ## 🛠️ 기술 스택
 
 ### 모노레포 구조 (Turborepo)
 - **빌드 시스템**: Turborepo 2.x
-- **패키지 매니저**: pnpm 9.x
+- **패키지 매니저**: pnpm 10.x
 - **워크스페이스**: apps (애플리케이션) + packages (공유 라이브러리)
 
 ### 프론트엔드 (apps/web)
-- **프레임워크**: React 18 + Compiler
+- **프레임워크**: React 18 + Compiler ⚡
 - **번들러**: Vite
-- **런타임**: Node.js 20.x LTS
-- **스타일링**: CSS Modules / Tailwind CSS (예정)
-- **상태 관리**: React Context API / Zustand (예정)
+- **런타임**: Node.js 25.1.0
+- **스타일링**: CSS Modules / Tailwind CSS
+- **상태 관리**: React Context API / Zustand
 
 ### 백엔드 (apps/api)
-- **프레임워크**: NestJS 11.x + Fastify (고성능 HTTP 서버)
+- **프레임워크**: NestJS 11.x + Fastify (고성능 HTTP 서버) 🚀
 - **실시간 통신**: Socket.IO (WebSocket)
-- **데이터베이스**: PostgreSQL 16.x (영구 저장)
-- **캐싱**: Redis 7.x (세션 관리)
-- **인증**: JWT + bcrypt (게스트/회원 2단계)
+- **데이터베이스**: MySQL v8 LTS (영구 저장)
+- **캐싱**: Redis v8 LTS (세션 관리)
+- **인증**: Supabase Auth (OAuth + Email) + JWT Custom Claims
 
 ### 공유 패키지 (packages/*)
 - **types**: TypeScript 타입 정의 (프론트-백엔드 공유)
@@ -36,9 +42,9 @@ Liar Game은 6명의 플레이어가 참여하는 실시간 추리 게임입니�
 ## 🚀 빠른 시작
 
 ### 사전 요구사항
-- Node.js 20.x LTS
-- pnpm 9.x
-- **Docker 24.x+ & Docker Compose V2** (인프라 자동 구성)
+- Node.js 25.1.0+
+- pnpm 10.x+
+- **Docker & Docker Compose** (인프라 자동 구성)
 - Git 2.x
 
 ### 1. 인프라 시작 (Docker Compose)
@@ -46,26 +52,24 @@ Liar Game은 6명의 플레이어가 참여하는 실시간 추리 게임입니�
 Docker Compose로 전체 인프라를 한 번에 시작합니다:
 
 ```bash
-# 환경 변수 설정 (.env.example 복사)
+# 환경 변수 설정
 cp .env.example .env
-# → POSTGRES_PASSWORD, REDIS_PASSWORD, MINIO_ROOT_PASSWORD 변경 필수
+# → DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 변경 필수
 
-# 전체 인프라 시작 (PostgreSQL, Redis, Nginx, MinIO)
+# 전체 인프라 시작 (MySQL, Redis, Nginx)
 docker compose up -d
 
 # 인프라 상태 확인
 docker compose ps
 
-# 서비스별 로그 확인
-docker compose logs -f postgres
-docker compose logs -f redis
+# 데이터베이스 마이그레이션
+cd apps/api && pnpm migration:run && cd ../..
 ```
 
 **인프라 구성**:
-- **PostgreSQL 16**: `localhost:5432` (게임 데이터, 사용자 정보)
-- **Redis 7**: `localhost:6379` (세션 관리, 캐싱)
-- **Nginx 1.25**: `localhost:80/443` (리버스 프록시, API 라우팅)
-- **MinIO**: `localhost:9000` (S3 스토리지), `localhost:9001` (콘솔)
+- **MySQL v8 LTS**: `localhost:3306` (게임 데이터, 사용자 정보)
+- **Redis v8 LTS**: `localhost:6379` (세션 관리, 캐싱)
+- **Nginx**: `localhost:80` (리버스 프록시, API 라우팅)
 
 **데이터 영속성**: `docker/volumes/` 디렉토리에 모든 데이터 저장
 
@@ -156,113 +160,135 @@ liar-game/
 
 ## 📚 문서
 
-### 개발 문서
-- **[아키텍처 문서](docs/architecture/)**:
-  - [모노레포 아키텍처](docs/architecture/monorepo.md)
-  - [인증 시스템 아키텍처](docs/architecture/authentication.md)
-  - [인프라 아키텍처](docs/infrastructure.md): Docker Compose 기반 인프라 통합 (PostgreSQL, Redis, Nginx, MinIO)
-- **[API 문서](docs/api/)**:
-  - [인증 API](docs/api/auth.md): 게스트/회원 인증, JWT 토큰 관리
+### 🎯 개발 스펙 (最新)
+- **[specs/](specs/)**: 현대적 스펙 관리 시스템
+  - **001-project-foundation**: 프로젝트 기반 기술 명세
+  - **001-supabase-auth**: Supabase 인증 시스템 완전 명세
+    - 5개 사용자 스토리 (이메일, OAuth, 토큰 관리, 프로필, 검색)
+    - 12개 API 엔드포인트 OpenAPI 명세
+    - 70개 구체적인 개발 태스크
+
+### 🏗️ 프로젝트 헌법
+- **[CONSTITUTION.md](CONSTITUTION.md)**: 프로젝트 개발 원칙 및 기술 가이드라인
+  - 한국어 우선 원칙
+  - SOLID 원칙 준수
+  - TypeORM 외키 제약 조건 및 마이그레이션 관리
+  - 코드 품질 기준 (파일 ≤300 LOC, 함수 ≤50 LOC)
+
+### 🔍 빠른 시작 가이드
+- **[Quickstart Guide](specs/001-supabase-auth/quickstart.md)**: 개발자를 위한 상세 시작 가이드
+- **[연구 보고서](specs/001-supabase-auth/research.md)**: Supabase 인증 Best Practices
 
 ## 🔐 인증 시스템
 
 liar-game은 **Supabase Auth**를 사용한 안전하고 확장 가능한 인증 시스템을 제공합니다.
 
-### 지원되는 인증 방식
+### 🚀 지원되는 인증 방식
 
-**1. 소셜 로그인 (추천)**:
+**1. 소셜 로그인 (PKCE Flow 보안 강화)**:
 - **Google OAuth 2.0**: Gmail 계정으로 빠른 로그인
 - **GitHub OAuth 2.0**: 개발자 친화적 인증
 - **Discord OAuth 2.0**: 게이머 커뮤니티 통합
 
-**2. Anonymous 인증 (게스트 플레이)**:
-- 닉네임 입력 없이 즉시 게임 시작
-- 게임 종료 후 소셜 계정 연동 옵션
-- 진행 상황 100% 유지
+**2. 이메일 로그인**:
+- 이메일 + 비밀번호 전통 인증
+- 안전한 비밀번호 해싱
+- 이메일 인증 지원
 
-**3. 기존 JWT 인증 (레거시)**:
-- 이메일 + 비밀번호 로그인
-- 게스트 → 회원 전환 지원
-- 마이그레이션 가이드: [auth-v1-to-v2.md](docs/migration/auth-v1-to-v2.md)
+**3. 자동 토큰 갱신**:
+- Refresh Token Rotation 보안 강화
+- 24시간 세션 자동 관리
+- 다중 디바이스 지원
 
 ### 환경 변수 설정
 
 .env 파일에 다음 변수를 추가하세요:
 
 ```bash
-# Supabase 설정
+# Database
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=liaruser
+DB_PASSWORD=change-this-password
+DB_NAME=liardb
+
+# Redis
+REDIS_URL=redis://localhost:6379
+REDIS_PASSWORD=change-this-redis-password
+
+# JWT
+JWT_SECRET=your-jwt-secret
+
+# Supabase
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# Next.js 프론트엔드용
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-### 빠른 시작
+### 🚀 개발 시작하기
 
-#### Supabase 프로젝트 생성
+#### Supabase 프로젝트 설정 (5분)
 
-1. https://supabase.com 접속
-2. "New Project" 클릭
-3. 프로젝트 이름 및 데이터베이스 비밀번호 설정
-4. API Settings에서 URL과 Key 복사
+1. [Supabase](https://supabase.com)에서 신규 프로젝트 생성
+2. Authentication → Providers에서 Google/GitHub/Discord OAuth 설정
+3. Project Settings → API에서 URL과 Keys 복사하여 .env에 추가
 
-#### OAuth 프로바이더 설정
-
-**Google OAuth**:
-1. Google Cloud Console에서 OAuth Client ID 생성
-2. Supabase 대시보드 → Authentication → Providers → Google
-3. Client ID와 Secret 입력
-
-**GitHub/Discord**:
-- 동일한 방식으로 Supabase 대시보드에서 설정
-
-#### 애플리케이션 실행
+#### 1단계: 개발 환경 준비
 
 ```bash
 # 환경 변수 설정
 cp .env.example .env
-# → SUPABASE_URL, SUPABASE_ANON_KEY 입력
+# → DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 변경 필수
 
-# 인프라 시작 (Docker Compose)
+# 인프라 시작 (MySQL, Redis)
 docker compose up -d
 
-# 애플리케이션 실행
-pnpm install
-pnpm turbo dev
+# 데이터베이스 마이그레이션
+cd apps/api && pnpm migration:run && cd ../..
 ```
 
-### 보안 특징
+#### 2단계: 애플리케이션 실행
 
-- **RLS (Row Level Security)**: PostgreSQL 레벨에서 자동 권한 제어
-- **자동 토큰 갱신**: Supabase SDK가 만료 전 자동 갱신
-- **PKCE 플로우**: 중간자 공격 방어 (OAuth)
-- **감사 로그**: Supabase 대시보드에서 모든 인증 이벤트 확인
+```bash
+# 의존성 설치
+pnpm install
+
+# 개발 서버 실행
+pnpm turbo dev
+# → 웹: http://localhost:3000
+# → API: http://localhost:4000 (Swagger: /api/docs)
+```
+
+### 🔒 보안 특징
+
+- **PKCE Flow**: OAuth 인증 시 중간자 공격 방어
+- **Refresh Token Rotation**: 탈취된 토큰 자동 폐지
+- **Custom JWT Claims**: Backend 사용자 정보 포함
+- **Rate Limiting**: IP/사용자 기반 접근 제어
+- **소프트 딜리트**: 데이터 보존을 위한 계정 비활성화
 
 **자세한 내용**:
-- [인증 API 문서](docs/api/auth.md)
-- [아키텍처 설계](docs/architecture/authentication.md)
-- [마이그레이션 가이드](docs/migration/auth-v1-to-v2.md)
+- [인증 시스템 명세](specs/001-supabase-auth/)
+- [데이터 모델 정의](specs/001-supabase-auth/data-model.md)
+- [API 명세서](specs/001-supabase-auth/contracts/openapi.yaml)
 
 ---
 
-## 🧪 테스트
+## 🧪 테스트 전략
 
-### 테스트 전략
-- **단위 테스트**: Vitest (프론트엔드), Jest (백엔드)
-- **통합 테스트**: 모노레포 루트 `tests/` 디렉토리
-- **커버리지 목표**: 85% 이상
+### 단위 테스트 중심 (프로젝트 헌법)
+- **백엔드**: Jest 단위 테스트만 허용 (통합 테스트는 WebSocket 시나리오로 제한)
+- **프론트엔드**: Vitest 단위 테스트
+- **커버리지 목표**: 85% 이상 (핵심 로직 집중)
 
 ### 테스트 실행
 
 ```bash
 # 전체 테스트
-pnpm test
+pnpm turbo test
 
-# 특정 패키지 테스트
-pnpm --filter @liar-game/types test
+# 백엔드 테스트만
+pnpm --filter @liar-game/api test
 
 # 커버리지 포함
 pnpm turbo test -- --coverage
@@ -270,48 +296,84 @@ pnpm turbo test -- --coverage
 
 ## 🧑‍💻 개발 가이드
 
-### 코드 규칙
-- 파일 ≤300 LOC
-- 함수 ≤50 LOC
-- 매개변수 ≤5개
-- 복잡도 ≤10
-- 테스트 커버리지 ≥85%
+### 코드 품질 기준 (프로젝트 헌법)
+- **파일 크기**: ≤300 LOC (단일 책임 원칙)
+- **함수 크기**: ≤50 LOC (단일 기능 수행)
+- **매개변수**: ≤5개 (인터페이스 분리 원칙)
+- **복잡도**: ≤10 (제어 흐름 단순화)
+- **테스트 커버리지**: ≥85% (핵심 로직)
+- **의존성**: 최소화하고 인터페이스 기반 설계
 
-## 📦 배포
+### 🎯 개발 태스크 기반
+- **70개 구체적인 태스크**: [specs/001-supabase-auth/tasks.md](specs/001-supabase-auth/tasks.md)
+- **독립적 배포 가능**: 각 사용자 스토리별 MVP 제공
+- **병렬 개발 지원**: Foundation 완료 후 여러 팀원 동시 작업
+- **단위 테스트 우선**: RED-GREEN-REFACTOR 사이클 준수
 
-### 프로덕션 빌드
+## 🚀 배포
+
+### 쿠버네티스 배포 준비
+
+프로젝트는 쿠버네티스 배포를 위한 설정을 포함하고 있습니다:
 
 ```bash
 # 전체 빌드
 pnpm turbo build
 
-# 빌드 결과 확인
-ls -la apps/web/dist/
-ls -la apps/api/dist/
+# 쿠버네티스 배포 설정 확인
+ls -la k8s/
 ```
 
-### 배포 환경
-- **프론트엔드**: 정적 파일 배포 (Vite 빌드) 또는 Custom Node.js 서버
+**배포 구성**:
+- **k8s/infra.yaml**: 쿠버네티스 인프라 설정
+- **nginx/**: 리버스 프록시 설정
+- **권장 플랫폼**: AWS EKS, Google GKE, Azure AKS
+
+### 프로덕션 환경
+- **프론트엔드**: Vite 빌드 결과물 (정적 파일)
 - **백엔드**: Dockerized NestJS + Fastify API 서버
-- **권장 플랫폼**: AWS Fargate, Railway, Fly.io
+- **데이터베이스**: MySQL v8 LTS (영구 저장)
+- **캐시**: Redis v8 LTS (세션 관리)
+
+## 🎯 개발 로드맵
+
+### 현재 상태 (2025-11)
+- ✅ **기반 기술 스택**: Turborepo, TypeScript 5.7.x, NestJS 11 + Fastify, React 18 + Compiler
+- ✅ **인증 시스템 명세**: Supabase 기반 완전한 기술 명서
+- 🔄 **개발 준비**: 70개 실행 가능한 태스크
+
+### 다음 단계
+1. **이메일 인증 MVP** (User Story 1): 2주
+2. **소셜 로그인** (User Story 2): 1주
+3. **게임 방 생성** (차기 스펙): 3주
+4. **실시간 게임 플레이** (차기 스펙): 4주
 
 ## 🤝 기여 가이드
 
-1. 이슈 생성 또는 기능 제안
+### 개발 시작하기
+1. [이슈 생성](https://github.com/m16khb/liar-game/issues) 또는 기능 제안
 2. 브랜치 생성: `feature/feature-name`
-3. TDD 구현 (RED → GREEN → REFACTOR)
-4. Pull Request 생성
+3. **단위 테스트 우선**: RED → GREEN → REFACTOR 사이클
+4. 프로젝트 헌법 준수 확인: [CONSTITUTION.md](CONSTITUTION.md)
+5. Pull Request 생성
+
+### 현재 기여 가능 영역
+- **인증 시스템**: [tasks.md](specs/001-supabase-auth/tasks.md) 태스크 기반 기여
+- **게임 로직**: 라이어 게임 규칙 구현
+- **UI/UX**: 게임 인터페이스 설계
+- **인프라**: 쿠버네티스 배포 최적화
 
 ## 📄 라이선스
 
-(라이선스 정보 추가 예정)
+MIT License (예정)
 
 ## 📞 문의
 
-- **프로젝트 관리자**: @Goos
-- **이슈 트래커**: GitHub Issues
-- **문서 기여**: Pull Request 환영
+- **프로젝트 관리자**: @m16khb
+- **이슈 트래커**: [GitHub Issues](https://github.com/m16khb/liar-game/issues)
+- **개발 스펙**: [specs/](specs/) 디렉토리
 
 ---
 
-**Built with Turborepo, React 18 + Compiler & NestJS + Fastify** 🚀 | Real-time Web Game
+**🚀 Built with TypeScript 5.7.x, React 18 + Compiler, NestJS 11 + Fastify, Supabase Auth**
+**📝 Modern development with specs, tasks, and single-responsibility architecture**
