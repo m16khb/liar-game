@@ -7,9 +7,11 @@ metadata:
   name: db-secrets
 type: Opaque
 data:
-  mysql-root: cm9vdHBhc3N3b3JkMTIz
-  mysql-user: dXNlcnBhc3N3b3JkMTIz
-  redis-pass: cmVkaXNwYXNzd29yZDEyMw==
+  # TODO: 실제 배포 시 비밀번호 생성 후 Base64로 인코딩
+  # echo -n 'your-root-password' | base64
+  mysql-root: <BASE64_ENCODED_ROOT_PASSWORD>
+  mysql-user: <BASE64_ENCODED_USER_PASSWORD>
+  redis-pass: <BASE64_ENCODED_REDIS_PASSWORD>
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
