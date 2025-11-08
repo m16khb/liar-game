@@ -1,4 +1,6 @@
-# @CODE:SETUP-001 | SPEC: .moai/specs/SPEC-SETUP-001/spec.md
 packages:
   - 'apps/*'
   - 'packages/*'
+
+onlyBuiltDependencies:
+  - bcrypt
