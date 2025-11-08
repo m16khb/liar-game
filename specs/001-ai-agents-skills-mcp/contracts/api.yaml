@@ -1,0 +1,378 @@
+# API 계약 (OpenAPI 3.0.3)
+# 메인페이지 히어로 섹션 및 Supabase 로그인 기능 API
+
+openapi: 3.0.3
+info:
+  title: 라이어 게임 API
+  description: 라이어 게임 메인페이지 및 인증 관련 API
+  version: 1.0.0
+  contact:
+    name: 라이어 게임 개발팀
+
+servers:
+  - url: http://localhost:4000
+    description: 개발 서버
+  - url: https://api.liar-game.com
+    description: 프로덕션 서버
+
+tags:
+  - name: stats
+    description: 게임 통계 관련 API
+  - name: users
+    description: 사용자 관련 API
+
+paths:
+  # 게임 통계 API
+  /api/stats/game:
+    get:
+      tags:
+        - stats
+      summary: 게임 통계 조회
+      description: 메인 히어로 섹션에 표시할 게임 통계 정보를 조회합니다.
+      operationId: getGameStats
+      responses:
+        '200':
+          description: 성공적으로 게임 통계를 조회함
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameStatsResponse'
+              examples:
+                success:
+                  summary: 성공 응답 예시
+                  value:
+                    success: true
+                    data:
+                      totalPlayers: 15420
+                      activeGames: 48
+                      todayGames: 1256
+                      averageGameDuration: 12.5
+                      popularDifficulty: normal
+                    timestamp: 2025-01-08T10:30:00.000Z
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                server_error:
+                  summary: 서버 오류 예시
+                  value:
+                    success: false
+                    error:
+                      code: INTERNAL_SERVER_ERROR
+                      message: 서버에서 일시적인 오류가 발생했습니다
+                    timestamp: 2025-01-08T10:30:00.000Z
+
+  # 사용자 프로필 API
+  /api/users/profile:
+    get:
+      tags:
+        - users
+      summary: 사용자 프로필 조회
+      description: 현재 로그인한 사용자의 프로필 정보를 조회합니다.
+      operationId: getUserProfile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 성공적으로 사용자 프로필을 조회함
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '401':
+          description: 인증되지 않은 사용자
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unauthorized:
+                  summary: 인증 실패 예시
+                  value:
+                    success: false
+                    error:
+                      code: UNAUTHORIZED
+                      message: 로그인이 필요합니다
+                    timestamp: 2025-01-08T10:30:00.000Z
+        '404':
+          description: 사용자를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # 인증 상태 확인 API
+  /api/auth/status:
+    get:
+      tags:
+        - users
+      summary: 인증 상태 확인
+      description: 현재 토큰의 유효성과 사용자 기본 정보를 확인합니다.
+      operationId: getAuthStatus
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 인증 상태 정보
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthStatusResponse'
+        '401':
+          description: 토큰이 유효하지 않음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    # 기본 응답 스키마
+    BaseResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: API 호출 성공 여부
+        timestamp:
+          type: string
+          format: date-time
+          description: 응답 생성 시간 (UTC)
+
+    # 에러 응답 스키마
+    ErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            success:
+              example: false
+            error:
+              type: object
+              required:
+                - code
+                - message
+              properties:
+                code:
+                  type: string
+                  description: 에러 코드
+                  enum:
+                    - UNAUTHORIZED
+                    - FORBIDDEN
+                    - NOT_FOUND
+                    - VALIDATION_ERROR
+                    - INTERNAL_SERVER_ERROR
+                    - RATE_LIMIT_EXCEEDED
+                    - SERVICE_UNAVAILABLE
+                message:
+                  type: string
+                  description: 사용자에게 보여줄 에러 메시지
+                details:
+                  type: object
+                  description: 추가 에러 정보 (개발자용)
+              example:
+                code: VALIDATION_ERROR
+                message: 입력값이 유효하지 않습니다
+                details:
+                  field: email
+                  reason: invalid_format
+
+    # 게임 통계 스키마
+    GameStats:
+      type: object
+      required:
+        - totalPlayers
+        - activeGames
+        - todayGames
+        - averageGameDuration
+        - popularDifficulty
+      properties:
+        totalPlayers:
+          type: integer
+          format: int64
+          description: 총 플레이어 수
+          example: 15420
+        activeGames:
+          type: integer
+          description: 현재 진행 중인 게임 수
+          example: 48
+        todayGames:
+          type: integer
+          description: 오늘 생성된 게임 수
+          example: 1256
+        averageGameDuration:
+          type: number
+          format: float
+          description: 평균 게임 시간 (분)
+          example: 12.5
+        popularDifficulty:
+          type: string
+          description: 가장 인기 있는 난이도
+          enum:
+            - easy
+            - normal
+            - hard
+          example: normal
+
+    GameStatsResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            success:
+              example: true
+            data:
+              $ref: '#/components/schemas/GameStats'
+
+    # 사용자 기본 정보 스키마
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - provider
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 사용자 고유 ID
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          format: email
+          description: 사용자 이메일
+          example: user@example.com
+        name:
+          type: string
+          description: 사용자 표시 이름
+          example: 김게이머
+        avatar_url:
+          type: string
+          format: uri
+          description: 프로필 이미지 URL
+          example: https://example.com/avatars/user.jpg
+        provider:
+          type: string
+          description: 인증 제공자
+          enum:
+            - google
+            - github
+            - discord
+            - email
+          example: google
+        created_at:
+          type: string
+          format: date-time
+          description: 계정 생성 시간
+          example: 2025-01-01T10:00:00.000Z
+
+    # 사용자 게임 통계 스키마
+    UserGameStats:
+      type: object
+      required:
+        - gamesPlayed
+        - gamesWon
+        - winRate
+        - favoriteDifficulty
+      properties:
+        gamesPlayed:
+          type: integer
+          description: 총 플레이한 게임 수
+          example: 42
+        gamesWon:
+          type: integer
+          description: 승리한 게임 수
+          example: 28
+        winRate:
+          type: number
+          format: float
+          description: 승률 (0-1)
+          example: 0.667
+        favoriteDifficulty:
+          type: string
+          description: 선호하는 난이도
+          enum:
+            - easy
+            - normal
+            - hard
+          example: normal
+
+    UserProfileResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            success:
+              example: true
+            data:
+              type: object
+              required:
+                - user
+                - stats
+                - last_login
+              properties:
+                user:
+                  $ref: '#/components/schemas/User'
+                stats:
+                  $ref: '#/components/schemas/UserGameStats'
+                last_login:
+                  type: string
+                  format: date-time
+                  description: 마지막 로그인 시간
+                  example: 2025-01-08T09:30:00.000Z
+
+    # 인증 상태 응답 스키마
+    AuthStatusResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            success:
+              example: true
+            data:
+              type: object
+              required:
+                - authenticated
+                - user
+                - expires_at
+              properties:
+                authenticated:
+                  type: boolean
+                  description: 인증된 사용자 여부
+                  example: true
+                user:
+                  $ref: '#/components/schemas/User'
+                expires_at:
+                  type: string
+                  format: date-time
+                  description: 토큰 만료 시간
+                  example: 2025-01-08T12:00:00.000Z
+
+  # 보안 스키마
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase JWT 토큰
+
+# 전역 보안 요구사항
+security:
+  - BearerAuth: []
+
+# 태그 그룹화
+tags:
+  - name: stats
+    description: 게임 통계 관련 API
+  - name: users
+    description: 사용자 관련 API
