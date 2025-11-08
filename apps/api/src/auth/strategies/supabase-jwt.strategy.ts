@@ -1,8 +1,8 @@
+import { UserEntity, UserRole, UserTier } from '@/user/entities';
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { UserRole } from '../entities/user.entity';
 
 /**
  * Supabase JWT Payload
@@ -26,14 +26,14 @@ export interface SupabaseJwtPayload {
   session_id?: string;
   // Custom claims from Backend hook
   user_id?: number; // Backend User ID
-  user_tier?: string; // UserTier
+  user_tier?: UserTier;
   user_role?: UserRole;
 }
 
 /**
  * Supabase JWT 검증 전략 (Stateless)
  * Supabase Auth에서 발급한 JWT를 검증하고 custom claims로 사용자 정보를 반환
- * DB 조회 없이 JWT claims만으로 사용자 정보를 구성하여 성능 최적화
+ * DB 조회 없이 JWT claims만으로 UserEntity를 구성하여 성능 최적화
  */
 @Injectable()
 export class SupabaseJwtStrategy extends PassportStrategy(Strategy, 'supabase-jwt') {
@@ -65,22 +65,16 @@ export class SupabaseJwtStrategy extends PassportStrategy(Strategy, 'supabase-jw
   }
 
   /**
-   * Supabase JWT payload를 검증하고 Backend 사용자 정보를 반환 (Stateless)
-   * DB 조회 없이 JWT custom claims만으로 사용자 정보를 구성하여 성능 최적화
+   * Supabase JWT payload를 검증하고 Backend 사용자 엔티티를 반환 (Stateless)
+   * DB 조회 없이 JWT custom claims만으로 UserEntity를 구성하여 성능 최적화
    *
    * @param payload - Supabase JWT payload (custom claims 포함)
-   * @returns Backend 사용자 정보 (JWT claims 기반)
+   * @returns Backend 사용자 엔티티 (JWT claims 기반)
    *
    * @note tier/role 변경은 다음 토큰 갱신 시 반영됨 (토큰 만료: 24시간)
    * @note 긴급 변경 시 토큰 블랙리스트 활용 가능
    */
-  async validate(payload: SupabaseJwtPayload): Promise<{
-    id: number;
-    oauthId: string;
-    email: string;
-    tier: string;
-    role: UserRole;
-  }> {
+  async validate(payload: SupabaseJwtPayload): Promise<UserEntity> {
     const supabaseUserId = payload.sub;
     const email = payload.email;
 
@@ -110,20 +104,22 @@ export class SupabaseJwtStrategy extends PassportStrategy(Strategy, 'supabase-jw
         );
       }
 
-      // 2. JWT claims로 사용자 정보 구성 (DB I/O 없음)
-      const user = {
-        id: backendUserId,
-        oauthId: supabaseUserId,
-        email: email || '',
-        tier: userTier,
-        role: userRole,
-      };
+      // 2. JWT claims로 UserEntity 구성 (DB I/O 없음)
+      const user = new UserEntity();
+      user.id = backendUserId;
+      user.oauthId = supabaseUserId;
+      user.email = email || '';
+      user.tier = userTier;
+      user.role = userRole;
+
+      // Success logging removed - only log errors for production
 
       return user;
     } catch (error) {
       this.logger.error(
         `Supabase JWT validation failed for Supabase user: ${supabaseUserId}`,
-        error instanceof Error ? error.stack : undefined
+        error instanceof Error ? error.stack : undefined,
+        { error, supabaseUserId, email }
       );
 
       if (error instanceof UnauthorizedException) {

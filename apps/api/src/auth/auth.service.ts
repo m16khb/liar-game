@@ -1,31 +1,16 @@
-import dayjs from 'dayjs';
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  Logger,
-  UnauthorizedException,
-  UnprocessableEntityException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { createClient, SupabaseClient, User as SupabaseUser } from '@supabase/supabase-js';
-import { UserRole } from '../entities/user.entity';
+import { UserRole, UserTier } from "@/user/entities";
+import { UserService } from "@/user/user.service";
+import { BadRequestException, ForbiddenException, Injectable, Logger, UnauthorizedException, UnprocessableEntityException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import dayjs from "dayjs";
 
-/**
- * Supabase Auth Service
- * Supabase 인증 시스템과의 연동을 담당합니다.
- *
- * 주요 기능:
- * - Custom Access Token Hook 처리
- * - 사용자 탈퇴 처리 (Supabase 세션 무효화)
- * - JWT 토큰 검증 및 정보 추출
- */
 @Injectable()
-export class SupabaseAuthService {
-  private readonly logger = new Logger(SupabaseAuthService.name);
+export class AuthService {
+  private logger = new Logger(AuthService.name);
   private supabaseAdmin: SupabaseClient | null = null;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(private userService: UserService, private readonly configService: ConfigService,) {
     // Supabase Admin Client 초기화
     const supabaseUrl = this.configService.get<string>('SUPABASE_URL');
     const supabaseServiceKey = this.configService.get<string>('SUPABASE_SERVICE_ROLE_KEY');
@@ -62,24 +47,22 @@ export class SupabaseAuthService {
         throw new BadRequestException('Email not found in claims');
       }
 
-      // 1. Mock 사용자 조회 (실제로는 UserService를 통해 DB 조회 필요)
-      // 여기서는 임시로 사용자 정보 생성
-      let user = await this.findMockUser(email);
+      // 1. MySQL에서 사용자 조회 (soft delete된 사용자 포함)
+      let user = await this.userService.findByEmailWithDeleted(email);
 
       if (!user) {
         // OAuth Provider 추출: app_metadata.provider에서 실제 provider 정보 추출
+        // 가능한 값: 'email', 'google', 'kakao', 'github', 'facebook' 등
         const provider = claims.app_metadata?.provider || 'email';
 
-        // 신규 사용자 생성 (실제로는 UserService.createUser 호출 필요)
-        user = {
-          id: Math.floor(Math.random() * 100000), // 임시 ID 생성
+        // 신규 사용자 생성
+        user = await this.userService.createUser({
           email,
-          tier: 'MEMBER',
-          role: UserRole.USER,
+          password: null,
+          tier: UserTier.MEMBER,
           oauthProvider: provider,
           oauthId: userId,
-          deletedAt: null,
-        };
+        });
         this.logger.log(`New user created via Auth Hook: ${user.id} (provider: ${provider})`);
       } else if (user.deletedAt) {
         // 2. soft delete된 사용자는 로그인 차단
@@ -89,7 +72,8 @@ export class SupabaseAuthService {
         );
       }
 
-      // 3. lastLoginAt 업데이트 (실제로는 UserService.updateLastLogin 호출 필요)
+      // 3. lastLoginAt 업데이트
+      await this.userService.updateLastLogin(user.id);
 
       // 4. Claims에 Backend 정보 추가 (JWT는 포함하지 않음)
       return {
@@ -104,6 +88,62 @@ export class SupabaseAuthService {
     } catch (error) {
       this.logger.error(
         'Supabase Auth Hook failed',
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * 회원 탈퇴 - Supabase 세션 무효화 및 Backend 계정 비활성화
+   * User withdrawal - Revoke all Supabase sessions and soft delete Backend account
+   *
+   * @note Supabase 사용자는 유지되며, 모든 세션만 무효화됨
+   * @note Backend는 soft delete만 수행 (deletedAt 설정)
+   */
+  async withdrawUser(userId: number): Promise<void> {
+    this.logger.debug(`Withdrawal request for user: ${userId}`);
+
+    try {
+      // 1. 사용자 조회
+      const user = await this.userService.findOneUser(userId);
+
+      if (!user) {
+        throw new UnauthorizedException('사용자를 찾을 수 없습니다');
+      }
+
+      // 2. ADMIN 역할 차단
+      if (user.role === UserRole.ADMIN) {
+        throw new ForbiddenException('관리자 계정은 직접 탈퇴할 수 없습니다');
+      }
+
+      const now = dayjs().toDate();
+
+      // 3. Supabase 모든 세션 무효화 (사용자는 유지)
+      if (this.supabaseAdmin && user.oauthId) {
+        try {
+          await this.revokeUserSupabaseTokens(user.id);
+          this.logger.log(
+            `All Supabase sessions revoked for user: ${user.oauthId} (Backend ID: ${userId})`
+          );
+        } catch (supabaseError) {
+          this.logger.error(
+            `Error revoking Supabase sessions: ${supabaseError instanceof Error ? supabaseError.message : 'Unknown'}`,
+            supabaseError instanceof Error ? supabaseError.stack : undefined
+          );
+          // Supabase 세션 무효화 실패해도 계속 진행 (Backend soft delete는 수행)
+        }
+      }
+
+      // 4. Backend Soft Delete
+      await this.userService.updateUser(user.id, {
+        deletedAt: now,
+      });
+
+      this.logger.log(`User withdrawal completed: ${userId}`);
+    } catch (error) {
+      this.logger.error(
+        `User withdrawal failed for user: ${userId}`,
         error instanceof Error ? error.stack : undefined
       );
       throw error;
@@ -129,8 +169,8 @@ export class SupabaseAuthService {
     }
 
     try {
-      // 1. Backend User 조회 (Mock - 실제로는 UserService.findOneUser 호출 필요)
-      const user = await this.findMockUserById(userId);
+      // 1. Backend User 조회
+      const user = await this.userService.findOneUser(userId);
       if (!user || !user.oauthId) {
         this.logger.warn(`User ${userId} does not have Supabase OAuth ID`);
         return;
@@ -156,12 +196,16 @@ export class SupabaseAuthService {
     }
   }
 
-  /**
+   /**
    * Check if email is registered in system
    * Used for pre-registration validation
    *
    * @param email - Email address to check
    * @returns Object with isExist status and isWithdrawn flag
+   *
+   * @note Environment-specific behavior:
+   *       - local/dev/stg: Checks both Backend and Supabase (shared account scenario)
+   *       - prod: Only checks Backend (Auth Hook auto-syncs on login)
    */
   async checkEmailRegistration(email: string): Promise<{ isExist: boolean; isWithdrawn: boolean }> {
     this.logger.debug(`Checking email registration: ${email}`);
@@ -169,18 +213,12 @@ export class SupabaseAuthService {
     try {
       const normalizedEmail = email.toLowerCase().trim();
 
-      // 1. Check Backend Database (Mock - 실제로는 UserService.findByEmailWithDeleted 호출 필요)
-      const backendUser = await this.findMockUser(normalizedEmail);
+      // 1. Check Backend Database (including soft-deleted users)
+      const backendUser = await this.userService.findByEmailWithDeleted(normalizedEmail);
       let isExist = !!backendUser;
 
       // Check if user is soft-deleted (withdrawn)
       const isWithdrawn = !!backendUser?.deletedAt;
-
-      // 2. Check Supabase Auth (only in non-production environments)
-      if (isDevelopment() && this.supabaseAdmin && !isExist) {
-        const registeredInSupabase = await this.checkSupabaseUserByEmail(normalizedEmail);
-        isExist = isExist || registeredInSupabase;
-      }
 
       this.logger.log(
         `Email check result: ${normalizedEmail} - isExist: ${isExist}, withdrawn: ${isWithdrawn}`
@@ -195,92 +233,4 @@ export class SupabaseAuthService {
       throw error;
     }
   }
-
-  // Mock 메소드들 (실제로는 UserService로 대체)
-  private async findMockUser(email: string): Promise<{
-    id: number;
-    email: string;
-    tier: string;
-    role: UserRole;
-    oauthProvider?: string;
-    oauthId?: string;
-    deletedAt?: Date | null;
-  } | null> {
-    // Mock 데이터 - 실제로는 DB 조회
-    if (email === 'test@example.com') {
-      return {
-        id: 1,
-        email: 'test@example.com',
-        tier: 'MEMBER',
-        role: UserRole.USER,
-        oauthId: 'mock-supabase-id',
-        deletedAt: null,
-      };
-    }
-    return null;
-  }
-
-  private async findMockUserById(userId: number): Promise<{
-    id: number;
-    oauthId?: string;
-  } | null> {
-    // Mock 데이터 - 실제로는 DB 조회
-    if (userId === 1) {
-      return {
-        id: 1,
-        oauthId: 'mock-supabase-id',
-      };
-    }
-    return null;
-  }
-
-  /**
-   * Check if user exists in Supabase Auth by email
-   *
-   * @param email - Normalized email address (lowercase, trimmed)
-   * @returns true if user found, false otherwise
-   */
-  private async checkSupabaseUserByEmail(email: string): Promise<boolean> {
-    if (!this.supabaseAdmin) {
-      return false;
-    }
-
-    try {
-      const { data, error } = await this.supabaseAdmin.auth.admin.listUsers();
-
-      if (error) {
-        this.logger.warn(`Supabase listUsers error: ${error.message}`);
-        return false;
-      }
-
-      if (!data?.users) {
-        return false;
-      }
-
-      // Search for email in all users
-      const found = data.users.some((user: SupabaseUser) =>
-        user.email?.toLowerCase() === email
-      );
-
-      if (found) {
-        this.logger.debug(`Email found in Supabase: ${email}`);
-      }
-
-      return found;
-    } catch (error) {
-      this.logger.error(
-        `Error checking Supabase user by email: ${email}`,
-        error instanceof Error ? error.stack : undefined
-      );
-      return false; // Fail gracefully
-    }
-  }
-}
-
-/**
- * 현재 환경이 개발 환경인지 확인
- */
-function isDevelopment(): boolean {
-  const nodeEnv = process.env.NODE_ENV || 'development';
-  return ['development', 'dev', 'local'].includes(nodeEnv);
 }
