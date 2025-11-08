@@ -19,6 +19,9 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       sourcemap: true,
     },
+    css: {
+      postcss: './postcss.config.cjs',
+    },
     resolve: {
       alias: {
         '@': '/src',
