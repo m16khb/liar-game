@@ -124,11 +124,6 @@ export default function RoomList({
 
   useEffect(() => {
     fetchRooms()
-
-    // 30초마다 방 목록 새로고침
-    const interval = setInterval(fetchRooms, 30000)
-
-    return () => clearInterval(interval)
   }, [])
 
   // 방 참가
@@ -648,18 +643,7 @@ export default function RoomList({
           )}
         </main>
 
-        {/* 자동 새로고침 안내 */}
-        {!loading && rooms.length > 0 && (
-          <div style={{
-            textAlign: 'center',
-            marginTop: '32px',
-            color: '#6b7280',
-            fontSize: isMobile ? '13px' : '14px'
-          }}>
-            <p>방 목록은 30초마다 자동으로 새로고침됩니다</p>
-          </div>
-        )}
-      </div>
+        </div>
 
       <style>{`
         @keyframes spin {
