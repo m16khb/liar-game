@@ -1,24 +1,60 @@
 {
   "compilerOptions": {
+    // Module & Target Configuration
+    "target": "ESNext",
     "module": "commonjs",
+    "lib": ["ESNext"],
+    "moduleResolution": "node",
+
+    // Strict Type-Checking Options (실용적 설정)
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": false,
+    "noImplicitReturns": false, // 완화: 함수 반환 타입 추론 허용
+    "noImplicitThis": false, // 완화: this 타입 추론 허용
+    "alwaysStrict": true,
+
+    // Additional Checks (대중적 설정)
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false,
+    "noImplicitOverride": false, // 완화: override 키워드 강제 해제
+    "noPropertyAccessFromIndexSignature": false,
+    "noUncheckedIndexedAccess": false, // 완화: 배열/객체 접근 유연성 확보
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // Performance & Quality
+    "skipLibCheck": true,
+    "incremental": true,
+    "isolatedModules": true,
+
+    // NestJS Required Settings
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+
+     // Output Configuration
     "declaration": true,
     "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "ES2020",
     "sourceMap": true,
     "outDir": "./dist",
+
+    // Path Configuration (Simplified)
     "baseUrl": "./",
-    "incremental": true,
-    "skipLibCheck": true,
-    "strictNullChecks": false,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@/*": ["./src/*"]
-    }
-  }
+      "@/*": ["./src/*"],
+    },
+
+    // Types Configuration
+    "typeRoots": ["./node_modules/@types", "../../node_modules/@types"],
+    "types": ["jest", "node"]
+  },
+  "include": ["src/**/*", "test/**/*", "ormconfig.ts"],
+  "exclude": ["node_modules", "dist"]
 }

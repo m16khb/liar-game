@@ -1,3 +1,4 @@
+import { UserEntity } from '@/user/entities';
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 /**
@@ -27,9 +28,9 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
  * ```
  */
 export const CurrentUser = createParamDecorator(
-  (data: string | undefined, ctx: ExecutionContext) => {
+  (data: keyof UserEntity | undefined, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    const user = request.user;
+    const user = request.user as UserEntity;
 
     // 특정 속성이 요청된 경우 해당 속성만 반환
     if (data) {
