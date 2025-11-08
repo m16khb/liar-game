@@ -9,10 +9,10 @@ import { databaseConfig } from './config/database.config'
 // 구현된 모듈들 임포트
 import { AuthModule } from './auth/auth.module'
 import { UserModule } from './user/user.module'
+import { RoomModule } from './room/room.module'
 import redisConfig from './config/redis.config'
 
 // TODO: 향후 추가할 모듈들
-// import { RoomModule } from './room/room.module'
 // import { GameModule } from './game/game.module'
 
 @Module({
@@ -33,9 +33,9 @@ import redisConfig from './config/redis.config'
     // 기능 모듈들
     AuthModule,
     UserModule,
+    RoomModule,
 
     // TODO: 향후 추가할 모듈들
-    // RoomModule,
     // GameModule,
   ],
   controllers: [],

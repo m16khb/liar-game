@@ -23,7 +23,7 @@ export enum UserRole {
 @Index('idx_users_email', ['email'])
 @Index('idx_users_tier', ['tier'])
 export class UserEntity {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn('increment', { type: 'int', unsigned: true })
   id: number;
 
   @Column({ type: 'varchar', length: 255 })

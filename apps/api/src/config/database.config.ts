@@ -1,9 +1,11 @@
 import { UserEntity } from '@/user/entities';
+import { Room } from '@/room/entities/room.entity';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 export const entities = [
   UserEntity,
+  Room,
 ];
 
 export const databaseConfig = (configService: ConfigService): TypeOrmModuleOptions => ({

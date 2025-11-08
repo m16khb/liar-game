@@ -28,8 +28,8 @@ export function setupMainSwagger(app: NestFastifyApplication): void {
 
   // Main API Swagger documentation (excludes admin modules)
   let mainConfigBuilder = new DocumentBuilder()
-    .setTitle('Next Candle API')
-    .setDescription('일반 사용자를 위한 Next Candle 서비스')
+    .setTitle('API')
+    .setDescription('일반 사용자를 위한 API 엔드포인트')
     .setVersion('1.0');
 
   // 자동 추출된 태그들을 DocumentBuilder에 추가
@@ -104,8 +104,8 @@ export function setupAdminSwagger(app: NestFastifyApplication): void {
 
   // Admin API Swagger documentation (only admin modules)
   let adminConfigBuilder = new DocumentBuilder()
-    .setTitle('Next Candle 관리자 API')
-    .setDescription('Next Candle 시스템 관리를 위한 관리자 기능')
+    .setTitle('관리자 API')
+    .setDescription('시스템 관리를 위한 관리자 기능')
     .setVersion('1.0');
 
   // 자동 추출된 어드민 태그들을 DocumentBuilder에 추가

@@ -4,7 +4,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ProfileModal from '../user/ProfileModal'
+import JoinRoomByCode from './JoinRoomByCode'
 import { useAuth } from '../../hooks/useAuth'
+import { useRooms } from '../../hooks/useRooms'
+import { RoomResponse, CreateRoomRequest, GameDifficulty } from '@/types/api'
 
 // 윈도우 크기를 추적하는 커스텀 훅
 function useWindowSize() {
@@ -30,17 +33,6 @@ function useWindowSize() {
   return windowSize
 }
 
-interface Room {
-  id: string
-  code: string
-  hostId: string
-  hostName: string
-  maxPlayers: number
-  currentPlayers: number
-  status: 'waiting' | 'playing' | 'finished'
-  createdAt: string
-}
-
 interface RoomListProps {
   isAuthenticated?: boolean
   onRoomJoin?: (roomCode: string) => void
@@ -51,83 +43,29 @@ export default function RoomList({
   onRoomJoin,
   onRoomCreate
 }: Omit<RoomListProps, 'isAuthenticated'>) {
-  const [rooms, setRooms] = useState<Room[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [creatingRoom, setCreatingRoom] = useState(false)
   const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null)
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const [showJoinByCodeModal, setShowJoinByCodeModal] = useState(false)
   const navigate = useNavigate()
   const { width } = useWindowSize()
   const { isAuthenticated, user } = useAuth() // 직접 인증 상태 구독
+
+  // useRooms 훅을 사용하여 방 목록 관리
+  const { rooms, loading, error, setError: setRoomsError, refresh, createRoom: createNewRoom } = useRooms('waiting')
 
   // 반응형 breakpoint
   const isMobile = width < 768
   const isTablet = width >= 768 && width < 1024
   const isDesktop = width >= 1024
 
-  // 대기중인 방 목록 조회
-  const fetchRooms = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      // TODO: 실제 API 호출로 대체
-      // const response = await fetch('/api/rooms?status=waiting')
-      // const data = await response.json()
-
-      // 임시 더미 데이터
-      const mockRooms: Room[] = [
-        {
-          id: '1',
-          code: 'ABC123',
-          hostId: 'user1',
-          hostName: '플레이어1',
-          maxPlayers: 8,
-          currentPlayers: 3,
-          status: 'waiting',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: '2',
-          code: 'DEF456',
-          hostId: 'user2',
-          hostName: '플레이어2',
-          maxPlayers: 6,
-          currentPlayers: 5,
-          status: 'waiting',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: '3',
-          code: 'GHI789',
-          hostId: 'user3',
-          hostName: '플레이어3',
-          maxPlayers: 8,
-          currentPlayers: 1,
-          status: 'waiting',
-          createdAt: new Date().toISOString()
-        }
-      ]
-
-      // 1초 지연 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      setRooms(mockRooms.filter(room => room.status === 'waiting'))
-    } catch (err) {
-      console.error('방 목록 조회 실패:', err)
-      setError('방 목록을 불러오는데 실패했습니다.')
-    } finally {
-      setLoading(false)
-    }
+  // 에러 상태 통합
+  const handleError = (message: string) => {
+    setRoomsError(message)
   }
 
-  useEffect(() => {
-    fetchRooms()
-  }, [])
-
   // 방 참가
-  const handleJoinRoom = async (room: Room) => {
+  const handleJoinRoom = async (room: RoomResponse) => {
     // 로그인 체크
     if (!isAuthenticated) {
       // 로그인 페이지로 이동, 참가하려는 방 정보 저장
@@ -137,14 +75,14 @@ export default function RoomList({
     }
 
     if (room.currentPlayers >= room.maxPlayers) {
-      setError('이 방은 정원이 가득 찼습니다.')
+      handleError('이 방은 정원이 가득 찼습니다.')
       return
     }
 
     try {
       setJoiningRoomId(room.id)
 
-      // TODO: 실제 API 호출로 대체
+      // TODO: 향후 방 참가 API 구현
       // const response = await fetch(`/api/rooms/${room.id}/join`, {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' }
@@ -158,7 +96,7 @@ export default function RoomList({
       navigate(`/game/${room.code}`)
     } catch (err) {
       console.error('방 참가 실패:', err)
-      setError('방 참가에 실패했습니다.')
+      handleError('방 참가에 실패했습니다.')
     } finally {
       setJoiningRoomId(null)
     }
@@ -177,23 +115,24 @@ export default function RoomList({
     try {
       setCreatingRoom(true)
 
-      // TODO: 실제 API 호출로 대체
-      // const response = await fetch('/api/rooms', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ maxPlayers: 8, difficulty: 'normal' })
-      // })
+      // 실제 API 호출
+      const createRoomData: CreateRoomRequest = {
+        title: `${user?.nickname || '플레이어'}의 방`,
+        maxPlayers: 8,
+        difficulty: GameDifficulty.NORMAL,
+        isPrivate: false,
+        description: '새로 생성된 방입니다. 참가해주세요!',
+      };
 
-      // 임시 지연 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 800))
+      const newRoom = await createNewRoom(createRoomData);
 
       // 방 생성 성공
-      const newRoomCode = 'NEW' + Math.random().toString(36).substring(2, 8).toUpperCase()
       onRoomCreate?.()
-      navigate(`/game/${newRoomCode}`)
+      navigate(`/game/${newRoom.code}`)
     } catch (err) {
       console.error('방 생성 실패:', err)
-      setError('방 생성에 실패했습니다.')
+      const errorMessage = err instanceof Error ? err.message : '방 생성에 실패했습니다.'
+      handleError(errorMessage)
     } finally {
       setCreatingRoom(false)
     }
@@ -299,8 +238,15 @@ export default function RoomList({
           </div>
         </header>
 
-        {/* 새 방 생성 버튼 */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        {/* 새 방 생성 및 코드 참가 버튼 */}
+        <div style={{
+          textAlign: 'center',
+          marginBottom: '32px',
+          display: 'flex',
+          gap: '16px',
+          justifyContent: 'center',
+          flexDirection: isMobile ? 'column' : 'row'
+        }}>
           <button
             onClick={handleCreateRoom}
             disabled={creatingRoom}
@@ -328,6 +274,31 @@ export default function RoomList({
             }}
           >
             {creatingRoom ? '방 생성 중...' : '새 방 생성'}
+          </button>
+
+          <button
+            onClick={() => setShowJoinByCodeModal(true)}
+            style={{
+              backgroundColor: '#8b5cf6',
+              color: 'white',
+              padding: isMobile ? '12px 24px' : '14px 28px',
+              borderRadius: '8px',
+              border: 'none',
+              fontSize: isMobile ? '15px' : '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              width: isMobile ? '100%' : 'auto',
+              maxWidth: isMobile ? '280px' : 'none'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = '#7c3aed'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = '#8b5cf6'
+            }}
+          >
+            코드로 참가
           </button>
         </div>
 
@@ -384,7 +355,7 @@ export default function RoomList({
 
             {/* 새로고침 아이콘 */}
             <button
-              onClick={fetchRooms}
+              onClick={refresh}
               style={{
                 background: '#f3f4f6',
                 border: '1px solid #e5e7eb',
@@ -462,7 +433,7 @@ export default function RoomList({
                 새 방을 생성하거나 잠시 후 다시 확인해주세요.
               </p>
               <button
-                onClick={fetchRooms}
+                onClick={refresh}
                 style={{
                   backgroundColor: '#3b82f6',
                   color: 'white',
@@ -536,7 +507,7 @@ export default function RoomList({
                         marginBottom: '4px',
                         wordBreak: 'break-word'
                       }}>
-                        방 코드: {room.code}
+                        {room.title}
                       </h3>
                       <p style={{
                         fontSize: isMobile ? '13px' : '14px',
@@ -545,7 +516,7 @@ export default function RoomList({
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
                       }}>
-                        방장: {room.hostName}
+                        방 코드: {room.code} | 방장: {room.host?.nickname || '알 수 없음'}
                       </p>
                     </div>
                   </div>
@@ -657,6 +628,33 @@ export default function RoomList({
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
       />
+
+      {/* 코드로 참가 모달 */}
+      {showJoinByCodeModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '16px'
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setShowJoinByCodeModal(false);
+          }
+        }}
+        >
+          <JoinRoomByCode
+            onClose={() => setShowJoinByCodeModal(false)}
+          />
+        </div>
+      )}
     </div>
   )
 }
