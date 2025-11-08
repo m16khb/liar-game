@@ -4,8 +4,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import GoogleLoginButton from './GoogleLoginButton'
-import GitHubLoginButton from './GitHubLoginButton'
-import DiscordLoginButton from './DiscordLoginButton'
+import EmailSignupModal from './EmailSignupModal'
 
 interface LoginFormProps {
   onLoginSuccess?: () => void
@@ -20,6 +19,7 @@ export default function LoginForm({
 }: LoginFormProps) {
   const { login, loading, error, clearError } = useAuth()
   const [socialError, setSocialError] = useState<string | null>(null)
+  const [showEmailSignup, setShowEmailSignup] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -38,6 +38,20 @@ export default function LoginForm({
   const clearAllErrors = () => {
     if (error) clearError()
     if (socialError) setSocialError(null)
+  }
+
+  // 이메일 인증 모달 핸들러
+  const handleEmailSignupClick = () => {
+    setShowEmailSignup(true)
+  }
+
+  const handleEmailSignupClose = () => {
+    setShowEmailSignup(false)
+  }
+
+  const handleEmailSignupSuccess = () => {
+    // 이메일 인증 성공 후 처리할 로직
+    onSignupClick?.()
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,22 +108,8 @@ export default function LoginForm({
         </h2>
 
         {/* 소셜 로그인 버튼 */}
-        <div className="space-y-3 mb-6">
+        <div className="mb-6">
           <GoogleLoginButton
-            onSuccess={onLoginSuccess}
-            onError={handleSocialError}
-            disabled={loading}
-            variant="primary"
-          />
-
-          <GitHubLoginButton
-            onSuccess={onLoginSuccess}
-            onError={handleSocialError}
-            disabled={loading}
-            variant="primary"
-          />
-
-          <DiscordLoginButton
             onSuccess={onLoginSuccess}
             onError={handleSocialError}
             disabled={loading}
@@ -197,13 +197,20 @@ export default function LoginForm({
           <span className="mx-2 text-gray-500 dark:text-gray-400">|</span>
           <button
             type="button"
-            onClick={onSignupClick}
+            onClick={handleEmailSignupClick}
             className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
           >
             계정이 없으신가요?
           </button>
         </div>
       </div>
+
+      {/* 이메일 인증 모달 */}
+      <EmailSignupModal
+        isOpen={showEmailSignup}
+        onClose={handleEmailSignupClose}
+        onSuccess={handleEmailSignupSuccess}
+      />
     </div>
   )
 }
