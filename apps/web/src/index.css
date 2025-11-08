@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* 전역 스타일 - 최소한의 기본 스타일링 */
 /* CSS Reset 기본 구현 */
 
