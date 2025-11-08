@@ -39,11 +39,21 @@ export default function OtpVerification({
         if (remainingTime) {
           setTimeLeft(remainingTime)
           setAttemptsLeft(Math.max(0, 5 - otpData.attempts))
+        } else {
+          // 유효시간이 지났으면 새로 저장
+          saveOTPToStorage(email)
+          setAttemptsLeft(5)
         }
+      } else {
+        // 다른 이메일이면 기존 데이터 삭제하고 새로 저장
+        clearOTPFromStorage()
+        saveOTPToStorage(email)
+        setAttemptsLeft(5)
       }
     } else {
       // OTP 정보가 없으면 새로 저장
       saveOTPToStorage(email)
+      setAttemptsLeft(5)
     }
   }, [email])
 
@@ -141,15 +151,6 @@ export default function OtpVerification({
     setError(null)
 
     try {
-      // 시도 횟수 감소
-      const remaining = incrementOTPAttempts()
-      setAttemptsLeft(remaining)
-
-      if (remaining <= 0) {
-        setError('인증 시도 횟수를 초과했습니다. 이메일 재전송 후 다시 시도해주세요.')
-        return
-      }
-
       const result = await verifyOtp(email, otpString)
 
       // 인증 성공 시 localStorage에서 OTP 정보 삭제
@@ -163,9 +164,18 @@ export default function OtpVerification({
 
       // onOtpVerified()는 호출하지 않고 바로 페이지 이동
     } catch (error: any) {
+      // 실패했을 때만 시도 횟수 감소
+      const remaining = incrementOTPAttempts()
+      setAttemptsLeft(remaining)
+
       // 더 구체적인 에러 메시지
       const errorMessage = error.message || '인증 코드가 올바르지 않습니다. 다시 확인해주세요.'
-      setError(errorMessage)
+
+      if (remaining <= 0) {
+        setError('인증 시도 횟수를 초과했습니다. 이메일 재전송 후 다시 시도해주세요.')
+      } else {
+        setError(errorMessage)
+      }
     } finally {
       setIsSubmitting(false)
     }
