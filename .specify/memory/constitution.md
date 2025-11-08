@@ -1,10 +1,10 @@
 <!--
 Sync Impact Report:
-Version: 1.4.0 → 1.5.0 (minor - TypeORM migration principle added)
+Version: 1.5.0 → 1.6.0 (minor - 공식 문서 참조 원칙 추가)
 Modified Principles: N/A
-Added Sections: XI. TypeORM 마이그레이션 관리 원칙
+Added Sections: XII. 공식 문서 참조 원칙
 Removed Sections: N/A
-Templates Updated: ✅ plan-template.md, ✅ tasks-template.md
+Templates Updated: ✅ plan-template.md, ✅ tasks-template.md, ⚠ checklist-template.md, ⚠ agent-file-template.md
 Follow-up TODOs: N/A
 -->
 
@@ -64,6 +64,15 @@ MySQL v8 LTS 버전을 주 데이터베이스로 사용하며, Redis v8 LTS 버�
 - **롤백 지원**: 모든 마이그레이션은 롤백이 가능하도록 down 메서드 구현이 필수
 - **네이밍 규칙**: 마이그레이션 파일은 `MigrationYYYYMMDDHHMMSS_descriptive_name.ts` 형식으로 명명
 - **테스트 검증**: 개발 환경에서 마이그레이션 적용/롤백 테스트 후 프로덕션 적용
+
+### XII. 공식 문서 참조 원칙
+모든 기술 구현과 의사결정은 최신 공식 문서를 우선적으로 참조해야 합니다:
+- **최신 버전 우선**: 사용하는 모든 기술의 공식 문서 최신 버전을 항상 참조
+- **공식 문서 최우선**: 타사 블로그, 튜토리얼, Q&A 사이트보다 공식 문서를 최우선으로 신뢰
+- **검증 절차**: 비공식 자료를 참조할 경우 반드시 공식 문서와 교차 검증 수행
+- **문서 링크 유지**: 중요한 기술 결정 시 참조한 공식 문서 URL을 코드 주석이나 문서에 명시
+- **정기적 확인**: 사용 중인 기술의 버전 업데이트 시 공식 문서의 변경사항을 정기적으로 확인
+- **학습 자료**: 팀원 교육 시 공식 문서를 주요 학습 자료로 활용
 
 ## 기술 표준
 
@@ -245,4 +254,4 @@ export class Migration20250101000000CreateUsersTable1640995200000 implements Mig
 ### 준수 검토
 모든 Pull Request는 헌법 준수 여부를 검토받아야 하며, 복잡성이 증가하는 변경 사항은 정당성이 명확하게 제시되어야 합니다.
 
-**버전**: 1.5.0 | **제정일**: 2025-11-07 | **최종 수정일**: 2025-11-07
+**버전**: 1.6.0 | **제정일**: 2025-11-07 | **최종 수정일**: 2025-11-08

@@ -3,7 +3,7 @@
 **Feature Branch**: `001-supabase-auth`
 **Created**: 2025-11-08
 **Status**: Draft
-**Input**: User description: "supabase 인증 시스템 구현을 확인하고 역설계로 스펙 생성"
+**Input**: User description: "메인페이지의 히어로 섹션과 supabase 기반 로그인 기능 구현"
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -20,7 +20,24 @@
   - Demonstrated to users independently
 -->
 
-### User Story 1 - 이메일 가입 및 로그인 (Priority: P1)
+### User Story 1 - 메인페이지 히어로 섹션 (Priority: P1)
+
+사용자가 라이어 게임 메인페이지에 접속하여 게임의 핵심 매력을 파악하고 쉽게 게임에 참여할 수 있도록 안내받는 과정
+
+**Why this priority**: 사용자의 첫인상을 결정하는 가장 중요한 페이지로, 게임 참여를 유도하는 진입점 역할
+
+**Independent Test**: 히어로 섹션만으로도 라이어 게임의 가치와 재미를 효과적으로 전달하고 사용자 참여를 유도할 수 있음
+
+**Acceptance Scenarios**:
+
+1. **Given** 사용자가 메인페이지에 접속했을 때, **When** 페이지가 로드되면, **Then** 라이어 게임의 핵심 특징을 보여주는 히어로 섹션이 표시된다
+2. **Given** 히어로 섹션에서 게임 설명을 보았을 때, **When** 내용을 읽으면, **Then** 6인 추리 게임의 재미와 규칙을 쉽게 이해할 수 있다
+3. **Given** 로그인하지 않은 사용자가 "게임 시작하기" 버튼을 클릭했을 때, **When** 클릭하면, **Then** 로그인 모달이 나타나거나 로그인 페이지로 이동한다
+4. **Given** 모바일 기기로 접속했을 때, **When** 히어로 섹션을 보면, **Then** 반응형 디자인으로 모바일 환경에 최적화된 UI가 표시된다
+
+---
+
+### User Story 2 - 이메일 가입 및 로그인 (Priority: P1)
 
 사용자가 이메일과 비밀번호를 사용하여 계정을 생성하고 로그인하는 과정
 
@@ -37,7 +54,7 @@
 
 ---
 
-### User Story 2 - 소셜 로그인 (OAuth) (Priority: P1)
+### User Story 3 - 소셜 로그인 (OAuth) (Priority: P1)
 
 사용자가 Google, GitHub, Discord 계정을 사용하여 빠르게 로그인하는 과정
 
@@ -54,7 +71,7 @@
 
 ---
 
-### User Story 3 - 토큰 갱신 및 세션 관리 (Priority: P1)
+### User Story 4 - 토큰 갱신 및 세션 관리 (Priority: P1)
 
 사용자의 로그인 상태를 유지하고 만료된 토큰을 자동으로 갱신하는 과정
 
@@ -71,7 +88,7 @@
 
 ---
 
-### User Story 4 - 사용자 프로필 관리 (Priority: P2)
+### User Story 5 - 사용자 프로필 관리 (Priority: P2)
 
 사용자가 자신의 개인 정보를 조회하고 수정하는 과정
 
@@ -88,7 +105,7 @@
 
 ---
 
-### User Story 5 - 사용자 검색 및 관리 (Priority: P3)
+### User Story 6 - 사용자 검색 및 관리 (Priority: P3)
 
 사용자가 다른 사용자를 검색하고 관리자가 사용자 목록을 조회하는 과정
 
@@ -120,18 +137,22 @@
 
 ### Functional Requirements
 
-- **FR-001**: System MUST 사용자가 이메일과 비밀번호로 계정을 생성할 수 있도록 허용해야 함
-- **FR-002**: System MUST 이메일 주소의 유효성을 검증하고 중복을 방지해야 함
-- **FR-003**: Users MUST be able to Google, GitHub, Discord OAuth 계정으로 로그인할 수 있어야 함
-- **FR-004**: System MUST Access Token과 Refresh Token을 통한 JWT 기반 인증을 제공해야 함
-- **FR-005**: System MUST Redis 기반의 세션 관리로 24시간 동안 사용자 상태를 유지해야 함
-- **FR-006**: System MUST Custom JWT Claims에 Backend 사용자 정보(ID, 등급, 역할)를 포함해야 함
-- **FR-007**: Users MUST be able to 자신의 프로필 정보를 조회하고 수정할 수 있어야 함
-- **FR-008**: System MUST 소프트 딜리트 방식으로 계정 탈퇴 시 사용자 데이터를 보관해야 함
-- **FR-009**: Users MUST be able to 닉네임이나 이메일로 다른 사용자를 검색할 수 있어야 함
-- **FR-010**: System MUST 모든 보안 관련 이벤트를 로깅하고 추적할 수 있어야 함
-- **FR-011**: System MUST 낮은 수준의 사용자 등급(MEMBER), 프리미엄(PREMIUM), VIP를 지원해야 함
-- **FR-012**: System MUST 사용자(USER)와 관리자(ADMIN) 역할을 구분해야 함
+- **FR-001**: System MUST 메인페이지에 라이어 게임의 핵심 특징을 보여주는 히어로 섹션을 표시해야 함
+- **FR-002**: System MUST 히어로 섹션에서 6인 추리 게임의 재미와 규칙을 효과적으로 설명해야 함
+- **FR-003**: System MUST 히어로 섹션에서 "게임 시작하기" CTA 버튼을 제공하여 인증으로 유도해야 함
+- **FR-004**: System MUST 모바일과 데스크톱 환경에 최적화된 반응형 히어로 섹션을 제공해야 함
+- **FR-005**: System MUST 사용자가 이메일과 비밀번호로 계정을 생성할 수 있도록 허용해야 함
+- **FR-006**: System MUST 이메일 주소의 유효성을 검증하고 중복을 방지해야 함
+- **FR-007**: Users MUST be able to Google, GitHub, Discord OAuth 계정으로 로그인할 수 있어야 함
+- **FR-008**: System MUST Access Token과 Refresh Token을 통한 JWT 기반 인증을 제공해야 함
+- **FR-009**: System MUST Redis 기반의 세션 관리로 24시간 동안 사용자 상태를 유지해야 함
+- **FR-010**: System MUST Custom JWT Claims에 Backend 사용자 정보(ID, 등급, 역할)를 포함해야 함
+- **FR-011**: Users MUST be able to 자신의 프로필 정보를 조회하고 수정할 수 있어야 함
+- **FR-012**: System MUST 소프트 딜리트 방식으로 계정 탈퇴 시 사용자 데이터를 보관해야 함
+- **FR-013**: Users MUST be able to 닉네임이나 이메일로 다른 사용자를 검색할 수 있어야 함
+- **FR-014**: System MUST 모든 보안 관련 이벤트를 로깅하고 추적할 수 있어야 함
+- **FR-015**: System MUST 낮은 수준의 사용자 등급(MEMBER), 프리미엄(PREMIUM), VIP를 지원해야 함
+- **FR-016**: System MUST 사용자(USER)와 관리자(ADMIN) 역할을 구분해야 함
 
 ### Key Entities *(include if feature involves data)*
 
@@ -150,13 +171,15 @@
 
 ### Measurable Outcomes
 
-- **SC-001**: 사용자가 이메일 계정 생성을 2분 이내에 완료할 수 있어야 함
-- **SC-002**: 소셜 로그인 사용자가 클릭 3회 이내에 로그인을 완료할 수 있어야 함
-- **SC-003**: 시스템이 1,000명의 동시 사용자 인증 요청을 지연 없이 처리할 수 있어야 함
-- **SC-004**: 토큰 갱신이 사용자에게 노출되지 않고 99.9% 성공률로 자동 처리되어야 함
-- **SC-005**: 인증 관련 지원 티켓이 50% 이상 감소해야 함
-- **SC-006**: 사용자가 프로필 정보 수정 시 3초 이내에 반영되어야 함
-- **SC-007**: 중복 사용자 검색이 1초 이내에 결과를 반환해야 함
-- **SC-008**: 90% 이상의 사용자가 첫 로그인 시도에 성공해야 함
-- **SC-009**: 시스템 가동 시간이 99.5% 이상 유지되어야 함
-- **SC-010**: 보안 이벤트 감지 및 대응 시간이 5분 이내여야 함
+- **SC-001**: 사용자가 메인페이지에 접속 후 5초 이내에 히어로 섹션이 완전히 로드되어야 함
+- **SC-002**: 히어로 섹션을 본 사용자의 80% 이상이 "게임 시작하기" 버튼을 클릭해야 함
+- **SC-003**: 사용자가 이메일 계정 생성을 2분 이내에 완료할 수 있어야 함
+- **SC-004**: 소셜 로그인 사용자가 클릭 3회 이내에 로그인을 완료할 수 있어야 함
+- **SC-005**: 시스템이 1,000명의 동시 사용자 인증 요청을 지연 없이 처리할 수 있어야 함
+- **SC-006**: 토큰 갱신이 사용자에게 노출되지 않고 99.9% 성공률로 자동 처리되어야 함
+- **SC-007**: 인증 관련 지원 티켓이 50% 이상 감소해야 함
+- **SC-008**: 사용자가 프로필 정보 수정 시 3초 이내에 반영되어야 함
+- **SC-009**: 중복 사용자 검색이 1초 이내에 결과를 반환해야 함
+- **SC-010**: 90% 이상의 사용자가 첫 로그인 시도에 성공해야 함
+- **SC-011**: 시스템 가동 시간이 99.5% 이상 유지되어야 함
+- **SC-012**: 보안 이벤트 감지 및 대응 시간이 5분 이내여야 함

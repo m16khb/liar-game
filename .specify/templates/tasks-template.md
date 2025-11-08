@@ -96,6 +96,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T016 [US1] [Component] React 컴포넌트 구현 in apps/web/src/components/
 - [ ] T017 [US1] DTO 유효성 검증 및 에러 핸들링 추가 (최소 구현 원칙 준수)
 - [ ] T018 [US1] 핵심 비즈니스 로직에 상세한 한글 주석 작성
+- [ ] T019 [US1] 기술 구현 시 참조한 공식 문서 URL을 주석에 명시 (공식 문서 참조 원칙)
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 

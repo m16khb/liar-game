@@ -1,13 +1,13 @@
-# Implementation Plan: Supabase Authentication System Analysis
+# Implementation Plan: [FEATURE]
 
-**Branch**: `001-supabase-auth` | **Date**: 2025-11-08 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `/specs/001-supabase-auth/spec.md`
+**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
 ## Summary
 
-Supabase 기반 인증 시스템의 역설계 및 명세화. 이 기능은 기존에 구현된 인증 시스템(이메일/비밀번호, OAuth 소셜 로그인, JWT 토큰 관리, Redis 세션 관리)을 분석하여 체계적인 기술 명세를 작성하는 것을 목표로 합니다. 이 과정을 통해 현재 인증 아키텍처의 이해도를 높이고 향후 확장 및 유지보수에 필요한 기술 문서를 확보합니다.
+[Extract from feature spec: primary requirement + technical approach from research]
 
 ## Technical Context
 
@@ -42,6 +42,7 @@ Supabase 기반 인증 시스템의 역설계 및 명세화. 이 기능은 기�
 - **코드 품질 및 주석 원칙**: 효율적 코드, 핵심 로직에 상세한 한글 주석
 - **TypeORM 외키 제약 조건 원칙**: 개념적 관계만 정의하고 실제 DB에는 FK 제약 조건 생성 안 함
 - **TypeORM 마이그레이션 관리 원칙**: 모든 스키마 변경은 TypeORM 마이그레이션으로 생성/적용, 비상 상황에서도 마이그레이션 파일 생성 필수
+- **공식 문서 참조 원칙**: 모든 기술 구현과 의사결정은 최신 공식 문서를 우선적으로 참조
 
 ## Project Structure
 
