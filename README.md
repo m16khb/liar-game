@@ -23,8 +23,10 @@ Liar Game은 6명의 플레이어가 참여하는 실시간 추리 게임입니�
 - **프레임워크**: React 18 + Compiler ⚡
 - **번들러**: Vite
 - **런타임**: Node.js 25.1.0
-- **스타일링**: CSS Modules / Tailwind CSS
+- **스타일링**: Tailwind CSS, Styled Components
 - **상태 관리**: React Context API / Zustand
+- **애니메이션**: Framer Motion
+- **테스트**: Vitest, Storybook
 
 ### 백엔드 (apps/api)
 - **프레임워크**: NestJS 11.x + Fastify (고성능 HTTP 서버) 🚀
@@ -32,12 +34,68 @@ Liar Game은 6명의 플레이어가 참여하는 실시간 추리 게임입니�
 - **데이터베이스**: MySQL v8 LTS (영구 저장)
 - **캐싱**: Redis v8 LTS (세션 관리)
 - **인증**: Supabase Auth (OAuth + Email) + JWT Custom Claims
+- **테스트**: Jest, 단위 테스트 중심
 
 ### 공유 패키지 (packages/*)
 - **types**: TypeScript 타입 정의 (프론트-백엔드 공유)
 - **config**: ESLint, TSConfig, Prettier 설정
 - **ui**: 공유 React 컴포넌트
 - **constants**: 게임 상수, Socket.IO 이벤트 정의
+
+### 🤖 AI 개발 도우미 시스템
+- **전문 에이전트**: 6개 분야별 전문 AI 에이전트
+- **자동화 스킬**: 8개 코드 생성 및 개발 자동화 스킬
+- **개발 가속화**: 최신 프롬프트 엔지니어링 기반의 개발 지원
+
+## 🤖 AI 개발 도우미 시스템
+
+프로젝트는 Claude AI를 기반으로 한 전문 개발 도우미 시스템을 갖추고 있습니다. 개발 생산성을 극대화하는 전문 에이전트와 자동화 스킬을 활용하세요.
+
+### 👥 전문 에이전트 (6개)
+
+| 에이전트 | 전문 분야 | 주요 역할 |
+|---------|---------|---------|
+| **React Frontend Developer** | 프론트엔드 개발 | React 18+, TypeScript, 히어로 섹션, Supabase Auth 연동 |
+| **UI/UX Designer** | 디자인 시스템 | 반응형 디자인, 히어로 섹션, 로그인 UI, 게임 인터페이스 |
+| **Database Architect** | 데이터베이스 설계 | MySQL, TypeORM, 마이그레이션, 성능 최적화 |
+| **Auth Security Specialist** | 인증/보안 | Supabase Auth, OAuth, JWT, 보안 정책 |
+| **Game Logic Analyzer** | 게임 로직 | 라이어 게임 규칙, 실시간 상태 관리, 비즈니스 로직 |
+| **Kubernetes Deployment Expert** | 인프라 배포 | 쿠버네티스, Docker, CI/CD, 프로덕션 배포 |
+
+### 🛠️ 자동화 스킬 (8개)
+
+| 스킬 | 기능 | 사용 예시 |
+|-----|------|---------|
+| **react-component-generator** | React 컴포넌트 자동 생성 | LoginForm, HeroSection, GameCard |
+| **supabase-auth-integrator** | Supabase 인증 통합 | 소셜 로그인, 세션 관리, 보호된 라우트 |
+| **responsive-page-builder** | 반응형 페이지 생성 | 모바일 퍼스트 랜딩 페이지 |
+| **api-endpoint-generator** | NestJS API 엔드포인트 생성 | Controller, Service, DTO, Entity |
+| **websocket-gateway-builder** | WebSocket 게이트웨이 구축 | 실시간 통신, 방 관리 |
+| **typeorm-migration-generator** | TypeORM 마이그레이션 생성 | 데이터베이스 스키마 관리 |
+| **nestjs-test-specialist** | NestJS 단위 테스트 작성 | Service, Controller, Gateway 테스트 |
+| **docker-k8s-optimizer** | Docker/쿠버네티스 최적화 | 배포 설정, 성능 튜닝 |
+
+### 💻 사용 방법
+
+```bash
+# Claude Code에서 스킬 실행하기
+/skill react-component-generator
+/skill supabase-auth-integrator
+/skill responsive-page-builder
+
+# 에이전트에게 작업 요청하기
+@react-frontend-developer 히어로 섹션 만들어주세요
+@ui-ux-designer 로그인 UI 디자인해주세요
+@auth-security-specialist Supabase 인증 설정 도와주세요
+```
+
+### 🎯 특장점
+
+- **실제 코드 생성**: 템플릿이 아닌 바로 사용 가능한 완전한 코드
+- **타입 안전성**: TypeScript 기반의 모든 생성물
+- **프로젝트 통합**: 기존 아키텍처와 완벽한 호환성
+- **최신 기술**: React 18+, NestJS 11+, Supabase 최신 버전 지원
+- **베스트 프랙티스**: 업계 표준 패턴과 관례 적용
 
 ## 🚀 빠른 시작
 
@@ -158,9 +216,33 @@ liar-game/
 │   ├── config/                 # ESLint, TSConfig, Prettier
 │   ├── ui/                     # 공유 React 컴포넌트
 │   └── constants/              # 게임 상수, 이벤트 정의
+├── .claude/                    # Claude AI 개발 도우미 시스템
+│   ├── agents/                 # 전문 AI 에이전트 (6개)
+│   │   ├── react-frontend-developer.md
+│   │   ├── ui-ux-designer.md
+│   │   ├── database-architect.md
+│   │   ├── auth-security-specialist.md
+│   │   ├── game-logic-analyzer.md
+│   │   └── kubernetes-deployment-expert.md
+│   ├── skills/                 # 자동화 개발 스킬 (8개)
+│   │   ├── react-component-generator/
+│   │   ├── supabase-auth-integrator/
+│   │   ├── responsive-page-builder/
+│   │   ├── api-endpoint-generator/
+│   │   ├── websocket-gateway-builder/
+│   │   ├── typeorm-migration-generator/
+│   │   ├── nestjs-test-specialist/
+│   │   └── docker-k8s-optimizer/
+│   ├── commands/               # 커스텀 슬래시 명령어
+│   └── templates/              # 코드 생성 템플릿
 ├── docs/                       # 프로젝트 문서
 │   └── architecture/           # 아키텍처 다이어그램
+├── specs/                      # 개발 스펙 및 계획
+│   ├── 001-project-foundation/
+│   ├── 001-supabase-auth/
+│   └── 001-ai-agents-skills-mcp/
 ├── tests/                      # 통합 테스트
+├── k8s/                        # 쿠버네티스 배포 설정
 ├── turbo.json                  # Turborepo 파이프라인
 ├── pnpm-workspace.yaml         # pnpm 워크스페이스
 └── package.json                # 루트 패키지
@@ -175,6 +257,10 @@ liar-game/
     - 5개 사용자 스토리 (이메일, OAuth, 토큰 관리, 프로필, 검색)
     - 12개 API 엔드포인트 OpenAPI 명세
     - 70개 구체적인 개발 태스크
+  - **001-ai-agents-skills-mcp**: AI 개발 도우미 시스템 명세 🆕
+    - 6개 전문 에이전트 (프론트엔드, UI/UX, 데이터베이스 등)
+    - 8개 자동화 스킬 (React 컴포넌트, Supabase 인증, API 엔드포인트 등)
+    - AI 기반 개발 생산성 극대화 시스템
 
 ### 🏗️ 프로젝트 헌법
 - **[CONSTITUTION.md](CONSTITUTION.md)**: 프로젝트 개발 원칙 및 기술 가이드라인
@@ -377,6 +463,14 @@ ls -la nginx/*.template
 5. Pull Request 생성
 
 ### 현재 기여 가능 영역
+- **AI 에이전트 활용**: 에이전트와 협력하여 빠른 개발
+  - `@react-frontend-developer`: 히어로 섹션, 로그인 UI 구현
+  - `@ui-ux-designer`: 반응형 디자인, 사용자 경험 개선
+  - `@auth-security-specialist`: Supabase 인증 시스템 보강
+- **자동화 스킬 사용**: 스킬을 통한 코드 자동 생성
+  - `/skill react-component-generator`: UI 컴포넌트 대량 생성
+  - `/skill supabase-auth-integrator`: 인증 기능 빠른 통합
+  - `/skill responsive-page-builder`: 랜딩 페이지 구축
 - **인증 시스템**: [tasks.md](specs/001-supabase-auth/tasks.md) 태스크 기반 기여
 - **게임 로직**: 라이어 게임 규칙 구현
 - **UI/UX**: 게임 인터페이스 설계
@@ -394,5 +488,37 @@ MIT License (예정)
 
 ---
 
+## 🤖 AI 개발 도우미 시스템 활용하기
+
+### 빠른 시작 가이드
+1. **에이전트 선택**: 작업에 맞는 전문 에이전트 선택
+2. **스킬 실행**: 반복 작업은 자동화 스킬로 처리
+3. **코드 검토**: 생성된 코드 검토 및 수정
+4. **학습 및 확장**: 에이전트와의 상호작용으로 학습
+
+### 추천 워크플로우
+```
+1. 새로운 기능 개발 시
+   @react-frontend-developer 컴포넌트 구조 설계해주세요
+
+2. UI/UX 개선 시
+   @ui-ux-designer 사용자 경험을 개선해주세요
+
+3. 인증 기능 추가 시
+   /skill supabase-auth-integrator
+   @auth-security-specialist 보안 검토해주세요
+
+4. API 개발 시
+   /skill api-endpoint-generator
+   @database-architect 데이터 모델 설계해주세요
+```
+
+### 성공적인 활용 팁
+- **구체적인 요청**: 명확하고 상세한 요청으로 더 좋은 결과
+- **맥락 제공**: 프로젝트 배경과 요구사항 공유
+- **점진적 개발**: 큰 기능은 작은 단위로 나누어 요청
+- **피드백 반영**: 결과물 검토 및 개선 요청
+
 **🚀 Built with TypeScript 5.7.x, React 18 + Compiler, NestJS 11 + Fastify, Supabase Auth**
+**🤖 Enhanced by AI agents and automated skills for developer productivity**
 **📝 Modern development with specs, tasks, and single-responsibility architecture**
