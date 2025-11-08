@@ -6,7 +6,6 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 // 환경 변수 (Vite는 VITE_ 접두사 사용)
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-const siteUrl = import.meta.env.VITE_SITE_URL
 
 // 필수 환경 변수 확인
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -21,12 +20,7 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKe
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-  },
-  // 추가 디버깅 옵션
-  global: {
-    headers: {
-      'X-Client-Info': 'liar-game-web',
-    },
+    flow: 'pkce', // 더 안전한 PKCE flow 사용
   },
 })
 
@@ -77,22 +71,18 @@ export const getCurrentSession = async () => {
 }
 
 /**
- * Google OAuth 로그인
+ * Google OAuth 로그인 (기본 redirect 사용)
  */
 export const signInWithGoogle = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
-      queryParams: {
-        access_type: 'offline',
-        prompt: 'consent',
-      },
+      // redirectTo를 제거하고 기본 동작에 맡김
     },
   })
 
   if (error) {
-    throw new Error(`Google 로그인 실패: ${error.message}`)
+    throw new Error('Google 로그인에 실패했습니다')
   }
 
   return data
@@ -105,12 +95,12 @@ export const signInWithGitHub = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'github',
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
+      // redirectTo를 제거하고 기본 동작에 맡김
     },
   })
 
   if (error) {
-    throw new Error(`GitHub 로그인 실패: ${error.message}`)
+    throw new Error('GitHub 로그인에 실패했습니다')
   }
 
   return data
@@ -123,12 +113,12 @@ export const signInWithDiscord = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'discord',
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
+      // redirectTo를 제거하고 기본 동작에 맡김
     },
   })
 
   if (error) {
-    throw new Error(`Discord 로그인 실패: ${error.message}`)
+    throw new Error('Discord 로그인에 실패했습니다')
   }
 
   return data
@@ -139,51 +129,15 @@ export const signInWithDiscord = async () => {
  * 이메일로 로그인
  */
 export const signInWithEmail = async (email: string, password: string) => {
-  console.log(`🔑 이메일 로그인 시도: ${email}`)
-
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
 
   if (error) {
-    console.error(`❌ 로그인 실패:`, {
-      message: error.message,
-      status: error.status,
-      email: email
-    })
-
-    // 이메일 인증이 필요한 경우
-    if (error.message.includes('Email not confirmed') || error.message.includes('email_confirm')) {
-      console.log(`📧 이메일 인증 필요: ${email}`)
-
-      // 인증 이메일 재전송
-      try {
-        await supabase.auth.resend({
-          type: 'signup',
-          email,
-          options: {
-            emailRedirectTo: `${window.location.origin}/set-password?email=${encodeURIComponent(email)}`
-          }
-        })
-        console.log(`✅ 인증 이메일 재전송 완료`)
-        throw new Error(`이메일 인증이 필요합니다. 받은 메일함에서 인증 링크를 클릭해주세요.`)
-      } catch (resendError) {
-        console.error(`인증 이메일 재전송 실패:`, resendError)
-        throw new Error(`이메일 인증이 필요합니다. 인증 메일을 다시 요청해주세요.`)
-      }
-    }
-
-    // 사용자가 없는 경우
-    if (error.message.includes('Invalid login credentials')) {
-      console.log(`❌ 사용자 정보 없음 또는 비밀번호 틀림`)
-      throw new Error(`이메일 또는 비밀번호가 올바르지 않습니다.`)
-    }
-
     throw new Error(error.message)
   }
 
-  console.log(`✅ 로그인 성공: ${email}`)
   return data
 }
 
@@ -191,8 +145,6 @@ export const signInWithEmail = async (email: string, password: string) => {
  * 이메일로 회원가입
  */
 export const signUpWithEmail = async (email: string, password?: string) => {
-  console.log(`📝 이메일 회원가입 시도: ${email}`)
-
   const { data, error } = await supabase.auth.signUp({
     email,
     password: password || '',
@@ -202,36 +154,9 @@ export const signUpWithEmail = async (email: string, password?: string) => {
   })
 
   if (error) {
-    console.error(`❌ 회원가입 실패:`, {
-      message: error.message,
-      status: error.status,
-      email: email
-    })
-
-    // 이미 사용자가 있는 경우
-    if (error.message.includes('User already registered') || error.message.includes('already been registered')) {
-      console.log(`🔄 사용자 이미 존재`)
-      throw new Error(`이미 가입된 이메일입니다. 로그인을 시도해주세요.`)
-    }
-
     throw new Error(error.message)
   }
 
-  console.log(`✅ 회원가입 성공:`, {
-    email: email,
-    user: data.user?.email,
-    session: !!data.session,
-    confirmationEmailSent: !data.session
-  })
-
-  // 세션이 바로 생성된 경우 (이메일 확인이 필요 없는 설정)
-  if (data.session) {
-    console.log(`✅ 즉시 로그인 성공`)
-    return data
-  }
-
-  // 이메일 확인 필요
-  console.log(`📧 이메일 확인 필요: ${email}`)
   return data
 }
 
@@ -245,11 +170,15 @@ export const signUpWithEmail = async (email: string, password?: string) => {
 export const sendEmailVerification = async (email: string) => {
   console.log(`이메일 OTP 발송 요청: ${email}`)
 
-  // 6자리 OTP 코드 발송
-  const { data, error } = await supabase.auth.signInWithOtp({
+  // signUp 메소드로 6자리 코드 발송
+  const { data, error } = await supabase.auth.signUp({
     email,
+    password: 'temp-password', // 임시 비밀번호 (나중에 설정)
     options: {
-      shouldCreateUser: true,
+      emailRedirectTo: `${window.location.origin}/set-password?email=${encodeURIComponent(email)}`,
+      data: {
+        signup_method: 'otp'
+      }
     }
   })
 
@@ -259,6 +188,29 @@ export const sendEmailVerification = async (email: string) => {
       status: error.status,
       code: error.status || 'unknown'
     })
+
+    // 이미 사용자가 있는 경우 signInWithOtp로 OTP 재발송
+    if (error.message.includes('User already registered') || error.message.includes('already been registered')) {
+      console.log(`기존 사용자에게 OTP 재발송: ${email}`)
+
+      const { data: otpData, error: otpError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+        }
+      })
+
+      if (otpError) {
+        throw new Error(`OTP 재발송 실패: ${otpError.message}`)
+      }
+
+      console.log(`OTP 재발송 성공: ${email}`)
+      return {
+        success: true,
+        message: '인증 코드를 재발송했습니다. 이메일을 확인해주세요.',
+        user: otpData.user
+      }
+    }
 
     throw new Error(`인증 메일 발송 실패: ${error.message}`)
   }
@@ -295,7 +247,7 @@ export const verifyOtp = async (email: string, token: string) => {
     const { data, error } = await supabase.auth.verifyOtp({
       email,
       token,
-      type: 'signup'
+      type: 'email'
     })
 
     console.log(`OTP verify 결과:`, { data, error })
@@ -335,26 +287,9 @@ export const completeSignUp = async (email: string, password: string, otpToken?:
   // 먼저 사용자가 존재하는지 확인 (OTP 인증 단계에서 생성되었을 수 있음)
   const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-  // 현재 세션에 사용자가 있는지 확인
-  let existingUser = user
-
-  if (!existingUser) {
-    // 세션에 없으면 이메일로 사용자 찾기 시도
-    try {
-      const { data: signInData } = await supabase.auth.signInWithPassword({
-        email,
-        password: 'temp-password-to-check-existence', // 임시 비밀번호로 확인
-      })
-      existingUser = signInData.user
-    } catch (e) {
-      // 사용자가 없는 것이 정상
-      existingUser = null
-    }
-  }
-
-  if (existingUser) {
+  if (user) {
     // 사용자가 이미 존재하면 비밀번호만 업데이트
-    console.log(`기존 사용자 비밀번호 업데이트: ${existingUser.email}`)
+    console.log(`기존 사용자 비밀번호 업데이트: ${user.email}`)
 
     const { data, error } = await supabase.auth.updateUser({
       password,
@@ -371,7 +306,7 @@ export const completeSignUp = async (email: string, password: string, otpToken?:
     }
 
     console.log(`비밀번호 업데이트 성공: ${email}`)
-    return { user: existingUser, session: data.session }
+    return data
 
   } else {
     // 사용자가 없으면 새로 생성 (일반적인 회원가입)
@@ -381,7 +316,6 @@ export const completeSignUp = async (email: string, password: string, otpToken?:
       email,
       password,
       options: {
-        emailConfirm: true, // 이메일 확인 건너뛰기 (OTP로 이미 확인)
         data: {
           signup_method: 'otp_password',
           signup_completed: true,
@@ -408,13 +342,10 @@ export const completeSignUp = async (email: string, password: string, otpToken?:
  * OTP 재전송
  */
 export const resendOtpEmail = async (email: string) => {
-  // 임시 비밀번호 생성
-  const tempPassword = generateTempPassword()
-
   const { data, error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${siteUrl}/set-password?email=${encodeURIComponent(email)}`,
+      emailRedirectTo: `${window.location.origin}/set-password?email=${encodeURIComponent(email)}`,
     },
   })
 
@@ -425,17 +356,6 @@ export const resendOtpEmail = async (email: string) => {
   return data
 }
 
-/**
- * 임시 비밀번호 생성
- */
-function generateTempPassword(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%'
-  let password = ''
-  for (let i = 0; i < 16; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return password
-}
 
 /**
  * 로그아웃
@@ -501,7 +421,7 @@ export const updateUserMetadata = async (metadata: Record<string, any>) => {
  * 인증 상태 변경 리스너
  */
 export const onAuthStateChange = (
-  callback: (event: 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED', session: any) => void
+  callback: (event: any, session: any) => void
 ) => {
   return supabase.auth.onAuthStateChange(callback)
 }
