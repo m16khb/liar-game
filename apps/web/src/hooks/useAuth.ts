@@ -91,6 +91,15 @@ export const useAuth = () => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        // URL에 hash fragment가 있는지 확인 (OAuth 콜백)
+        if (window.location.hash && window.location.hash.includes('access_token')) {
+          // Supabase가 자동으로 hash를 처리하도록 잠시 대기
+          await new Promise(resolve => setTimeout(resolve, 500))
+
+          // hash를 정리해서 URL을 깔끔하게 유지
+          window.history.replaceState({}, document.title, window.location.pathname)
+        }
+
         const session = await getCurrentSession()
         updateAuthState(session)
       } catch (error) {
@@ -102,7 +111,6 @@ export const useAuth = () => {
 
     // 인증 상태 변화 리스너 설정
     const { subscription } = onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session)
       updateAuthState(session)
     })
 
@@ -147,6 +155,7 @@ export const useAuth = () => {
   const loginWithGoogle = useCallback(async () => {
     try {
       const data = await signInWithGoogle()
+      // Supabase 인증 상태 변경은 onAuthStateChange 리스너에서 자동 처리됨
       return data
     } catch (error) {
       handleError(error as Error)

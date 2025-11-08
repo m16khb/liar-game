@@ -3,10 +3,20 @@
 
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import dotenv from 'dotenv'
+import path from 'path'
+
+// 프로젝트 루트의 .env 파일 로드
+dotenv.config({ path: path.resolve(__dirname, '../../.env') })
 
 export default defineConfig(({ mode }) => {
-  // 루트 .env 파일 로드
-  const env = loadEnv(mode, process.cwd(), '')
+  // 루트 .env 파일 로드 (VITE_ 접두사가 있는 변수만)
+  const env = loadEnv(mode, path.resolve(__dirname, '../..'), '')
+
+  console.log('🔧 Loaded environment variables:', {
+    SUPABASE_URL: env.VITE_SUPABASE_URL?.substring(0, 30) + '...',
+    SITE_URL: env.VITE_SITE_URL
+  })
 
   return {
     plugins: [react()],
@@ -24,7 +34,7 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        '@': '/src',
+        '@': path.resolve(__dirname, './src'),
       },
     },
     // 환경 변수 설정

@@ -6,7 +6,8 @@ import { useEffect } from 'react'
 import LoginForm from './components/auth/LoginForm'
 import OtpVerification from './components/auth/OtpVerification'
 import SetPasswordForm from './components/auth/SetPasswordForm'
-import { supabase } from './lib/supabase'
+import RoomList from './components/game/RoomList'
+import { supabase, getCurrentSession } from './lib/supabase'
 import { useAuth } from './hooks/useAuth'
 
 /**
@@ -17,8 +18,47 @@ import { useAuth } from './hooks/useAuth'
 // 로그인 페이지
 function LoginPage() {
   const handleLoginSuccess = () => {
-    // TODO: 로그인 성공 후 메인 페이지로 이동
-    console.log('로그인 성공')
+    // 저장된 리디렉션 경로 확인
+    const redirectPath = sessionStorage.getItem('redirectAfterLogin')
+    sessionStorage.removeItem('redirectAfterLogin') // 사용 후 삭제
+
+    console.log('✅ 로그인 성공!')
+    console.log('📋 저장된 리디렉션 경로:', redirectPath)
+
+    if (redirectPath && redirectPath !== '/') {
+      // 방 생성 또는 참가하려던 경로로 이동
+      if (redirectPath.includes('/game/')) {
+        window.location.href = redirectPath
+      } else if (redirectPath.includes('action=create')) {
+        window.location.href = '/rooms'
+        // 방 생성은 여기서 바로 처리 (필요하면)
+      } else {
+        window.location.href = redirectPath
+      }
+    } else {
+      // 기본적으로 마이페이지로 이동 (있는 경우)
+      const user = supabase.auth.getUser()
+      console.log('🔍 현재 사용자 확인 중...')
+
+      // 비동적으로 사용자 정보 확인
+      setTimeout(async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser()
+          console.log('✅ 사용자 확인 완료:', user?.email)
+
+          if (user) {
+            console.log('👤 마이페이지로 이동')
+            window.location.href = '/mypage'
+          } else {
+            console.log('📋 사용자 없음, rooms로 이동')
+            window.location.href = '/rooms'
+          }
+        } catch (error) {
+          console.error('사용자 정보 확인 실패:', error)
+          window.location.href = '/rooms'
+        }
+      }, 100)
+    }
   }
 
   const handleSignupClick = () => {
@@ -214,58 +254,111 @@ function OtpVerificationPage() {
   )
 }
 
-// Auth 콜백 페이지 - Supabase 리디렉션 처리 (tmp/frontend 방식 참고)
+// Auth 콜백 페이지 - Supabase 리디렉션 처리
 function AuthCallbackPage() {
   const [searchParams] = useSearchParams()
 
   useEffect(() => {
-    // Supabase 콜백 처리 - URL hash에서 세션 정보 추출
+    // Supabase 콜백 처리 - Supabase가 자동으로 hash를 처리하도록 함
     const handleAuthCallback = async () => {
       try {
         console.log('🔄 Auth callback 시작:', window.location.href)
+        console.log('🔍 Search params:', window.location.search)
+        console.log('🔗 URL hash:', window.location.hash)
+        console.log('📍 Origin:', window.location.origin)
+        console.log('📋 Pathname:', window.location.pathname)
 
-        // URL hash 확인
+        // URL에서 에러 확인
+        const urlParams = new URLSearchParams(window.location.search)
+        const error = urlParams.get('error')
+        const errorDescription = urlParams.get('error_description')
+
+        if (error) {
+          console.error('❌ OAuth 에러:', { error, errorDescription })
+          console.error('에러 코드:', urlParams.get('error_code'))
+          alert(`로그인 실패: ${errorDescription || error}`)
+          window.location.href = '/'
+          return
+        }
+
+        // URL hash 확인 - OAuth 토큰이 있는지
         const hash = window.location.hash
-        console.log('🔗 Callback URL hash:', hash)
+        console.log('🔗 URL hash 길이:', hash.length)
+        console.log('🔍 Hash 내 access_token 포함:', hash.includes('access_token'))
 
         if (hash && hash.includes('access_token')) {
-          console.log('✅ Hash에서 access_token 발견')
+          console.log('✅ OAuth 토큰 발견!')
+          console.log('📋 전체 hash:', hash)
 
-          // Supabase가 hash를 처리하도록 잠시 대기
-          await new Promise(resolve => setTimeout(resolve, 500))
+          // hash 파싱
+          const hashParams = new URLSearchParams(hash.substring(1))
+          const accessToken = hashParams.get('access_token')
+          const refreshToken = hashParams.get('refresh_token')
+          const expiresIn = hashParams.get('expires_in')
+          const provider = hashParams.get('provider')
 
-          // 세션 확인
-          const { getCurrentSession } = require('./lib/supabase')
+          console.log('🎫 토큰 정보:')
+          console.log('  - access_token:', accessToken?.substring(0, 20) + '...')
+          console.log('  - refresh_token:', refreshToken?.substring(0, 10) + '...')
+          console.log('  - expires_in:', expiresIn)
+          console.log('  - provider:', provider)
+
+          // Supabase가 hash를 처리할 시간을 충분히 줌
+          console.log('⏳ Supabase 자동 처리 대기 (2초)...')
+          await new Promise(resolve => setTimeout(resolve, 2000))
+
+          // 세션이 설정되었는지 확인
+          console.log('🔍 세션 확인 중...')
           const session = await getCurrentSession()
 
           if (session?.user) {
-            console.log('✅ Auth callback 성공:', session.user.email)
+            console.log('✅ OAuth 로그인 성공!')
+            console.log('👤 사용자 정보:', {
+              id: session.user.id,
+              email: session.user.email,
+              provider: session.user.app_metadata?.provider,
+              created_at: session.user.created_at,
+            })
 
-            // Google OAuth 로그인 성공 - 바로 홈페이지로 이동
-            console.log('🎉 Google 로그인 성공 - 홈페이지로 이동')
-            window.location.href = '/'
-          } else {
-            console.log('⏳ 세션 아직 없음, 추가 대기...')
-            // 더 오래 대기 후 다시 확인
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            const retrySession = await getCurrentSession()
+            // URL 정리 (hash 제거)
+            console.log('🧹 URL 정리 (hash 제거)')
+            window.history.replaceState({}, '', window.location.pathname)
 
-            if (retrySession?.user) {
-              console.log('✅ 재시도 성공:', retrySession.user.email)
+            // 리디렉션 경로 확인
+            const redirectPath = sessionStorage.getItem('redirectAfterLogin')
+            sessionStorage.removeItem('redirectAfterLogin')
 
-              // OAuth 로그인 성공 - 바로 홈페이지로 이동
-              window.location.href = '/'
+            console.log('🎯 리디렉션 경로:', redirectPath || '/rooms')
+
+            if (redirectPath && redirectPath !== '/') {
+              console.log('🎉 OAuth 성공 - 저장된 경로로 이동:', redirectPath)
+              window.location.href = redirectPath
             } else {
-              console.error('Auth callback 실패: 세션 없음')
-              window.location.href = '/'
+              console.log('🎉 OAuth 성공 - 방 목록(/rooms)로 이동')
+              window.location.href = '/rooms'
             }
+          } else {
+            console.error('❌ 세션 설정 실패')
+            console.log('상세 정보:')
+            console.log('  - Hash:', hash)
+            console.log('  - URL:', window.location.href)
+            console.log('  - Origin:', window.location.origin)
+            console.log('  - Pathname:', window.location.pathname)
+            alert('로그인 처리에 실패했습니다. 다시 시도해주세요.')
+            window.location.href = '/'
           }
         } else {
-          console.log('❌ Hash에 access_token 없음')
+          console.log('❌ OAuth 토큰 없음')
+          console.log('URL 정보:')
+          console.log('  - Hash:', hash)
+          console.log('  - Search:', window.location.search)
+          console.log('  - Origin:', window.location.origin)
           window.location.href = '/'
         }
       } catch (error) {
-        console.error('Auth callback 에러:', error)
+        console.error('❌ Auth callback 에러:', error)
+        console.error('에러 스택트레이스:', error.stack)
+        alert('로그인 처리 중 오류가 발생했습니다.')
         window.location.href = '/'
       }
     }
@@ -301,109 +394,16 @@ function AuthCallbackPage() {
 
 // 메인 페이지 컴포넌트 - 로그인 상태에 따라 다르게 표시
 function MainApp() {
-  const { user, isAuthenticated, logout } = useAuth()
+  const { isAuthenticated } = useAuth()
 
-  // 로그인 상태 확인
-  useEffect(() => {
-    console.log('👤 MainApp - 인증 상태:', isAuthenticated)
-    console.log('👤 MainApp - 사용자:', user)
-  }, [user, isAuthenticated])
+  // 모든 사용자에게 게임방 목록 표시 (인증 여부와 무관)
+  return <RoomList isAuthenticated={isAuthenticated} />
+}
 
-  // 인증되지 않은 경우에만 로그인 페이지 표시
-  if (!isAuthenticated) {
-    return <LoginPage />
-  }
-
-  // 인증된 경우 메인 콘텐츠 표시
-  return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f9fafb',
-      padding: '48px 16px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '640px',
-        textAlign: 'center'
-      }}>
-        <h1 style={{
-          fontSize: '32px',
-          fontWeight: 'bold',
-          color: '#1f2937',
-          marginBottom: '16px'
-        }}>
-          라이어 게임
-        </h1>
-        <p style={{
-          fontSize: '18px',
-          color: '#6b7280',
-          marginBottom: '32px'
-        }}>
-          환영합니다, {user?.email || '사용자'}님!
-        </p>
-        <div style={{
-          backgroundColor: '#10b981',
-          color: 'white',
-          padding: '12px 24px',
-          borderRadius: '8px',
-          display: 'inline-block',
-          marginBottom: '24px'
-        }}>
-          ✅ 로그인 성공
-        </div>
-        <p style={{
-          fontSize: '14px',
-          color: '#6b7280',
-          marginBottom: '32px'
-        }}>
-          게임 메뉴는 준비 중입니다...
-        </p>
-
-        {/* 로그아웃 버튼 */}
-        <button
-          onClick={async () => {
-            try {
-              console.log('로그아웃 시도')
-              await logout()
-              console.log('로그아웃 성공')
-            } catch (error) {
-              console.error('로그아웃 실패:', error)
-            }
-          }}
-          style={{
-            backgroundColor: '#ef4444',
-            color: 'white',
-            padding: '12px 24px',
-            borderRadius: '8px',
-            border: 'none',
-            fontSize: '16px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            marginBottom: '16px'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = '#dc2626'
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = '#ef4444'
-          }}
-        >
-          로그아웃
-        </button>
-
-        <p style={{
-          fontSize: '12px',
-          color: '#9ca3af'
-        }}>
-          로그아웃하면 모든 데이터가 안전하게 처리됩니다.
-        </p>
-      </div>
-    </div>
-  )
+// 게임방 목록 페이지
+function RoomListPage() {
+  // MainApp과 동일한 인증 상태 사용
+  return <RoomList />
 }
 
 function App() {
@@ -411,9 +411,13 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<MainApp />} />
+        <Route path="/rooms" element={<RoomListPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/otp-verification" element={<OtpVerificationPage />} />
         <Route path="/set-password" element={<SetPasswordPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        {/* 게임 페이지 (향후 구현) */}
+        <Route path="/game/:roomCode" element={<div>게임 페이지 (준비 중)</div>} />
       </Routes>
     </Router>
   )

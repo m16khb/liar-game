@@ -3,6 +3,9 @@
 
 import { useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
+import { useNavigate } from 'react-router-dom'
+import { sendEmailVerification } from '../../lib/supabase'
+import { saveOTPToStorage, canSendOTP } from '../../utils/otpStorage'
 import GoogleLoginButton from './GoogleLoginButton'
 import EmailSignupModal from './EmailSignupModal'
 
@@ -18,8 +21,10 @@ export default function LoginForm({
   onPasswordResetClick,
 }: LoginFormProps) {
   const { login, loading, error, clearError } = useAuth()
+  const navigate = useNavigate()
   const [socialError, setSocialError] = useState<string | null>(null)
   const [showEmailSignup, setShowEmailSignup] = useState(false)
+  const [showOtpInput, setShowOtpInput] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -47,6 +52,42 @@ export default function LoginForm({
 
   const handleEmailSignupClose = () => {
     setShowEmailSignup(false)
+  }
+
+  // 이메일 OTP 발송 핸들러
+  const handleSendOtp = async () => {
+    if (!formData.email) {
+      setSocialError('이메일 주소를 입력해주세요.')
+      return
+    }
+
+    // 이메일 유효성 검사
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      setSocialError('유효한 이메일 주소를 입력해주세요.')
+      return
+    }
+
+    // OTP 발송 가능 여부 확인
+    if (!canSendOTP(formData.email)) {
+      setSocialError('이미 인증 메일을 발송했습니다. 이메일을 확인해주세요.')
+      return
+    }
+
+    setIsSubmitting(true)
+    setSocialError(null)
+
+    try {
+      await sendEmailVerification(formData.email)
+      saveOTPToStorage(formData.email)
+
+      // OTP 인증 페이지로 이동
+      navigate(`/otp-verification?email=${encodeURIComponent(formData.email)}`)
+    } catch (error: any) {
+      setSocialError(error.message || '인증 메일 발송에 실패했습니다.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleEmailSignupSuccess = () => {

@@ -2,7 +2,14 @@
 // 이메일로 전송된 OTP 코드 입력
 
 import React, { useState, useEffect } from 'react'
-import { verifyOtp, resendOtpEmail } from '../../lib/supabase'
+import { verifyOtp, resendOtpEmail, sendEmailVerification } from '../../lib/supabase'
+import {
+  saveOTPToStorage,
+  getOTPFromStorage,
+  clearOTPFromStorage,
+  getOTPRemainingTime,
+  incrementOTPAttempts
+} from '../../utils/otpStorage'
 
 interface OtpVerificationProps {
   email: string
@@ -15,11 +22,30 @@ export default function OtpVerification({
   onOtpVerified,
   onCancel
 }: OtpVerificationProps) {
-  const [otp, setOtp] = useState(['', '', '', '', '', '', ''])
+  const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [timeLeft, setTimeLeft] = useState(600) // 10분 (600초)
   const [isResending, setIsResending] = useState(false)
+  const [attemptsLeft, setAttemptsLeft] = useState(5)
+
+  // 초기 로드 시 localStorage 확인
+  useEffect(() => {
+    const otpData = getOTPFromStorage()
+    if (otpData) {
+      // 동일한 이메일에 대한 OTP가 있고 유효한 경우
+      if (otpData.email === email) {
+        const remainingTime = getOTPRemainingTime()
+        if (remainingTime) {
+          setTimeLeft(remainingTime)
+          setAttemptsLeft(Math.max(0, 5 - otpData.attempts))
+        }
+      }
+    } else {
+      // OTP 정보가 없으면 새로 저장
+      saveOTPToStorage(email)
+    }
+  }, [email])
 
   // 타이머�
   React.useEffect(() => {
@@ -105,14 +131,29 @@ export default function OtpVerification({
       return
     }
 
+    // 시도 횟수 확인
+    if (attemptsLeft <= 0) {
+      setError('인증 시도 횟수를 초과했습니다. 이메일 재전송 후 다시 시도해주세요.')
+      return
+    }
+
     setIsSubmitting(true)
     setError(null)
 
     try {
-      console.log(`OTP 확인 시도: ${email}, 코드: ${otpString}`)
+      // 시도 횟수 감소
+      const remaining = incrementOTPAttempts()
+      setAttemptsLeft(remaining)
+
+      if (remaining <= 0) {
+        setError('인증 시도 횟수를 초과했습니다. 이메일 재전송 후 다시 시도해주세요.')
+        return
+      }
+
       const result = await verifyOtp(email, otpString)
 
-      console.log('OTP 확인 성공:', result)
+      // 인증 성공 시 localStorage에서 OTP 정보 삭제
+      clearOTPFromStorage()
 
       // URL에 OTP 토큰 추가하여 비밀번호 설정 페이지로 전달
       const url = new URL(`${window.location.origin}/set-password`)
@@ -122,8 +163,6 @@ export default function OtpVerification({
 
       // onOtpVerified()는 호출하지 않고 바로 페이지 이동
     } catch (error: any) {
-      console.error('OTP 확인 실패:', error)
-
       // 더 구체적인 에러 메시지
       const errorMessage = error.message || '인증 코드가 올바르지 않습니다. 다시 확인해주세요.'
       setError(errorMessage)
@@ -138,9 +177,18 @@ export default function OtpVerification({
     setError(null)
 
     try {
-      console.log(`이메일 재전송 시도: ${email}`)
-      await resendOtpEmail(email)
-      setTimeLeft(600) // 타이머리 리셋
+      // 새 OTP 발송
+      await sendEmailVerification(email)
+
+      // localStorage에 새 OTP 정보 저장
+      saveOTPToStorage(email)
+
+      // 타이머와 시도 횟수 리셋
+      setTimeLeft(600)
+      setAttemptsLeft(5)
+
+      // OTP 입력 필드 초기화
+      setOtp(['', '', '', '', '', ''])
     } catch (error) {
       console.error('이메일 재전송 실패:', error)
       setError('이메일 재전송에 실패했습니다. 다시 시도해주세요.')
@@ -198,7 +246,7 @@ export default function OtpVerification({
               lineHeight: '1.5'
             }}>
               <strong>{email}</strong>로 전송된<br />
-              8자리 인증 코드를 입력해주세요
+              6자리 인증 코드를 입력해주세요
             </p>
           </div>
 
@@ -260,21 +308,36 @@ export default function OtpVerification({
               ))}
             </div>
 
-            {/* 남은 시간 */}
+            {/* 남은 시간 및 시도 횟수 */}
             <div style={{
               textAlign: 'center',
               marginBottom: '24px'
             }}>
               {timeLeft > 0 ? (
-                <p style={{ fontSize: '14px', color: '#6b7280' }}>
-                  유효시간: <span style={{ fontWeight: 'bold', color: '#ff6b6b' }}>
-                    {formatTime(timeLeft)}
-                  </span>
-                </p>
+                <div>
+                  <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '4px' }}>
+                    유효시간: <span style={{ fontWeight: 'bold', color: '#ff6b6b' }}>
+                      {formatTime(timeLeft)}
+                    </span>
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#9ca3af' }}>
+                    남은 시도 횟수: <span style={{
+                      fontWeight: 'bold',
+                      color: attemptsLeft <= 2 ? '#ef4444' : '#6b7280'
+                    }}>
+                      {attemptsLeft}/5
+                    </span>
+                  </p>
+                </div>
               ) : (
-                <p style={{ fontSize: '14px', color: '#dc2626' }}>
-                  인증 코드가 만료되었습니다.
-                </p>
+                <div>
+                  <p style={{ fontSize: '14px', color: '#dc2626', marginBottom: '4px' }}>
+                    인증 코드가 만료되었습니다.
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#9ca3af' }}>
+                    인증 코드 재발송 후 다시 시도해주세요.
+                  </p>
+                </div>
               )}
             </div>
 

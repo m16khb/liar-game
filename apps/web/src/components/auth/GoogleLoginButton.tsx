@@ -1,7 +1,7 @@
 // Google OAuth 로그인 버튼 컴포넌트
 // Google 계정으로 빠른 로그인
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 
 interface GoogleLoginButtonProps {
@@ -19,19 +19,44 @@ export default function GoogleLoginButton({
   className = '',
   variant = 'primary',
 }: GoogleLoginButtonProps) {
-  const { loginWithGoogle, loading } = useAuth()
-  const [isLoggingIn, setIsLoggingIn] = useState(false)
+  const { loginWithGoogle, loading, isAuthenticated } = useAuth()
+  const [wasClicked, setWasClicked] = useState(false)
+
+  // isAuthenticated 상태 변화 감지
+  React.useEffect(() => {
+    // 버튼이 클릭된 후에 인증 상태가 변경되면 성공 콜백 호출
+    if (wasClicked && isAuthenticated) {
+      onSuccess?.()
+      setWasClicked(false) // 초기화
+    }
+  }, [wasClicked, isAuthenticated, onSuccess])
+
+  // 타임아웃 처리: 30초 안에 인증이 없으면 초기화
+  React.useEffect(() => {
+    let timeoutId: NodeJS.Timeout
+
+    if (wasClicked) {
+      timeoutId = setTimeout(() => {
+        setWasClicked(false)
+      }, 30000) // 30초 타임아웃
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
+  }, [wasClicked])
 
   const handleClick = async () => {
-    if (disabled || isLoggingIn) return
-
-    setIsLoggingIn(true)
+    if (disabled || loading || wasClicked) return
 
     try {
+      setWasClicked(true) // 클릭 상태 표시
       await loginWithGoogle()
-      onSuccess?.()
+      // onSuccess는 useEffect에서 isAuthenticated 상태 변경 시 호출됨
     } catch (error) {
-      console.error('Google 로그인 실패:', error)
+      setWasClicked(false) // 에러 시 초기화
 
       // 사용자 친화적인 에러 메시지 생성
       let errorMessage = 'Google 로그인에 실패했습니다.'
@@ -42,13 +67,12 @@ export default function GoogleLoginButton({
           errorMessage = 'Google 계정 접근이 거부되었습니다.'
         } else if (error.message.includes('network')) {
           errorMessage = '네트워크 연결을 확인해주세요.'
+        } else if (error.message.includes('Provider is not supported')) {
+          errorMessage = 'Google Provider가 활성화되지 않았습니다.'
         }
       }
 
-      const customError = new Error(errorMessage)
-      onError?.(customError)
-    } finally {
-      setIsLoggingIn(false)
+      onError?.(new Error(errorMessage))
     }
   }
 
@@ -67,11 +91,11 @@ export default function GoogleLoginButton({
     <button
       type="button"
       onClick={handleClick}
-      disabled={disabled || loading || isLoggingIn}
+      disabled={disabled || loading}
       className={classes}
     >
       {/* 로딩 상태 */}
-      {(loading || isLoggingIn) && (
+      {loading && (
         <svg
           className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
           xmlns="http://www.w3.org/2000/svg"
@@ -128,7 +152,7 @@ export default function GoogleLoginButton({
         />
       </svg>
 
-      <span>{loading || isLoggingIn ? 'Google 로그인 중...' : 'Google로 로그인'}</span>
+      <span>{loading ? 'Google 로그인 중...' : 'Google로 로그인'}</span>
     </button>
   )
 }
