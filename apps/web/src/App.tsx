@@ -54,12 +54,6 @@ function App() {
           }}>
             라이어 게임
           </h1>
-          <p style={{
-            fontSize: '16px',
-            color: '#6b7280'
-          }}>
-            Supabase 기반 소셜 로그인
-          </p>
         </header>
 
         <main>
