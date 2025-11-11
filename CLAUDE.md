@@ -16,11 +16,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 # 의존성 설치
 pnpm install
 
-# 인프라 시작 (PostgreSQL, Redis, Nginx, MinIO)
-docker compose up -d
+# Kubernetes 기반 인프라 연결 (별개 터미널에서 실행)
+kubectl port-forward svc/mysql 3306:3306 &
+kubectl port-forward svc/redis 6379:6379 &
 
 # 데이터베이스 마이그레이션
 cd apps/api && pnpm migration:run
+
+# Docker Compose (보조 인프라만 사용)
+docker compose up -d  # PostgreSQL, Nginx, MinIO 전용
 ```
 
 ## 핵심 개발 명령어
@@ -44,15 +48,38 @@ pnpm --filter @liar-game/api test
 # 코드 품질 검사
 pnpm turbo lint
 pnpm turbo type-check
+
+# API 서버와 웹 애플리케이션 구동
+pnpm run start:dev
 ```
+
+## 프로젝트 헌법 (Project Constitution)
+
+### 인프라 운영 원칙
+- **Kubernetes 기반**: MySQL v8 LTS, Redis v8 LTS는 K8s ClusterIP로 운영
+- **포트 포워딩**: 개발 환경에서 `kubectl port-forward` 사용
+- **데이터 분리**: 영구 데이터는 TypeORM + MySQL, 세션/캐시는 Redis
+- **Docker Compose**: PostgreSQL, Nginx, MinIO 전용으로만 사용
+
+### 의무사항
+1. **인프라 일관성**: 모든 환경에서 K8s 기반 MySQL/Redis 사용
+2. **포트 관리**: 개발 시 포트 포워딩 필수 적용
+3. **데이터 동기화 금지**: K8s와 로컬 데이터베이스 동기화 금지
+4. **배포 준비**: 모든 개발은 K8s 배포 환경 가정 하에 진행
+
+### 금지사항
+- Docker Compose에서 MySQL/Redis 실행 금지
+- 로컬 데이터베이스와 K8s 데이터베이스 혼용 금지
+- K8s 없이 애플리케이션 단독 실행 금지
 
 ## 아키텍처 개요
 
 ### 기술 스택
 - **모노레포**: Turborepo + pnpm
 - **백엔드**: NestJS 11 + Fastify (Socket.IO는 향후 확장 예정)
-- **데이터베이스**: MySQL v8 LTS + TypeORM (영속 데이터) + Redis v8 LTS (세션/캐시)
+- **데이터베이스**: MySQL v8 LTS (K8s) + TypeORM (영속 데이터) + Redis v8 LTS (K8s) (세션/캐시)
 - **인증**: Supabase 기반 소셜 로그인 + Email 로그인
+- **인프라**: Kubernetes (Production/Development)
 
 ### 핵심 모듈 구조
 - **auth**: Supabase 인증 시스템 (Google, GitHub, Discord OAuth + Email/Password)
@@ -216,6 +243,31 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 - TypeScript 5.7.x (Node.js 25.1.0) + React 18 + Compiler, NestJS 11.x + Fastify, Socket.IO, Supabase Auth (001-project-foundation)
 - MySQL v8 LTS (영구 저장), Redis v8 LTS (세션/캐싱) (001-project-foundation)
 - TypeScript 5.7.x (Node.js 25.1.0) + React 18 + Compiler, NestJS 11.x + Fastify, Socket.IO, Supabase Auth, TypeORM (FK 제약 조건 없음, 마이그레이션 필수) (001-supabase-auth)
+
+## AI 에이전트 및 스킬 통합
+
+### Sub-agents (전문 분석 에이전트)
+프로젝트별 전문화된 sub-agents를 `.claude/agents/`에 관리합니다. Claude가 자동으로 적절한 에이전트를 호출하여 전문적인 분석을 수행합니다.
+
+- **game-logic-analyzer**: 게임 로직 분석 및 최적화
+- **database-architect**: 데이터베이스 아키텍처 전문
+- **auth-security-specialist**: 인증 및 보안 전문가
+- **kubernetes-deployment-expert**: Kubernetes 배포 전문가
+
+### Skills (자동 호출 기능)
+프로젝트별 특화된 기능 스킬을 `.claude/skills/`에 관리합니다.
+
+- **api-endpoint-generator**: NestJS API 엔드포인트 생성
+- **websocket-gateway-builder**: Socket.IO Gateway 구축
+- **typeorm-migration-generator**: TypeORM 마이그레이션 생성
+- **docker-k8s-optimizer**: Docker 및 Kubernetes 최적화
+- **nestjs-test-specialist**: NestJS 단위 테스트 전문가
+
+### 사용 원칙
+- **자동 호출**: Claude가 작업 내용에 맞는 적절한 sub-agent나 skill을 자동 선택
+- **프로젝트 공유**: 모든 sub-agents와 skills는 git에 체크인되어 팀과 공유
+- **한글 우선**: 모든 분석 결과와 출력은 한글로 작성
+- **기술 준수**: 프로젝트 기술 스택과 헌법 원칙 준수
 
 ## Recent Changes
 - 001-project-foundation: Added TypeScript 5.7.x (Node.js 25.1.0) + React 18 + Compiler, NestJS 11.x + Fastify, Socket.IO, Supabase Auth
