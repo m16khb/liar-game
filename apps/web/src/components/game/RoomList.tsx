@@ -5,9 +5,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ProfileModal from '../user/ProfileModal'
 import JoinRoomByCode from './JoinRoomByCode'
+import CreateRoomModal, { CreateRoomRequest } from './CreateRoomModal'
 import { useAuth } from '../../hooks/useAuth'
 import { useRooms } from '../../hooks/useRooms'
-import { RoomResponse, CreateRoomRequest, GameDifficulty } from '@/types/api'
+import { RoomResponse, GameDifficulty } from '@/types/api'
 
 // 윈도우 크기를 추적하는 커스텀 훅
 function useWindowSize() {
@@ -47,6 +48,7 @@ export default function RoomList({
   const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showJoinByCodeModal, setShowJoinByCodeModal] = useState(false)
+  const [showCreateRoomModal, setShowCreateRoomModal] = useState(false)
   const navigate = useNavigate()
   const { width } = useWindowSize()
   const { isAuthenticated, user } = useAuth() // 직접 인증 상태 구독
@@ -102,8 +104,8 @@ export default function RoomList({
     }
   }
 
-  // 새 방 생성
-  const handleCreateRoom = async () => {
+  // 새 방 생성 버튼 클릭
+  const handleCreateRoomClick = () => {
     // 로그인 체크
     if (!isAuthenticated) {
       // 로그인 페이지로 이동, 방 생성 의도 저장
@@ -112,19 +114,15 @@ export default function RoomList({
       return
     }
 
+    setShowCreateRoomModal(true)
+  }
+
+  // 방 생성 처리
+  const handleCreateRoom = async (roomData: CreateRoomRequest) => {
     try {
       setCreatingRoom(true)
 
-      // 실제 API 호출
-      const createRoomData: CreateRoomRequest = {
-        title: `${user?.nickname || '플레이어'}의 방`,
-        maxPlayers: 8,
-        difficulty: GameDifficulty.NORMAL,
-        isPrivate: false,
-        description: '새로 생성된 방입니다. 참가해주세요!',
-      };
-
-      const newRoom = await createNewRoom(createRoomData);
+      const newRoom = await createNewRoom(roomData);
 
       // 방 생성 성공
       onRoomCreate?.()
@@ -133,6 +131,7 @@ export default function RoomList({
       console.error('방 생성 실패:', err)
       const errorMessage = err instanceof Error ? err.message : '방 생성에 실패했습니다.'
       handleError(errorMessage)
+      throw err // 모달이 닫히지 않도록 에러를 다시 던짐
     } finally {
       setCreatingRoom(false)
     }
@@ -248,7 +247,7 @@ export default function RoomList({
           flexDirection: isMobile ? 'column' : 'row'
         }}>
           <button
-            onClick={handleCreateRoom}
+            onClick={handleCreateRoomClick}
             disabled={creatingRoom}
             style={{
               backgroundColor: '#10b981',
@@ -273,7 +272,7 @@ export default function RoomList({
               e.currentTarget.style.backgroundColor = '#10b981'
             }}
           >
-            {creatingRoom ? '방 생성 중...' : '새 방 생성'}
+            새 방 생성
           </button>
 
           <button
@@ -655,6 +654,14 @@ export default function RoomList({
           />
         </div>
       )}
+
+      {/* 방 생성 모달 */}
+      <CreateRoomModal
+        isOpen={showCreateRoomModal}
+        onClose={() => setShowCreateRoomModal(false)}
+        onCreateRoom={handleCreateRoom}
+        creating={creatingRoom}
+      />
     </div>
   )
 }

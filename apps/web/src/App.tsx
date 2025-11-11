@@ -7,6 +7,7 @@ import LoginForm from './components/auth/LoginForm'
 import OtpVerification from './components/auth/OtpVerification'
 import SetPasswordForm from './components/auth/SetPasswordForm'
 import RoomList from './components/game/RoomList'
+import GameRoom from './components/game/GameRoomSimple'
 import { supabase, getCurrentSession } from './lib/supabase'
 import { useAuth } from './hooks/useAuth'
 
@@ -416,8 +417,8 @@ function App() {
         <Route path="/otp-verification" element={<OtpVerificationPage />} />
         <Route path="/set-password" element={<SetPasswordPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        {/* 게임 페이지 (향후 구현) */}
-        <Route path="/game/:roomCode" element={<div>게임 페이지 (준비 중)</div>} />
+        {/* 게임 방 대기 페이지 */}
+        <Route path="/game/:roomCode" element={<GameRoom />} />
       </Routes>
     </Router>
   )
