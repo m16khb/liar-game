@@ -18,7 +18,6 @@ export async function apiRequest<T = any>(
 
   // 요청 옵션 병합
   const config: RequestInit = {
-    headers: defaultHeaders,
     ...options,
     headers: {
       ...defaultHeaders,
