@@ -15,11 +15,11 @@ export enum GameDifficulty {
 
 @Entity('rooms')
 @Index(['status', 'createdAt'])
-export class Room {
+export class RoomEntity {
   @PrimaryGeneratedColumn('increment', { type: 'int', unsigned: true })
   id: number;
 
-  @Column({ unique: true })
+  @Column({ unique: true, length: 32})
   code: string;
 
   @Column({ length: 100 })
@@ -41,6 +41,9 @@ export class Room {
 
   @Column({ default: 8, comment: '최대 인원 수' })
   maxPlayers: number;
+
+  @Column({ default: 4, comment: '최소 인원 수' })
+  minPlayers: number;
 
   @Column({ default: 0, comment: '현재 인원 수' })
   currentPlayers: number;

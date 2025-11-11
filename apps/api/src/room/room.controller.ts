@@ -31,7 +31,15 @@ export class RoomController {
     @Body(ValidationPipe) createRoomDto: CreateRoomDto,
     @CurrentUser() user: UserEntity,
   ): Promise<RoomResponseDto> {
-    return this.roomService.createRoom(createRoomDto, user);
+    // 최소 인원수가 최대 인원수보다 큰 경우 체크
+    if (createRoomDto.minPlayers && createRoomDto.maxPlayers) {
+      if (createRoomDto.minPlayers > createRoomDto.maxPlayers) {
+        throw new Error('최소 인원수는 최대 인원수보다 작거나 같아야 합니다.');
+      }
+    }
+
+    const room = await this.roomService.createRoom(createRoomDto, user.id);
+    return this.roomService.mapToRoomResponseDto(room);
   }
 
   /**
@@ -68,6 +76,7 @@ export class RoomController {
   @ApiResponse({ status: 200, description: '조회 성공', type: RoomResponseDto })
   @ApiResponse({ status: 404, description: '존재하지 않는 방' })
   async findByCode(code: string): Promise<RoomResponseDto> {
-    return this.roomService.findByCode(code);
+    const room = await this.roomService.findByCode(code);
+    return this.roomService.mapToRoomResponseDto(room);
   }
 }

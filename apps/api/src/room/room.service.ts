@@ -1,41 +1,38 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, IsNull } from 'typeorm';
-import { Room, RoomStatus } from './entities/room.entity';
+import { randomUUID } from 'crypto';
+import { RoomEntity, RoomStatus } from './entities/room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { RoomResponseDto } from './dto/room-response.dto';
-import { UserEntity } from '../user/entities/user.entity';
 
 @Injectable()
 export class RoomService {
   constructor(
-    @InjectRepository(Room)
-    private readonly roomRepository: Repository<Room>,
+    @InjectRepository(RoomEntity)
+    private readonly roomRepository: Repository<RoomEntity>,
   ) {}
 
   /**
    * 방 생성
    */
-  async createRoom(createRoomDto: CreateRoomDto, host: UserEntity): Promise<RoomResponseDto> {
+  async createRoom(createRoomDto: CreateRoomDto, hostId?: number): Promise<RoomEntity> {
     // 비공개 방인데 비밀번호가 없는 경우
     if (createRoomDto.isPrivate && !createRoomDto.password) {
       throw new BadRequestException('비공개 방은 비밀번호가 필요합니다.');
     }
 
-    // 방 코드 생성 (6자리 영문 대문자 + 숫자)
+    // 방 코드 생성 (UUID에서 하이픈 제거)
     const code = await this.generateUniqueRoomCode();
 
     const room = this.roomRepository.create({
       ...createRoomDto,
       code,
-      host,
-      hostId: host.id,
-      currentPlayers: host ? 1 : 0,
+      hostId,
+      currentPlayers: 0,
     });
 
-    const savedRoom = await this.roomRepository.save(room);
-
-    return this.mapToRoomResponseDto(savedRoom);
+    return await this.roomRepository.save(room);
   }
 
   /**
@@ -86,7 +83,7 @@ export class RoomService {
   /**
    * 방 코드로 방 조회
    */
-  async findByCode(code: string): Promise<RoomResponseDto> {
+  async findByCode(code: string): Promise<RoomEntity> {
     const room = await this.roomRepository.findOne({
       where: { code, deletedAt: IsNull() },
       relations: ['host'],
@@ -96,13 +93,63 @@ export class RoomService {
       throw new NotFoundException('존재하지 않는 방입니다.');
     }
 
-    return this.mapToRoomResponseDto(room);
+    return room;
+  }
+
+  /**
+   * 인원 수 증가
+   */
+  async incrementPlayers(roomId: number): Promise<RoomEntity> {
+    const room = await this.roomRepository.findOne({
+      where: { id: roomId },
+    });
+
+    if (!room) {
+      throw new NotFoundException('존재하지 않는 방입니다.');
+    }
+
+    room.currentPlayers += 1;
+    return await this.roomRepository.save(room);
+  }
+
+  /**
+   * 인원 수 감소
+   */
+  async decrementPlayers(roomId: number): Promise<RoomEntity> {
+    const room = await this.roomRepository.findOne({
+      where: { id: roomId },
+    });
+
+    if (!room) {
+      throw new NotFoundException('존재하지 않는 방입니다.');
+    }
+
+    if (room.currentPlayers > 0) {
+      room.currentPlayers -= 1;
+    }
+    return await this.roomRepository.save(room);
+  }
+
+  /**
+   * 방 상태 업데이트
+   */
+  async updateStatus(roomId: number, status: RoomStatus): Promise<RoomEntity> {
+    const room = await this.roomRepository.findOne({
+      where: { id: roomId },
+    });
+
+    if (!room) {
+      throw new NotFoundException('존재하지 않는 방입니다.');
+    }
+
+    room.status = status;
+    return await this.roomRepository.save(room);
   }
 
   /**
    * 방 정보 업데이트 (인원 수 등)
    */
-  async updateRoom(id: number, updates: Partial<Room>): Promise<RoomResponseDto> {
+  async updateRoom(id: number, updates: Partial<RoomEntity>): Promise<RoomResponseDto> {
     const room = await this.roomRepository.findOne({
       where: { id, deletedAt: IsNull() },
     });
@@ -135,18 +182,15 @@ export class RoomService {
   }
 
   /**
-   * 중복되지 않는 방 코드 생성
+   * 중복되지 않는 방 코드 생성 (UUID에서 하이픈 제거)
    */
   private async generateUniqueRoomCode(): Promise<string> {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code: string;
     let isUnique = false;
 
     while (!isUnique) {
-      code = '';
-      for (let i = 0; i < 6; i++) {
-        code += characters.charAt(Math.floor(Math.random() * characters.length));
-      }
+      // UUID 생성 후 하이픈(-) 제거
+      code = randomUUID().replace(/-/g, '');
 
       const existingRoom = await this.roomRepository.findOne({
         where: { code, deletedAt: IsNull() },
@@ -161,15 +205,16 @@ export class RoomService {
   }
 
   /**
-   * Room Entity를 RoomResponseDto로 변환
+   * RoomEntity를 RoomResponseDto로 변환
    */
-  private mapToRoomResponseDto(room: Room): RoomResponseDto {
+  mapToRoomResponseDto(room: RoomEntity): RoomResponseDto {
     return {
       id: room.id,
       code: room.code,
       title: room.title,
       status: room.status,
       difficulty: room.difficulty,
+      minPlayers: room.minPlayers,
       maxPlayers: room.maxPlayers,
       currentPlayers: room.currentPlayers,
       isPrivate: room.isPrivate,

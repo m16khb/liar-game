@@ -12,8 +12,14 @@ export class CreateRoomDto {
   difficulty?: GameDifficulty = GameDifficulty.NORMAL;
 
   @IsInt()
-  @Min(2)
-  @Max(20)
+  @Min(4)
+  @Max(8)
+  @IsOptional()
+  minPlayers?: number = 4;
+
+  @IsInt()
+  @Min(4)
+  @Max(8)
   @IsOptional()
   maxPlayers?: number = 8;
 

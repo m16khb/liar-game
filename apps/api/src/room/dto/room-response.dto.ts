@@ -18,6 +18,9 @@ export class RoomResponseDto {
   difficulty: GameDifficulty;
 
   @ApiProperty()
+  minPlayers: number;
+
+  @ApiProperty()
   maxPlayers: number;
 
   @ApiProperty()
