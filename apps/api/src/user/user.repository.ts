@@ -50,6 +50,17 @@ export class UserRepository {
     });
   }
 
+  /**
+   * OAuth ID로 사용자 조회
+   */
+  async findByOAuthId(oauthId: string): Promise<UserEntity | null> {
+    return this.userRepository.findOne({
+      where: {
+        oauthId,
+      },
+    });
+  }
+
   async create(userData: CreateUserData): Promise<UserEntity> {
     const user = this.userRepository.create(userData);
     return this.userRepository.save(user);

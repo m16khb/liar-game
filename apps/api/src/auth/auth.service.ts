@@ -233,4 +233,42 @@ export class AuthService {
       throw error;
     }
   }
+
+  /**
+   * JWT 토큰 검증
+   * Socket.IO 인증에 사용
+   */
+  async verifyToken(token: string): Promise<{ sub: number; email: string; role: string }> {
+    try {
+      if (!this.supabaseAdmin) {
+        throw new Error('Supabase Admin Client is not initialized');
+      }
+
+      // Supabase JWT 토큰 검증
+      const { data, error } = await this.supabaseAdmin.auth.getUser(token);
+
+      if (error || !data.user) {
+        throw new UnauthorizedException('Invalid token');
+      }
+
+      // Backend에서 사용자 정보 조회
+      const user = await this.userService.findUserByOAuthId(data.user.id);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      if (user.deletedAt) {
+        throw new UnauthorizedException('User is deactivated');
+      }
+
+      return {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Token verification failed');
+    }
+  }
 }

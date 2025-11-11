@@ -298,6 +298,27 @@ export class UserService {
     }
   }
 
+  async findUserByOAuthId(oauthId: string): Promise<UserEntity | null> {
+    this.logger.debug(`Finding user with OAuth ID: ${oauthId}`);
+
+    try {
+      const user = await this.userRepository.findByOAuthId(oauthId);
+
+      if (user) {
+        this.logger.debug(`User found: ${user.id}`);
+      }
+
+      return user;
+    } catch (error) {
+      this.logger.error(
+        `Error finding user with OAuth ID: ${oauthId}`,
+        error instanceof Error ? error.stack : undefined,
+        { error, oauthId }
+      );
+      throw error;
+    }
+  }
+
   async verifyEmail(id: number): Promise<UserEntity> {
     this.logger.debug(`Verifying email for user: ${id}`);
 
