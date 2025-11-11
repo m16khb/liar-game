@@ -29,7 +29,12 @@ interface AuthenticatedSocket extends Socket {
 @WebSocketGateway({
   namespace: '/room',
   cors: {
-    origin: process.env.WEB_URL || 'http://localhost:3000',
+    origin: [
+      'http://localhost:3000',
+      'https://dev.m16khb.xyz',
+      'https://ws.dev.m16khb.xyz',
+      'https://ws.m16khb.xyz'
+    ],
     credentials: true,
   },
   transports: ['websocket', 'polling'],

@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 
 // 테스트 설정
-const SERVER_URL = 'https://ws.dev.m16khb.xyz/room';
+const SERVER_URL = 'https://dev.m16khb.xyz/room';
 const TEST_ROOM_CODE = 'TEST123';
 
 interface JoinRoomData {
