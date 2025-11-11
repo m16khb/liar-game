@@ -1,11 +1,13 @@
 import { UserEntity } from '@/user/entities';
-import { Room } from '@/room/entities/room.entity';
+import { RoomEntity } from '@/room/entities/room.entity';
+import { PlayerEntity } from '@/room/entities/player.entity';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 export const entities = [
   UserEntity,
-  Room,
+  RoomEntity,
+  PlayerEntity,
 ];
 
 export const databaseConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
@@ -16,7 +18,8 @@ export const databaseConfig = (configService: ConfigService): TypeOrmModuleOptio
   password: configService.get<string>('DB_PASSWORD'),
   database: configService.get<string>('DB_NAME'),
   entities,
-  synchronize: configService.get<string>('NODE_ENV') !== 'production',
+  // synchronize: configService.get<string>('NODE_ENV') !== 'production',
+  synchronize: false,
   logging: configService.get<string>('NODE_ENV') !== 'production',
   timezone: 'Z', // ✅ UTC 타임존 설정 (MySQL timestamp 컬럼에 UTC 저장)
   ssl: false,

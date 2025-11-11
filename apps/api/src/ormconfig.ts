@@ -1,8 +1,10 @@
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-// .env 파일 명시적 로드
-dotenv.config();
+// .env 파일 명시적 로드 (프로젝트 루트에서 로드)
+const envPath = path.resolve(__dirname, '../../..', '.env');
+dotenv.config({ path: envPath });
 
 function getDBName(env: string | undefined): string {
   console.log('🔍 [ormconfig] NODE_ENV:', env);
