@@ -9,7 +9,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UnauthorizedException } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
 import { RoomService } from '../room.service';
@@ -44,7 +44,6 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   constructor(
     private readonly roomService: RoomService,
     private readonly playerService: PlayerService,
-    private readonly userService: UserService,
     private readonly configService: ConfigService,
   ) {
     this.supabaseJwtStrategy = new SupabaseJwtStrategy(this.configService);
