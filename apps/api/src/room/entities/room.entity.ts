@@ -14,12 +14,13 @@ export enum GameDifficulty {
 }
 
 @Entity('rooms')
-@Index(['status', 'createdAt'])
+@Index('unique_code', ['code'], { unique: true })
+@Index('index_status_createdAt', ['status', 'createdAt'])
 export class RoomEntity {
   @PrimaryGeneratedColumn('increment', { type: 'int', unsigned: true })
   id: number;
 
-  @Column({ unique: true, length: 32})
+  @Column({ length: 32})
   code: string;
 
   @Column({ length: 100 })
@@ -63,7 +64,7 @@ export class RoomEntity {
   @Column({ nullable: true, comment: '방 설명' })
   description: string;
 
-  @ManyToOne(() => UserEntity, { nullable: true })
+  @ManyToOne(() => UserEntity, { nullable: true, createForeignKeyConstraints: false })
   host: UserEntity;
 
   @Column({ nullable: true, type: 'int', unsigned: true, comment: '방장 ID' })
