@@ -20,8 +20,8 @@ export enum UserRole {
 }
 
 @Entity({ name: 'users' })
-@Index('idx_users_email', ['email'])
-@Index('idx_users_tier', ['tier'])
+@Index('unique_email', ['email'], { unique: true })
+@Index('index_tier', ['tier'])
 export class UserEntity {
   @PrimaryGeneratedColumn('increment', { type: 'int', unsigned: true })
   id: number;
@@ -43,7 +43,6 @@ export class UserEntity {
   })
   role: UserRole;
 
-  // @CODE:AUTH-OAUTH-001 | SPEC: SPEC-AUTH-OAUTH-001.md
   @Column({ type: 'varchar', length: 50, nullable: true })
   oauthProvider: string | null;
 
