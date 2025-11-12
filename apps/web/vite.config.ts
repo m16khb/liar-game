@@ -1,4 +1,4 @@
-// Vite 설정 파일 - React 18 + Compiler 지원
+// Vite 설정 파일 - React 19 + Compiler 지원
 // 빠른 개발 빌드와 최적화된 프로덕션 빌드를 위한 설정
 
 import { defineConfig, loadEnv } from 'vite'
@@ -19,7 +19,15 @@ export default defineConfig(({ mode }) => {
   })
 
   return {
-    plugins: [react()],
+    plugins: [
+      react({
+        babel: {
+          plugins: [
+            'babel-plugin-react-compiler', // React Compiler 추가 (반드시 첫 번째로 위치)
+          ],
+        },
+      }),
+    ],
     server: {
       port: 3000,
       host: true,

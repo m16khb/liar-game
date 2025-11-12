@@ -18,8 +18,7 @@ export const databaseConfig = (configService: ConfigService): TypeOrmModuleOptio
   password: configService.get<string>('DB_PASSWORD'),
   database: configService.get<string>('DB_NAME'),
   entities,
-  // synchronize: configService.get<string>('NODE_ENV') !== 'production',
-  synchronize: false,
+  synchronize: configService.get<string>('NODE_ENV') !== 'production',
   logging: configService.get<string>('NODE_ENV') !== 'production',
   timezone: 'Z', // ✅ UTC 타임존 설정 (MySQL timestamp 컬럼에 UTC 저장)
   ssl: false,

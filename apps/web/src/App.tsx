@@ -7,7 +7,7 @@ import LoginForm from './components/auth/LoginForm'
 import OtpVerification from './components/auth/OtpVerification'
 import SetPasswordForm from './components/auth/SetPasswordForm'
 import RoomList from './components/game/RoomList'
-import GameRoom from './components/game/GameRoomSimple'
+import GameRoom from './components/game/GameRoom'
 import { supabase, getCurrentSession } from './lib/supabase'
 import { useAuth } from './hooks/useAuth'
 

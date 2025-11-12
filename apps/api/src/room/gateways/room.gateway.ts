@@ -308,6 +308,60 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     }
   }
 
+  @SubscribeMessage('transfer-host')
+  async handleTransferHost(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { targetUserId: number }
+  ) {
+    this.logger.log(`User ${client.userId} is attempting to transfer host to ${data.targetUserId}`);
+    try {
+      const userId = client.userId;
+
+      if (!userId) {
+        client.emit('error', { message: '인증이 필요합니다.' });
+        return;
+      }
+
+      const player = await this.playerService.findActivePlayer(userId);
+
+      if (!player || !player.isHost) {
+        client.emit('error', { message: '방장만 방장 위임이 가능합니다.' });
+        return;
+      }
+
+      if (player.room.status !== RoomStatus.WAITING) {
+        client.emit('error', { message: '게임 중에는 방장 위임이 불가능합니다.' });
+        return;
+      }
+
+      // 위임 대상 플레이어 확인
+      const targetPlayer = await this.playerService.findPlayer(player.roomId, data.targetUserId);
+
+      if (!targetPlayer) {
+        client.emit('error', { message: '존재하지 않는 플레이어입니다.' });
+        return;
+      }
+
+      // 방장 위임 처리
+      await this.playerService.updateHost(player.roomId, data.targetUserId);
+
+      // 모든 플레이어 정보 가져오기
+      const players = await this.playerService.getPlayers(player.roomId);
+
+      // 방에 있는 모든 사람에게 방장 변경 알림
+      this.server.to(player.room.code).emit('host-transferred', {
+        previousHostId: userId,
+        newHostId: data.targetUserId,
+        players
+      });
+
+      this.logger.log(`Host transferred from ${userId} to ${data.targetUserId} in room: ${player.room.code}`);
+    } catch (error) {
+      this.logger.error(`Failed to transfer host: ${error instanceof Error ? error.message : error}`);
+      client.emit('error', { message: '방장 위임에 실패했습니다.' });
+    }
+  }
+
   @SubscribeMessage('start-game')
   async handleStartGame(@ConnectedSocket() client: AuthenticatedSocket) {
     this.logger.log(`User ${client.userId} is attempting to start the game`);
