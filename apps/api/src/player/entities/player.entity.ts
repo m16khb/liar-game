@@ -10,8 +10,8 @@ export enum PlayerStatus {
 }
 
 @Entity('players')
-@Unique(['roomId', 'userId'])
-@Index(['roomId', 'status'])
+@Index('unique_roomId_userId', ['roomId', 'userId'], { unique: true })
+@Index('index_roomId_status', ['roomId', 'status'])
 export class PlayerEntity {
   @PrimaryGeneratedColumn('increment', { type: 'int', unsigned: true })
   id: number;
@@ -22,10 +22,10 @@ export class PlayerEntity {
   @Column({ type: 'int', unsigned: true, comment: '사용자 ID' })
   userId: number;
 
-  @ManyToOne(() => RoomEntity)
+  @ManyToOne(() => RoomEntity, { createForeignKeyConstraints: false })
   room: RoomEntity;
 
-  @ManyToOne(() => UserEntity)
+  @ManyToOne(() => UserEntity, { createForeignKeyConstraints: false })
   user: UserEntity;
 
   @Column({
