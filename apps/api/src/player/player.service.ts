@@ -1,8 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PlayerEntity } from '../entities/player.entity';
-import { PlayerStatus } from '../entities/player.entity';
+import { PlayerEntity, PlayerStatus } from './entities/player.entity';
 
 @Injectable()
 export class PlayerService {
@@ -130,7 +129,7 @@ export class PlayerService {
       .update(PlayerEntity)
       .set({ isHost: false })
       .where('roomId = :roomId', { roomId })
-      .where('isHost = :isHost', { isHost: true })
+      .andWhere('isHost = :isHost', { isHost: true })
       .execute();
 
     // 새로운 방장 지정
@@ -139,7 +138,7 @@ export class PlayerService {
       .update(PlayerEntity)
       .set({ isHost: true })
       .where('roomId = :roomId', { roomId })
-      .where('userId = :userId', { userId: newHostUserId })
+      .andWhere('userId = :userId', { userId: newHostUserId })
       .execute();
   }
 
@@ -174,7 +173,7 @@ export class PlayerService {
       .update(PlayerEntity)
       .set({ lastActiveAt: new Date() })
       .where('roomId = :roomId', { roomId })
-      .where('userId = :userId', { userId: userId })
+      .andWhere('userId = :userId', { userId: userId })
       .execute();
   }
 

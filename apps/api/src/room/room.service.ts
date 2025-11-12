@@ -97,6 +97,15 @@ export class RoomService {
   }
 
   /**
+   * ID로 방 조회
+   */
+  async findById(id: number): Promise<RoomEntity | null> {
+    return await this.roomRepository.findOne({
+      where: { id, deletedAt: IsNull() },
+    });
+  }
+
+  /**
    * 인원 수 증가
    */
   async incrementPlayers(roomId: number): Promise<RoomEntity> {

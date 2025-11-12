@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index, ManyToOne } from 'typeorm';
 import { UserEntity } from '../../user/entities/user.entity';
 
 export enum RoomStatus {
@@ -63,8 +63,7 @@ export class RoomEntity {
   @Column({ nullable: true, comment: '방 설명' })
   description: string;
 
-  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'hostId' })
+  @ManyToOne(() => UserEntity, { nullable: true })
   host: UserEntity;
 
   @Column({ nullable: true, type: 'int', unsigned: true, comment: '방장 ID' })

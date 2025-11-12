@@ -1,6 +1,6 @@
 import { UserEntity } from '@/user/entities';
 import { RoomEntity } from '@/room/entities/room.entity';
-import { PlayerEntity } from '@/room/entities/player.entity';
+import { PlayerEntity } from '@/player/entities/player.entity';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 

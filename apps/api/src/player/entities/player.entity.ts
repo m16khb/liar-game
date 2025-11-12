@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index, ManyToOne, JoinColumn, Unique } from 'typeorm';
 import { UserEntity } from '../../user/entities/user.entity';
-import { RoomEntity } from './room.entity';
+import { RoomEntity } from '../../room/entities/room.entity';
 
 export enum PlayerStatus {
   READY = 'ready',
@@ -22,12 +22,10 @@ export class PlayerEntity {
   @Column({ type: 'int', unsigned: true, comment: '사용자 ID' })
   userId: number;
 
-  @ManyToOne(() => RoomEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'roomId' })
+  @ManyToOne(() => RoomEntity)
   room: RoomEntity;
 
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
+  @ManyToOne(() => UserEntity)
   user: UserEntity;
 
   @Column({

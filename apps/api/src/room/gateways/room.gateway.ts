@@ -13,11 +13,10 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
 import { RoomService } from '../room.service';
-import { PlayerService } from '../services/player.service';
-import { UserService } from '../../user/user.service';
+import { PlayerService } from '../../player/player.service';
 import { CreateRoomDto } from '../dto/create-room.dto';
 import { JoinRoomDto } from '../dto/join-room.dto';
-import { PlayerStatus } from '../entities/player.entity';
+import { PlayerStatus } from '../../player/entities/player.entity';
 import { RoomStatus } from '../entities/room.entity';
 import { SupabaseJwtStrategy, SupabaseJwtPayload } from '../../auth/strategies/supabase-jwt.strategy';
 
@@ -42,6 +41,7 @@ interface AuthenticatedSocket extends Socket {
 export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(RoomGateway.name);
   private connectedClients = new Map<string, AuthenticatedSocket>();
+  private disconnectTimers = new Map<number, NodeJS.Timeout>(); // userId -> timer
   @WebSocketServer() server: Server;
 
   private supabaseJwtStrategy: SupabaseJwtStrategy;
@@ -86,6 +86,43 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       client.userId = user.id;
       client.user = user;
       this.connectedClients.set(client.id, client);
+
+      // 재접속인 경우 타이머 취소
+      const existingTimer = this.disconnectTimers.get(user.id);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+        this.disconnectTimers.delete(user.id);
+        this.logger.log(`User ${user.id} reconnected, canceling disconnect timer`);
+
+        // 플레이어 정보를 다시 가져와서 상태 복원
+        const player = await this.playerService.findActivePlayer(user.id);
+        if (player) {
+          // 방에 다시 참가시키고 다른 플레이어들에게 알림
+          await client.join(player.room.code);
+
+          // 방의 모든 플레이어 정보 다시 조회
+          const allPlayers = await this.playerService.getPlayers(player.roomId);
+          const roomInfo = await this.roomService.findByCode(player.room.code);
+
+          // 재접속한 유저에게 전체 방 정보 전송
+          client.emit('reconnect-success', {
+            room: roomInfo,
+            players: allPlayers,
+            player: await this.playerService.findPlayer(player.roomId, user.id)
+          });
+
+          // 재접속 플래그 설정 (handleJoinRoom에서 중복 방지용)
+          (client as any).isReconnecting = true;
+
+          // 방에 있는 다른 플레이어들에게 알림
+          this.server.to(player.room.code).emit('player-reconnected', {
+            userId: user.id,
+            player: await this.playerService.findPlayer(player.roomId, user.id),
+            players: allPlayers
+          });
+        }
+      }
+
       this.logger.log(`User authenticated: ${client.userId} (${user.email})`);
     } catch (error) {
       this.logger.error(`Authentication failed: ${error instanceof Error ? error.message : error}`);
@@ -98,9 +135,158 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     this.logger.log(`Client disconnected: ${client.id}`);
     this.connectedClients.delete(client.id);
 
-    // 방에서 나가기 처리
+    // 방에서 참여 중인 플레이어인지 확인
     if (client.userId) {
-      this.handleLeaveRoom(client);
+      this.handlePlayerDisconnect(client);
+    }
+  }
+
+  /**
+   * 플레이어 연결 끊김 처리
+   */
+  private async handlePlayerDisconnect(client: AuthenticatedSocket) {
+    const userId = client.userId;
+    if (!userId) return;
+
+    try {
+      const player = await this.playerService.findActivePlayer(userId);
+      if (!player) return;
+
+      // 이미 타이머가 실행 중인지 확인
+      if (this.disconnectTimers.has(userId)) {
+        return;
+      }
+
+      // 방에 다른 플레이어들에게 '통신중' 상태 알림
+      this.server.to(player.room.code).emit('player-disconnected', {
+        userId,
+        message: '통신 중...',
+        player: await this.playerService.findPlayer(player.roomId, userId)
+      });
+
+      // 5초 후 자동 퇴장 타이머 설정
+      const disconnectTimer = setTimeout(async () => {
+        this.logger.log(`User ${userId} did not reconnect, removing from room`);
+
+        // 실제 방 나가기 처리
+        await this.performLeaveRoom(userId);
+
+        // 타이머 삭제
+        this.disconnectTimers.delete(userId);
+      }, 5000); // 5초
+
+      this.disconnectTimers.set(userId, disconnectTimer);
+      this.logger.log(`Set disconnect timer for user ${userId}`);
+    } catch (error) {
+      this.logger.error(`Error handling player disconnect: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  /**
+   * 게임 시작 가능 여부 확인
+   */
+  private async checkGameStartStatus(roomId: number) {
+    try {
+      const players = await this.playerService.getPlayers(roomId);
+
+      if (players.length === 0) {
+        this.logger.warn(`No players in room ${roomId}`);
+        return;
+      }
+
+      // roomId로 방 정보 조회
+      const room = await this.roomService.findById(roomId);
+
+      if (!room) {
+        this.logger.warn(`Room not found: ${roomId}`);
+        return;
+      }
+
+      // 최소 인원수 충족 및 방장 제외 모든 플레이어 준비 확인
+      const nonHostPlayers = players.filter(p => !p.isHost);
+      const host = players.find(p => p.isHost);
+
+      // 디버깅 로그
+      this.logger.log(`Room info: id=${room.id}, minPlayers=${room.minPlayers}, maxPlayers=${room.maxPlayers}`);
+      this.logger.log(`Players info (total ${players.length}):`);
+      players.forEach(p => {
+        this.logger.log(`  - User ${p.userId}: isHost=${p.isHost}, status=${p.status}`);
+      });
+
+      // 방장도 준비 상태여야 함
+      const allPlayersReady = players.length >= room.minPlayers &&
+        nonHostPlayers.every(p => p.status === PlayerStatus.READY) &&
+        (!host || host.status === PlayerStatus.READY);
+
+      this.logger.log(`Result: Total=${players.length}/${room.minPlayers}, HostReady=${host ? host.status : 'none'}, NonHostReady=${nonHostPlayers.filter(p => p.status === PlayerStatus.READY).length}/${nonHostPlayers.length}, CanStart=${allPlayersReady}`);
+
+      if (host) {
+        const hostSocket = Array.from(this.connectedClients.values())
+          .find(c => c.userId === host.userId);
+
+        this.logger.log(`Host socket found: ${hostSocket ? 'yes' : 'no'}, Connected clients: ${this.connectedClients.size}`);
+
+        if (hostSocket) {
+          this.logger.log(`Sending game-can-start to host ${host.userId}: ${allPlayersReady}`);
+
+          // 방장의 준비 상태 확인
+          const hostReady = host ? host.status === PlayerStatus.READY : false;
+          const readyNonHostCount = nonHostPlayers.filter(p => p.status === PlayerStatus.READY).length;
+
+          hostSocket.emit('game-can-start', {
+            canStart: allPlayersReady,
+            message: allPlayersReady
+              ? '모든 플레이어가 준비되었습니다. 게임을 시작할 수 있습니다.'
+              : `준비된 플레이어: ${readyNonHostCount + (hostReady ? 1 : 0)}/${players.length}명`
+          });
+        } else {
+          this.logger.warn(`Host socket not found for user ${host.userId}`);
+        }
+      } else {
+        this.logger.warn('No host found in room');
+      }
+    } catch (error) {
+      this.logger.error(`Failed to check game start status: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  /**
+   * 실제 방 나가기 처리
+   */
+  private async performLeaveRoom(userId: number) {
+    try {
+      const player = await this.playerService.findActivePlayer(userId);
+
+      if (player) {
+        await this.playerService.removePlayer(player.roomId, userId);
+        const room = await this.roomService.decrementPlayers(player.roomId);
+
+        // 방에 남아있는 모든 사람에게 알림
+        this.server.to(room.code).emit('room-updated', {
+          room,
+          players: await this.playerService.getPlayers(room.id),
+        });
+
+        // 방장이 나가면 방장 권한 위임
+        const players = await this.playerService.getPlayers(room.id);
+        if (players.length > 0) {
+          const newHost = players[0];
+          await this.playerService.updateHost(player.roomId, newHost.userId);
+
+          this.server.to(room.code).emit('host-changed', {
+            newHostId: newHost.userId,
+          });
+        }
+
+        this.logger.log(`User ${userId} left room: ${room.code}`);
+
+        // 방장에게 게임 시작 가능 여부 다시 확인
+        if (players.length > 0) {
+          await this.checkGameStartStatus(room.id);
+        }
+      }
+    } catch (error) {
+      this.logger.error(`Failed to leave room: ${error instanceof Error ? error.message : error}`);
     }
   }
 
@@ -180,10 +366,30 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       if (existingPlayer) {
         // 재접속 처리
         await client.join(room.code);
+
+        // 방의 모든 플레이어 정보 조회
+        const allPlayers = await this.playerService.getPlayers(room.id);
+
+        // 재접속한 유저에게 전체 정보 전송
         client.emit('room-joined', {
           room,
           player: existingPlayer,
+          players: allPlayers,
         });
+
+        // handleConnection에서 이미 재접속 처리를 했는지 확인
+        if (!(client as any).isReconnecting) {
+          // 방에 있는 다른 플레이어들에게 알림
+          client.to(room.code).emit('player-reconnected', {
+            userId,
+            player: existingPlayer,
+            players: allPlayers
+          });
+        }
+
+        // 플래그 초기화
+        (client as any).isReconnecting = false;
+
         return;
       }
 
@@ -208,6 +414,9 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         players: await this.playerService.getPlayers(room.id),
       });
 
+      // 방장에게 게임 시작 가능 여부 확인
+      await this.checkGameStartStatus(room.id);
+
       this.logger.log(`User ${userId} joined room: ${room.code}`);
     } catch (error) {
       this.logger.error(`Failed to join room: ${error instanceof Error ? error.message : error}`);
@@ -223,6 +432,13 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       if (!userId) {
         return;
+      }
+
+      // 타이머가 있다면 취소 (명시적 나가기)
+      const existingTimer = this.disconnectTimers.get(userId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+        this.disconnectTimers.delete(userId);
       }
 
       const player = await this.playerService.findActivePlayer(userId);
@@ -292,14 +508,8 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         players,
       });
 
-      // 모든 인원이 준비되었는지 확인 (방장 제외)
-      const nonHostPlayers = players.filter(p => !p.isHost);
-      const allPlayersReady = nonHostPlayers.length >= (player.room.minPlayers - 1) &&
-        nonHostPlayers.every(p => p.status === PlayerStatus.READY);
-
-      if (allPlayersReady) {
-        this.server.to(player.room.code).emit('game-can-start');
-      }
+      // 방장에게 게임 시작 가능 여부 확인
+      await this.checkGameStartStatus(player.roomId);
 
       this.logger.log(`User ${userId} changed ready status: ${newStatus}`);
     } catch (error) {
