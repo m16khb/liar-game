@@ -276,6 +276,16 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
           this.server.to(room.code).emit('host-changed', {
             newHostId: newHost.userId,
           });
+        } else {
+          // 참가자가 0명이면 방 삭제
+          this.logger.log(`Room ${room.code} has no players. Deleting room.`);
+          await this.roomService.deleteRoom(room.id);
+
+          // 방에서 모두 내보내기
+          this.server.in(room.code).emit('room-deleted', {
+            message: '참가자가 없어 방이 삭제되었습니다.',
+          });
+          this.server.in(room.code).socketsLeave(room.code);
         }
 
         this.logger.log(`User ${userId} left room: ${room.code}`);
@@ -393,8 +403,9 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         return;
       }
 
-      // 플레이어 추가
-      const player = await this.playerService.addPlayer(room.id, userId);
+      // 플레이어 추가 (방 생성자인지 확인)
+      const isHost = room.hostId === userId;
+      const player = await this.playerService.addPlayer(room.id, userId, isHost);
 
       // Socket.IO 룸 참가
       await client.join(room.code);
@@ -402,16 +413,21 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       // 방 정보 업데이트
       const updatedRoom = await this.roomService.incrementPlayers(room.id);
 
+      // 전체 플레이어 정보 조회
+      const allPlayers = await this.playerService.getPlayers(room.id);
+      this.logger.log(`Players in room ${room.code}: ${JSON.stringify(allPlayers.map(p => ({ userId: p.userId, isHost: p.isHost, email: p.user?.email })))}`);
+
       // 방 참가 성공 알림
       client.emit('room-joined', {
         room: updatedRoom,
         player,
+        players: allPlayers,  // 방장 정보를 포함한 전체 플레이어 목록
       });
 
       // 방장을 포함한 모든 참가자에게 업데이트 알림
       this.server.to(room.code).emit('room-updated', {
         room: updatedRoom,
-        players: await this.playerService.getPlayers(room.id),
+        players: allPlayers,
       });
 
       // 방장에게 게임 시작 가능 여부 확인
@@ -464,6 +480,16 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
           this.server.to(room.code).emit('host-changed', {
             newHostId: newHost.userId,
           });
+        } else {
+          // 참가자가 0명이면 방 삭제
+          this.logger.log(`Room ${room.code} has no players. Deleting room.`);
+          await this.roomService.deleteRoom(room.id);
+
+          // 방에서 모두 내보내기
+          this.server.in(room.code).emit('room-deleted', {
+            message: '참가자가 없어 방이 삭제되었습니다.',
+          });
+          this.server.in(room.code).socketsLeave(room.code);
         }
 
         this.logger.log(`User ${userId} left room: ${room.code}`);
