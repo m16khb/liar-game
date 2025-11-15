@@ -169,11 +169,14 @@ export class PlayerService {
       .andWhere('isHost = :isHost', { isHost: true })
       .execute();
 
-    // 새로운 방장 지정
+    // 새로운 방장 지정 및 준비 상태로 변경
     await this.playerRepository
       .createQueryBuilder()
       .update(PlayerEntity)
-      .set({ isHost: true })
+      .set({
+        isHost: true,
+        status: PlayerStatus.READY  // 방장은 항상 준비 상태
+      })
       .where('roomId = :roomId', { roomId })
       .andWhere('userId = :userId', { userId: newHostUserId })
       .execute();

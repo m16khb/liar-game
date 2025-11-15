@@ -39,6 +39,7 @@ export default function GameRoom() {
   const [room, setRoom] = useState<Room | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [isReady, setIsReady] = useState(false)
+  const [isHost, setIsHost] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLeaving, setIsLeaving] = useState(false)
 
@@ -77,7 +78,21 @@ export default function GameRoom() {
     console.log('✅ 플레이어 상세:', data.players?.map((p: any) => ({ userId: p.userId, isHost: p.isHost, email: p.user?.email })))
     setRoom(data.room)
     setPlayers(data.players || [])
-  }, [])
+
+    // 내 플레이어 정보 확인
+    const myPlayer = data.players?.find((p: any) =>
+      p.user?.email === user?.email || p.userId === user?.backendUserId
+    )
+    if (myPlayer) {
+      setIsReady(myPlayer.status === 'ready')
+      console.log('✅ 방 참가 시 내 상태:', {
+        myId: user?.backendUserId,
+        myStatus: myPlayer.status,
+        isReady: myPlayer.status === 'ready',
+        isHost: myPlayer.isHost
+      })
+    }
+  }, [user?.backendUserId, user?.email, setIsReady])
 
   // 이벤트 핸들러들
   const handleRoomUpdated = useCallback((data: any) => {
@@ -104,6 +119,13 @@ export default function GameRoom() {
         )
         if (myPlayer) {
           setIsReady(myPlayer.status === 'ready')
+          console.log('✅ [room-updated] 방장 변경 후 내 상태:', {
+            myId: user?.backendUserId,
+            myStatus: myPlayer.status,
+            isReady: myPlayer.status === 'ready',
+            isHost: myPlayer.isHost,
+            amIHost
+          })
         }
       })
 
@@ -135,6 +157,13 @@ export default function GameRoom() {
     )
     if (myPlayer) {
       setIsReady(myPlayer.status === 'ready')
+      console.log('🔄 내 준비 상태 업데이트:', {
+        myId: user?.backendUserId,
+        myStatus: myPlayer.status,
+        isReady: myPlayer.status === 'ready',
+        isHostFromPlayer: myPlayer.isHost,
+        isHostFromState: isHost
+      })
     }
   }, [user?.backendUserId, user?.email])
 
@@ -200,10 +229,11 @@ export default function GameRoom() {
 
   // 준비 상태 토글
   const handleToggleReady = useCallback(() => {
-    if (socket && room?.status === 'waiting') {
+    // 방장은 준비 상태를 변경할 수 없음
+    if (socket && room?.status === 'waiting' && !isHost) {
       socket.emit('toggle-ready')
     }
-  }, [socket, room])
+  }, [socket, room, isHost])
 
   // 게임 시작 (방장만)
   const handleStartGame = useCallback(() => {
@@ -260,9 +290,6 @@ export default function GameRoom() {
     return () => document.removeEventListener('click', handleClick)
   }, [closeContextMenu])
 
-  // 현재 유저가 방장인지 확인 - backendUserId로 비교
-  const [isHost, setIsHost] = useState(false)
-
   // players나 user가 변경될 때마다 isHost 계산
   useEffect(() => {
     const result = players.some(p => p.userId === user?.backendUserId && p.isHost)
@@ -287,7 +314,22 @@ export default function GameRoom() {
   // 게임 시작 가능 여부
   const canStartGame = room &&
     room.currentPlayers >= room.minPlayers &&
-    players.filter(p => p.status === 'ready' || p.isHost).length >= room.minPlayers
+    // 방장(isHost) + 준비된 일반 플레이어 수가 최소 인원수보다 많거나 같아야 함
+    (players.filter(p => p.isHost).length + players.filter(p => p.status === 'ready' && !p.isHost).length) >= room.minPlayers
+
+  // 게임 시작 조건 로그
+  if (room) {
+    const hostCount = players.filter(p => p.isHost).length
+    const readyNonHostCount = players.filter(p => p.status === 'ready' && !p.isHost).length
+    console.log('🎮 게임 시작 조건 확인:', {
+      currentPlayers: room.currentPlayers,
+      minPlayers: room.minPlayers,
+      hostCount,
+      readyNonHostCount,
+      totalReady: hostCount + readyNonHostCount,
+      canStartGame
+    })
+  }
 
   if (isConnecting) {
     return (
