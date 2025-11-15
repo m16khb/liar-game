@@ -32,7 +32,22 @@ export class RoomService {
       currentPlayers: 0,
     });
 
-    return await this.roomRepository.save(room);
+    console.log(`[RoomService.createRoom] 방 엔티티 생성:`, {
+      code,
+      hostId,
+      title: createRoomDto.title,
+      isPrivate: createRoomDto.isPrivate
+    });
+
+    const savedRoom = await this.roomRepository.save(room);
+
+    console.log(`[RoomService.createRoom] 데이터베이스에 방 저장 완료:`, {
+      id: savedRoom.id,
+      code: savedRoom.code,
+      hostId: savedRoom.hostId
+    });
+
+    return savedRoom;
   }
 
   /**

@@ -24,7 +24,8 @@ import {
 
 // 사용자 정보 타입
 export interface AuthUser {
-  id: string
+  id: string  // Supabase UUID
+  backendUserId?: number  // Backend User ID (JWT custom claims)
   email?: string
   user_metadata?: {
     nickname?: string
@@ -70,8 +71,27 @@ export const useAuth = () => {
 
   // 인증 상태 업데이트
   const updateAuthState = useCallback((session: any | null) => {
+    let user = session?.user || null;
+
+    // JWT 토큰에서 backend user_id 추출
+    if (session?.access_token) {
+      try {
+        const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+        if (payload.user_id) {
+          // backend user_id를 추가
+          user = {
+            ...user,
+            backendUserId: payload.user_id  // 숫자 타입의 backend ID
+          };
+          console.log('🔑 Backend User ID 설정:', payload.user_id);
+        }
+      } catch (error) {
+        console.error('토큰 디코딩 실패:', error);
+      }
+    }
+
     setAuthState({
-      user: session?.user || null,
+      user,
       session,
       loading: false,
       error: null,

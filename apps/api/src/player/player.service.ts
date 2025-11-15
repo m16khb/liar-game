@@ -14,15 +14,26 @@ export class PlayerService {
    * 방에 플레이어 추가
    */
   async addPlayer(roomId: number, userId: number, isHost: boolean = false): Promise<PlayerEntity> {
+    // 로그 추가
+    console.log(`[PlayerService.addPlayer] roomId: ${roomId}, userId: ${userId}, isHost: ${isHost}`);
+
     // 이미 참여 중인지 확인 (softDelete된 플레이어도 포함)
     const existingPlayer = await this.playerRepository.findOne({
       where: { roomId, userId },
       withDeleted: true, // softDelete된 레코드도 조회
     });
 
+    console.log(`[PlayerService.addPlayer] existingPlayer:`, existingPlayer ? {
+      id: existingPlayer.id,
+      userId: existingPlayer.userId,
+      isHost: existingPlayer.isHost,
+      deletedAt: existingPlayer.deletedAt
+    } : null);
+
     if (existingPlayer) {
       if (existingPlayer.deletedAt) {
         // softDelete된 경우 복원
+        console.log(`[PlayerService.addPlayer] 복원 처리 - 기존 isHost: ${existingPlayer.isHost}, 새 isHost: ${isHost}`);
         existingPlayer.deletedAt = null;
         existingPlayer.isHost = isHost;
         existingPlayer.status = isHost ? PlayerStatus.READY : PlayerStatus.NOT_READY;
@@ -51,7 +62,23 @@ export class PlayerService {
       lastActiveAt: new Date(),
     });
 
-    return await this.playerRepository.save(roomPlayer);
+    console.log(`[PlayerService.addPlayer] 새 플레이어 생성:`, {
+      roomId,
+      userId,
+      isHost,
+      status: isHost ? PlayerStatus.READY : PlayerStatus.NOT_READY,
+      joinOrder
+    });
+
+    const savedPlayer = await this.playerRepository.save(roomPlayer);
+    console.log(`[PlayerService.addPlayer] 저장된 플레이어:`, {
+      id: savedPlayer.id,
+      userId: savedPlayer.userId,
+      isHost: savedPlayer.isHost,
+      status: savedPlayer.status
+    });
+
+    return savedPlayer;
   }
 
   /**

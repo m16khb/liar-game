@@ -405,7 +405,15 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       // 플레이어 추가 (방 생성자인지 확인)
       const isHost = room.hostId === userId;
+
+      // 상세한 방장 확인 로그
+      this.logger.log(`[방장 확인] roomId: ${room.id}, room.hostId: ${room.hostId}, userId: ${userId}, isHost: ${isHost}`);
+      this.logger.log(`[방 정보] 방 코드: ${room.code}, 방 제목: ${room.title}, 방장 ID: ${room.hostId}`);
+
       const player = await this.playerService.addPlayer(room.id, userId, isHost);
+
+      // 생성된 플레이어 정보 로그
+      this.logger.log(`[플레이어 생성] playerId: ${player.id}, userId: ${player.userId}, isHost: ${player.isHost}`);
 
       // Socket.IO 룸 참가
       await client.join(room.code);

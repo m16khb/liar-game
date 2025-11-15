@@ -31,6 +31,14 @@ export class RoomController {
     @Body(ValidationPipe) createRoomDto: CreateRoomDto,
     @CurrentUser() user: UserEntity,
   ): Promise<RoomResponseDto> {
+    // 로그 추가
+    console.log(`[RoomController.createRoom] 사용자가 방 생성을 시도합니다:`, {
+      userId: user.id,
+      userEmail: user.email,
+      userNickname: user.nickname,
+      roomTitle: createRoomDto.title
+    });
+
     // 최소 인원수가 최대 인원수보다 큰 경우 체크
     if (createRoomDto.minPlayers && createRoomDto.maxPlayers) {
       if (createRoomDto.minPlayers > createRoomDto.maxPlayers) {
@@ -39,6 +47,14 @@ export class RoomController {
     }
 
     const room = await this.roomService.createRoom(createRoomDto, user.id);
+
+    console.log(`[RoomController.createRoom] 방 생성 완료:`, {
+      roomId: room.id,
+      roomCode: room.code,
+      hostId: room.hostId,
+      title: room.title
+    });
+
     return this.roomService.mapToRoomResponseDto(room);
   }
 

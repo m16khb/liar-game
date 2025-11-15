@@ -97,7 +97,7 @@ export default function GameRoom() {
       setPlayers(data.players || [])
       // 현재 유저의 준비 상태 업데이트
       const myPlayer = data.players?.find((p: any) =>
-        p.user?.email === user?.email || p.userId === user?.id
+        p.user?.email === user?.email || p.userId === user?.backendUserId
       )
       if (myPlayer) {
         setIsReady(myPlayer.status === 'ready')
@@ -178,10 +178,10 @@ export default function GameRoom() {
   // 컨텍스트 메뉴 핸들러
   const handleContextMenu = useCallback((e: React.MouseEvent, player: Player) => {
     e.preventDefault()
-    const isHost = players.some(p => p.userId === user?.id && p.isHost)
+    const isHost = players.some(p => p.userId === user?.backendUserId && p.isHost)
 
     // 방장이 자신이 아니고, 대상이 자신이 아니고, 방이 대기 상태일 때만 메뉴 표시
-    if (isHost && player.userId !== user?.id && room?.status === 'waiting') {
+    if (isHost && player.userId !== user?.backendUserId && room?.status === 'waiting') {
       setContextMenu({
         visible: true,
         x: e.clientX,
@@ -211,8 +211,22 @@ export default function GameRoom() {
     return () => document.removeEventListener('click', handleClick)
   }, [closeContextMenu])
 
-  // 현재 유저가 방장인지 확인 - 이메일로 비교
-  const isHost = players.some(p => p.user?.email === user?.email && p.isHost)
+  // 현재 유저가 방장인지 확인 - backendUserId로 비교
+  const isHost = players.some(p => p.userId === user?.backendUserId && p.isHost)
+
+  // 방장 확인 로그
+  console.log('👑 방장 확인 로그:', {
+    supabaseId: user?.id,  // Supabase UUID
+    backendUserId: user?.backendUserId,  // Backend User ID
+    userNickname: user?.user_metadata?.nickname,
+    players: players.map(p => ({
+      userId: p.userId,
+      nickname: p.nickname,
+      isHost: p.isHost,
+      status: p.status
+    })),
+    isHostResult: isHost
+  })
 
   // 게임 시작 가능 여부
   const canStartGame = room &&
@@ -489,7 +503,7 @@ export default function GameRoom() {
                         방장
                       </span>
                     )}
-                    {player.userId === user?.id && (
+                    {player.userId === user?.backendUserId && (
                       <span style={{
                         fontSize: '12px',
                         color: '#10b981',

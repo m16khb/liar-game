@@ -431,6 +431,24 @@ export const onAuthStateChange = (
  */
 export const getAccessToken = async (): Promise<string | null> => {
   const { data: { session } } = await supabase.auth.getSession()
+
+  // JWT 토큰 디코딩 로그
+  if (session?.access_token) {
+    try {
+      const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+      console.log('🔑 JWT 토큰 정보:', {
+        sub: payload.sub,  // Supabase User ID (UUID)
+        user_id: payload.user_id,  // Backend User ID
+        email: payload.email,
+        user_tier: payload.user_tier,
+        user_role: payload.user_role,
+        exp: new Date(payload.exp * 1000).toLocaleString()
+      });
+    } catch (error) {
+      console.error('토큰 디코딩 실패:', error);
+    }
+  }
+
   return session?.access_token || null
 }
 
