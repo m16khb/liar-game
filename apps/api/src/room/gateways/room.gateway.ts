@@ -275,19 +275,25 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
           // 방 인원 수 감소
           const room = await this.roomService.decrementPlayers(player.roomId);
 
-          // 방에 남아있는 모든 사람에게 알림
+          // 업데이트된 플레이어 정보 다시 조회 (isHost 값이 업데이트되었는지 확인)
+          const updatedPlayers = await this.playerService.getPlayers(room.id);
+
+          this.logger.log(`[방장 위임-연결끊김] 플레이어 업데이트 확인:`, {
+            roomCode: room.code,
+            newHostId: newHost.userId,
+            playersCount: updatedPlayers.length,
+            playersWithHost: updatedPlayers.filter(p => p.isHost).map(p => ({ userId: p.userId, isHost: p.isHost }))
+          });
+
+          // room-updated 이벤트에 모든 정보를 담아 전송
           this.server.to(room.code).emit('room-updated', {
             room: {
               ...room,
               hostId: newHost.userId  // 명시적으로 hostId 포함
             },
-            players: remainingPlayers,
-          });
-
-          // 방장 변경 알림
-          this.server.to(room.code).emit('host-changed', {
-            newHostId: newHost.userId,
-            players: remainingPlayers,
+            players: updatedPlayers,  // 다시 조회한 플레이어 정보 사용
+            hostChanged: true,  // 방장 변경임을 명시
+            newHostId: newHost.userId
           });
 
           // 방장에게 게임 시작 가능 여부 다시 확인
@@ -501,19 +507,25 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
           await client.leave(room.code);
 
-          // 방에 남아있는 모든 사람에게 알림
+          // 업데이트된 플레이어 정보 다시 조회 (isHost 값이 업데이트되었는지 확인)
+          const updatedPlayers = await this.playerService.getPlayers(room.id);
+
+          this.logger.log(`[방장 위임-명시적나감] 플레이어 업데이트 확인:`, {
+            roomCode: room.code,
+            newHostId: newHost.userId,
+            playersCount: updatedPlayers.length,
+            playersWithHost: updatedPlayers.filter(p => p.isHost).map(p => ({ userId: p.userId, isHost: p.isHost }))
+          });
+
+          // room-updated 이벤트에 모든 정보를 담아 전송
           this.server.to(room.code).emit('room-updated', {
             room: {
               ...room,
               hostId: newHost.userId  // 명시적으로 hostId 포함
             },
-            players: remainingPlayers,
-          });
-
-          // 방장 변경 알림
-          this.server.to(room.code).emit('host-changed', {
-            newHostId: newHost.userId,
-            players: remainingPlayers,
+            players: updatedPlayers,  // 다시 조회한 플레이어 정보 사용
+            hostChanged: true,  // 방장 변경임을 명시
+            newHostId: newHost.userId
           });
         } else {
           // 참가자가 0명이면 방 삭제

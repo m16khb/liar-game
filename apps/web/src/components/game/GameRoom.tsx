@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { flushSync } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSocket } from '@/hooks/useSocket'
 import { useAuth } from '@/hooks/useAuth'
@@ -80,27 +81,49 @@ export default function GameRoom() {
 
   // 이벤트 핸들러들
   const handleRoomUpdated = useCallback((data: any) => {
-    console.log('📝 방 정보 업데이트:', data)
-    console.log('📝 방 hostId:', data.room?.hostId)
-    console.log('📝 플레이어 상세:', data.players?.map((p: any) => ({ userId: p.userId, isHost: p.isHost, email: p.user?.email })))
+    console.log('📝 [room-updated] 방 정보 업데이트 수신:', data)
 
-    // 배치 업데이트로 상태 변경을 동시에 처리
-    setRoom(data.room)
-    setPlayers(data.players || [])
+    // 방장 변경 여부 확인
+    const amIHost = data.players?.some((p: any) => p.userId === user?.backendUserId && p.isHost)
 
-    // 현재 유저의 준비 상태도 업데이트
-    const myPlayer = data.players?.find((p: any) =>
-      p.user?.email === user?.email || p.userId === user?.backendUserId
-    )
-    if (myPlayer) {
-      setIsReady(myPlayer.status === 'ready')
+    if (data.hostChanged) {
+      console.log('👑 [room-updated] 방장 변경 감지됨!')
+      console.log('👑 새로운 방장 ID:', data.newHostId)
+      console.log('👑 내가 새로운 방장인가?:', amIHost)
+
+      // 방장 변경된 경우 동기적 상태 업데이트
+      console.log('🔄 [room-updated] 방장 변경됨! flushSync로 동기적 업데이트')
+      flushSync(() => {
+        setRoom(data.room)
+        setPlayers(data.players || [])
+        setIsHost(amIHost)  // 방장 상태도 즉시 업데이트
+
+        // 현재 유저의 준비 상태도 업데이트
+        const myPlayer = data.players?.find((p: any) =>
+          p.user?.email === user?.email || p.userId === user?.backendUserId
+        )
+        if (myPlayer) {
+          setIsReady(myPlayer.status === 'ready')
+        }
+      })
+
+      console.log('✅ [room-updated] 동기적 업데이트 완료 - 현재 방장 여부:', amIHost)
+    } else {
+      console.log('📝 [room-updated] 일반 업데이트')
+      console.log('📝 [room-updated] 방 hostId:', data.room?.hostId)
+      console.log('📝 [room-updated] 플레이어 상세:', data.players?.map((p: any) => ({ userId: p.userId, isHost: p.isHost, email: p.user?.email })))
+
+      // 일반 업데이트는 비동기적으로 처리
+      setRoom(data.room)
+      setPlayers(data.players || [])
+
+      const myPlayer = data.players?.find((p: any) =>
+        p.user?.email === user?.email || p.userId === user?.backendUserId
+      )
+      if (myPlayer) {
+        setIsReady(myPlayer.status === 'ready')
+      }
     }
-
-    // 상태 업데이트 후 확인
-    requestAnimationFrame(() => {
-      console.log('🔍 방장 확인 - room.hostId:', data.room?.hostId)
-      console.log('🔍 플레이어 방장 여부:', data.players?.filter((p: any) => p.isHost).map((p: any) => ({ userId: p.userId, isHost: p.isHost })))
-    })
   }, [user?.backendUserId, user?.email])
 
   const handlePlayerReadyChanged = useCallback((data: any) => {
@@ -125,12 +148,17 @@ export default function GameRoom() {
     setPlayers(data.players || [])
   }, [])
 
-  const handleHostChanged = useCallback((data: any) => {
-    console.log('🔄 방장 자동 변경:', data)
-    console.log('🔄 새로운 방장 ID:', data.newHostId)
-    // room 정보를 즉시 업데이트하여 UI 반응성 향상
-    setRoom(prev => prev ? { ...prev, hostId: data.newHostId } : null)
-  }, [])
+  // handleHostChanged는 더 이상 사용하지 않음 (room-updated로 통합)
+  // const handleHostChanged = useCallback((data: any) => {
+  //   console.log('🔄 [host-changed] 방장 자동 변경 수신:', data)
+  //   console.log('🔄 [host-changed] 새로운 방장 ID:', data.newHostId)
+  //   console.log('🔄 [host-changed] 내가 새로운 방장인가?:', user?.backendUserId === data.newHostId)
+  //   setRoom(prev => prev ? { ...prev, hostId: data.newHostId } : null)
+  //   if (data.players) {
+  //     setPlayers(data.players)
+  //     console.log('✅ [host-changed] 플레이어 상태 업데이트 완료')
+  //   }
+  // }, [user?.backendUserId])
 
   const handleRoomDeleted = useCallback((data: any) => {
     console.log('❌ 방 삭제:', data)
@@ -148,7 +176,7 @@ export default function GameRoom() {
     socket.on('player-ready-changed', handlePlayerReadyChanged)
     socket.on('game-started', handleGameStarted)
     socket.on('host-transferred', handleHostTransferred)
-    socket.on('host-changed', handleHostChanged)
+    // host-changed 이벤트는 room-updated로 통합됨
     socket.on('room-deleted', handleRoomDeleted)
 
     // cleanup
@@ -158,10 +186,10 @@ export default function GameRoom() {
       socket.off('player-ready-changed', handlePlayerReadyChanged)
       socket.off('game-started', handleGameStarted)
       socket.off('host-transferred', handleHostTransferred)
-      socket.off('host-changed', handleHostChanged)
+      // socket.off('host-changed', handleHostChanged)  // 더 이상 사용하지 않음
       socket.off('room-deleted', handleRoomDeleted)
     }
-  }, [socket, handleRoomJoined, handleRoomUpdated, handlePlayerReadyChanged, handleGameStarted, handleHostTransferred, handleHostChanged, handleRoomDeleted])
+  }, [socket, handleRoomJoined, handleRoomUpdated, handlePlayerReadyChanged, handleGameStarted, handleHostTransferred, handleRoomDeleted])
 
   // 에러 상태 동기화
   useEffect(() => {
@@ -233,7 +261,10 @@ export default function GameRoom() {
   }, [closeContextMenu])
 
   // 현재 유저가 방장인지 확인 - backendUserId로 비교
-  const isHost = useMemo(() => {
+  const [isHost, setIsHost] = useState(false)
+
+  // players나 user가 변경될 때마다 isHost 계산
+  useEffect(() => {
     const result = players.some(p => p.userId === user?.backendUserId && p.isHost)
 
     // 방장 확인 로그
@@ -250,7 +281,7 @@ export default function GameRoom() {
       isHostResult: result
     })
 
-    return result
+    setIsHost(result)
   }, [players, user?.backendUserId, user?.id, user?.user_metadata?.nickname])
 
   // 게임 시작 가능 여부
