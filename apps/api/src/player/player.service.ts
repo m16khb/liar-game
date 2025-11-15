@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { PlayerEntity, PlayerStatus } from './entities/player.entity';
 
 @Injectable()
@@ -53,7 +53,7 @@ export class PlayerService {
       return;
     }
 
-    await this.playerRepository.remove(player);
+    await this.playerRepository.softDelete(player.id);
   }
 
   /**
@@ -61,7 +61,7 @@ export class PlayerService {
    */
   async findPlayer(roomId: number, userId: number): Promise<PlayerEntity | null> {
     return await this.playerRepository.findOne({
-      where: { roomId, userId },
+      where: { roomId, userId, deletedAt: IsNull() },
       relations: ['room', 'user'],
     });
   }
@@ -71,7 +71,7 @@ export class PlayerService {
    */
   async findActivePlayer(userId: number): Promise<PlayerEntity | null> {
     return await this.playerRepository.findOne({
-      where: { userId },
+      where: { userId, deletedAt: IsNull() },
       relations: ['room', 'user'],
     });
   }
@@ -81,7 +81,7 @@ export class PlayerService {
    */
   async getPlayers(roomId: number): Promise<PlayerEntity[]> {
     return await this.playerRepository.find({
-      where: { roomId },
+      where: { roomId, deletedAt: IsNull() },
       relations: ['user'],
       order: {
         joinOrder: 'ASC',
