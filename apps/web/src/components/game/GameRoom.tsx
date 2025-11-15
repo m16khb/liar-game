@@ -95,8 +95,12 @@ export default function GameRoom() {
     const handlePlayerReadyChanged = (data: any) => {
       console.log('🔄 플레이어 준비 상태 변경:', data)
       setPlayers(data.players || [])
-      if (data.player?.userId === user?.id) {
-        setIsReady(data.player.status === 'ready')
+      // 현재 유저의 준비 상태 업데이트
+      const myPlayer = data.players?.find((p: any) =>
+        p.user?.email === user?.email || p.userId === user?.id
+      )
+      if (myPlayer) {
+        setIsReady(myPlayer.status === 'ready')
       }
     }
 
@@ -207,8 +211,8 @@ export default function GameRoom() {
     return () => document.removeEventListener('click', handleClick)
   }, [closeContextMenu])
 
-  // 현재 유저가 방장인지 확인
-  const isHost = players.some(p => p.userId === user?.id && p.isHost)
+  // 현재 유저가 방장인지 확인 - 이메일로 비교
+  const isHost = players.some(p => p.user?.email === user?.email && p.isHost)
 
   // 게임 시작 가능 여부
   const canStartGame = room &&

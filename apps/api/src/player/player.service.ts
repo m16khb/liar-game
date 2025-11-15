@@ -14,13 +14,23 @@ export class PlayerService {
    * 방에 플레이어 추가
    */
   async addPlayer(roomId: number, userId: number, isHost: boolean = false): Promise<PlayerEntity> {
-    // 이미 참여 중인지 확인
+    // 이미 참여 중인지 확인 (softDelete된 플레이어도 포함)
     const existingPlayer = await this.playerRepository.findOne({
       where: { roomId, userId },
+      withDeleted: true, // softDelete된 레코드도 조회
     });
 
     if (existingPlayer) {
-      throw new ConflictException('이미 방에 참여 중입니다.');
+      if (existingPlayer.deletedAt) {
+        // softDelete된 경우 복원
+        existingPlayer.deletedAt = null;
+        existingPlayer.isHost = isHost;
+        existingPlayer.status = isHost ? PlayerStatus.READY : PlayerStatus.NOT_READY;
+        existingPlayer.lastActiveAt = new Date();
+        return await this.playerRepository.save(existingPlayer);
+      } else {
+        throw new ConflictException('이미 방에 참여 중입니다.');
+      }
     }
 
     // 참가 순서 조회
