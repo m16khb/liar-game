@@ -56,6 +56,18 @@ export default function RoomList({
   // useRooms 훅을 사용하여 방 목록 관리
   const { rooms, loading, error, setError: setRoomsError, refresh, createRoom: createNewRoom } = useRooms('waiting')
 
+  // 페이지가 보일 때마다 방 목록 새로고침
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        refresh()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [refresh])
+
   // 반응형 breakpoint
   const isMobile = width < 768
   const isTablet = width >= 768 && width < 1024
