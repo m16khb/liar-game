@@ -39,6 +39,7 @@ export default function GameRoom() {
   const [players, setPlayers] = useState<Player[]>([])
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isLeaving, setIsLeaving] = useState(false)
 
   // 컨텍스트 메뉴 상태
   const [contextMenu, setContextMenu] = useState<{
@@ -76,6 +77,7 @@ export default function GameRoom() {
     // 방 참가 성공
     const handleRoomJoined = (data: any) => {
       console.log('✅ 방 참가 성공:', data)
+      console.log('✅ 플레이어 상세:', data.players?.map((p: any) => ({ userId: p.userId, isHost: p.isHost, email: p.user?.email })))
       setRoom(data.room)
       setPlayers(data.players || [])
     }
@@ -83,8 +85,10 @@ export default function GameRoom() {
     // 방 정보 업데이트
     const handleRoomUpdated = (data: any) => {
       console.log('📝 방 정보 업데이트:', data)
+      console.log('📝 플레이어 상세:', data.players?.map((p: any) => ({ userId: p.userId, isHost: p.isHost, email: p.user?.email })))
       setRoom(data.room)
       setPlayers(data.players || [])
+      console.log('🔍 setPlayers 후 상태:', data.players?.map((p: any) => ({ userId: p.userId, isHost: p.isHost, email: p.user?.email })))
     }
 
     // 플레이어 준비 상태 변경
@@ -108,12 +112,20 @@ export default function GameRoom() {
       setPlayers(data.players || [])
     }
 
+    // 방 삭제
+    const handleRoomDeleted = (data: any) => {
+      console.log('❌ 방 삭제:', data)
+      alert(data.message || '방이 삭제되었습니다.')
+      navigate('/rooms')
+    }
+
     // 이벤트 리스너 등록
     socket.on('room-joined', handleRoomJoined)
     socket.on('room-updated', handleRoomUpdated)
     socket.on('player-ready-changed', handlePlayerReadyChanged)
     socket.on('game-started', handleGameStarted)
     socket.on('host-transferred', handleHostTransferred)
+    socket.on('room-deleted', handleRoomDeleted)
 
     // cleanup
     return () => {
@@ -122,6 +134,7 @@ export default function GameRoom() {
       socket.off('player-ready-changed', handlePlayerReadyChanged)
       socket.off('game-started', handleGameStarted)
       socket.off('host-transferred', handleHostTransferred)
+      socket.off('room-deleted', handleRoomDeleted)
     }
   }, [socket, user?.id, navigate, roomCode])
 
@@ -148,11 +161,15 @@ export default function GameRoom() {
 
   // 방 나가기
   const handleLeaveRoom = useCallback(() => {
-    if (socket) {
+    if (socket && !isLeaving) {
+      setIsLeaving(true)
       socket.emit('leave-room')
-      navigate('/rooms')
+      // 0.5초 후에 방 목록으로 이동
+      setTimeout(() => {
+        navigate('/rooms', { replace: true })
+      }, 500)
     }
-  }, [socket, navigate])
+  }, [socket, navigate, isLeaving])
 
   // 컨텍스트 메뉴 핸들러
   const handleContextMenu = useCallback((e: React.MouseEvent, player: Player) => {
@@ -337,17 +354,19 @@ export default function GameRoom() {
             </h1>
             <button
               onClick={handleLeaveRoom}
+              disabled={isLeaving}
               style={{
                 padding: '8px 16px',
-                backgroundColor: '#ef4444',
+                backgroundColor: isLeaving ? '#9ca3af' : '#ef4444',
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',
                 fontSize: '14px',
-                cursor: 'pointer'
+                cursor: isLeaving ? 'not-allowed' : 'pointer',
+                opacity: isLeaving ? 0.7 : 1
               }}
             >
-              나가기
+              {isLeaving ? '나가는 중...' : '나가기'}
             </button>
           </div>
 
@@ -452,7 +471,7 @@ export default function GameRoom() {
                       fontWeight: '600',
                       color: '#1f2937'
                     }}>
-                      {player.nickname || `플레이어 ${player.userId}`}
+                      {player.user?.email || `플레이어 ${player.userId}`}
                     </span>
                     {player.isHost && (
                       <span style={{
