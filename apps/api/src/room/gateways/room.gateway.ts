@@ -259,41 +259,55 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       if (player) {
         await this.playerService.removePlayer(player.roomId, userId);
-        const room = await this.roomService.decrementPlayers(player.roomId);
 
-        // 방에 남아있는 모든 사람에게 알림
-        this.server.to(room.code).emit('room-updated', {
-          room,
-          players: await this.playerService.getPlayers(room.id),
-        });
+        // 남은 플레이어 목록 조회
+        const remainingPlayers = await this.playerService.getPlayers(player.roomId);
 
-        // 방장이 나가면 방장 권한 위임
-        const players = await this.playerService.getPlayers(room.id);
-        if (players.length > 0) {
-          const newHost = players[0];
+        if (remainingPlayers.length > 0) {
+          const newHost = remainingPlayers[0];
+
+          // 플레이어 테이블의 방장 정보 업데이트
           await this.playerService.updateHost(player.roomId, newHost.userId);
 
+          // 방 테이블의 방장 정보 업데이트
+          await this.roomService.updateHost(player.roomId, newHost.userId);
+
+          // 방 인원 수 감소
+          const room = await this.roomService.decrementPlayers(player.roomId);
+
+          // 방에 남아있는 모든 사람에게 알림
+          this.server.to(room.code).emit('room-updated', {
+            room: {
+              ...room,
+              hostId: newHost.userId  // 명시적으로 hostId 포함
+            },
+            players: remainingPlayers,
+          });
+
+          // 방장 변경 알림
           this.server.to(room.code).emit('host-changed', {
             newHostId: newHost.userId,
+            players: remainingPlayers,
           });
+
+          // 방장에게 게임 시작 가능 여부 다시 확인
+          await this.checkGameStartStatus(room.id);
         } else {
           // 참가자가 0명이면 방 삭제
-          this.logger.log(`Room ${room.code} has no players. Deleting room.`);
-          await this.roomService.deleteRoom(room.id);
+          const roomToDelete = await this.roomService.findById(player.roomId);
+          if (roomToDelete) {
+            this.logger.log(`Room ${roomToDelete.code} has no players. Deleting room.`);
+            await this.roomService.deleteRoom(player.roomId);
 
-          // 방에서 모두 내보내기
-          this.server.in(room.code).emit('room-deleted', {
-            message: '참가자가 없어 방이 삭제되었습니다.',
-          });
-          this.server.in(room.code).socketsLeave(room.code);
+            // 방에서 모두 내보내기
+            this.server.in(roomToDelete.code).emit('room-deleted', {
+              message: '참가자가 없어 방이 삭제되었습니다.',
+            });
+            this.server.in(roomToDelete.code).socketsLeave(roomToDelete.code);
+          }
         }
 
-        this.logger.log(`User ${userId} left room: ${room.code}`);
-
-        // 방장에게 게임 시작 가능 여부 다시 확인
-        if (players.length > 0) {
-          await this.checkGameStartStatus(room.id);
-        }
+        this.logger.log(`User ${userId} left room`);
       }
     } catch (error) {
       this.logger.error(`Failed to leave room: ${error instanceof Error ? error.message : error}`);
@@ -469,27 +483,43 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       if (player) {
         await this.playerService.removePlayer(player.roomId, userId);
-        const room = await this.roomService.decrementPlayers(player.roomId);
 
-        await client.leave(room.code);
+        // 남은 플레이어 목록 조회
+        const remainingPlayers = await this.playerService.getPlayers(player.roomId);
 
-        // 방에 남아있는 모든 사람에게 알림
-        this.server.to(room.code).emit('room-updated', {
-          room,
-          players: await this.playerService.getPlayers(room.id),
-        });
+        if (remainingPlayers.length > 0) {
+          const newHost = remainingPlayers[0];
 
-        // 방장이 나가면 방장 권한 위임
-        const players = await this.playerService.getPlayers(room.id);
-        if (players.length > 0) {
-          const newHost = players[0];
+          // 플레이어 테이블의 방장 정보 업데이트
           await this.playerService.updateHost(player.roomId, newHost.userId);
 
+          // 방 테이블의 방장 정보 업데이트
+          await this.roomService.updateHost(player.roomId, newHost.userId);
+
+          // 방 인원 수 감소
+          const room = await this.roomService.decrementPlayers(player.roomId);
+
+          await client.leave(room.code);
+
+          // 방에 남아있는 모든 사람에게 알림
+          this.server.to(room.code).emit('room-updated', {
+            room: {
+              ...room,
+              hostId: newHost.userId  // 명시적으로 hostId 포함
+            },
+            players: remainingPlayers,
+          });
+
+          // 방장 변경 알림
           this.server.to(room.code).emit('host-changed', {
             newHostId: newHost.userId,
+            players: remainingPlayers,
           });
         } else {
           // 참가자가 0명이면 방 삭제
+          const room = await this.roomService.decrementPlayers(player.roomId);
+          await client.leave(room.code);
+
           this.logger.log(`Room ${room.code} has no players. Deleting room.`);
           await this.roomService.deleteRoom(room.id);
 
@@ -500,7 +530,7 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
           this.server.in(room.code).socketsLeave(room.code);
         }
 
-        this.logger.log(`User ${userId} left room: ${room.code}`);
+        this.logger.log(`User ${userId} left room`);
       }
     } catch (error) {
       this.logger.error(`Failed to leave room: ${error instanceof Error ? error.message : error}`);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSocket } from '@/hooks/useSocket'
 import { useAuth } from '@/hooks/useAuth'
@@ -70,58 +70,77 @@ export default function GameRoom() {
     }
   }, [roomCode, navigate, connect, disconnect])
 
+  // 이벤트 핸들러들을 useEffect 밖으로 이동
+  const handleRoomJoined = useCallback((data: any) => {
+    console.log('✅ 방 참가 성공:', data)
+    console.log('✅ 플레이어 상세:', data.players?.map((p: any) => ({ userId: p.userId, isHost: p.isHost, email: p.user?.email })))
+    setRoom(data.room)
+    setPlayers(data.players || [])
+  }, [])
+
+  // 이벤트 핸들러들
+  const handleRoomUpdated = useCallback((data: any) => {
+    console.log('📝 방 정보 업데이트:', data)
+    console.log('📝 방 hostId:', data.room?.hostId)
+    console.log('📝 플레이어 상세:', data.players?.map((p: any) => ({ userId: p.userId, isHost: p.isHost, email: p.user?.email })))
+
+    // 배치 업데이트로 상태 변경을 동시에 처리
+    setRoom(data.room)
+    setPlayers(data.players || [])
+
+    // 현재 유저의 준비 상태도 업데이트
+    const myPlayer = data.players?.find((p: any) =>
+      p.user?.email === user?.email || p.userId === user?.backendUserId
+    )
+    if (myPlayer) {
+      setIsReady(myPlayer.status === 'ready')
+    }
+
+    // 상태 업데이트 후 확인
+    requestAnimationFrame(() => {
+      console.log('🔍 방장 확인 - room.hostId:', data.room?.hostId)
+      console.log('🔍 플레이어 방장 여부:', data.players?.filter((p: any) => p.isHost).map((p: any) => ({ userId: p.userId, isHost: p.isHost })))
+    })
+  }, [user?.backendUserId, user?.email])
+
+  const handlePlayerReadyChanged = useCallback((data: any) => {
+    console.log('🔄 플레이어 준비 상태 변경:', data)
+    setPlayers(data.players || [])
+    // 현재 유저의 준비 상태 업데이트
+    const myPlayer = data.players?.find((p: any) =>
+      p.user?.email === user?.email || p.userId === user?.backendUserId
+    )
+    if (myPlayer) {
+      setIsReady(myPlayer.status === 'ready')
+    }
+  }, [user?.backendUserId, user?.email])
+
+  const handleGameStarted = useCallback(() => {
+    console.log('🎮 게임 시작')
+    navigate(`/game/${roomCode}/play`)
+  }, [navigate, roomCode])
+
+  const handleHostTransferred = useCallback((data: any) => {
+    console.log('👑 방장 위임:', data)
+    setPlayers(data.players || [])
+  }, [])
+
+  const handleHostChanged = useCallback((data: any) => {
+    console.log('🔄 방장 자동 변경:', data)
+    console.log('🔄 새로운 방장 ID:', data.newHostId)
+    // room 정보를 즉시 업데이트하여 UI 반응성 향상
+    setRoom(prev => prev ? { ...prev, hostId: data.newHostId } : null)
+  }, [])
+
+  const handleRoomDeleted = useCallback((data: any) => {
+    console.log('❌ 방 삭제:', data)
+    alert(data.message || '방이 삭제되었습니다.')
+    navigate('/rooms')
+  }, [navigate])
+
   // 소켓 이벤트 리스너 설정
   useEffect(() => {
     if (!socket) return
-
-    // 방 참가 성공
-    const handleRoomJoined = (data: any) => {
-      console.log('✅ 방 참가 성공:', data)
-      console.log('✅ 플레이어 상세:', data.players?.map((p: any) => ({ userId: p.userId, isHost: p.isHost, email: p.user?.email })))
-      setRoom(data.room)
-      setPlayers(data.players || [])
-    }
-
-    // 방 정보 업데이트
-    const handleRoomUpdated = (data: any) => {
-      console.log('📝 방 정보 업데이트:', data)
-      console.log('📝 플레이어 상세:', data.players?.map((p: any) => ({ userId: p.userId, isHost: p.isHost, email: p.user?.email })))
-      setRoom(data.room)
-      setPlayers(data.players || [])
-      console.log('🔍 setPlayers 후 상태:', data.players?.map((p: any) => ({ userId: p.userId, isHost: p.isHost, email: p.user?.email })))
-    }
-
-    // 플레이어 준비 상태 변경
-    const handlePlayerReadyChanged = (data: any) => {
-      console.log('🔄 플레이어 준비 상태 변경:', data)
-      setPlayers(data.players || [])
-      // 현재 유저의 준비 상태 업데이트
-      const myPlayer = data.players?.find((p: any) =>
-        p.user?.email === user?.email || p.userId === user?.backendUserId
-      )
-      if (myPlayer) {
-        setIsReady(myPlayer.status === 'ready')
-      }
-    }
-
-    // 게임 시작
-    const handleGameStarted = () => {
-      console.log('🎮 게임 시작')
-      navigate(`/game/${roomCode}/play`)
-    }
-
-    // 방장 위임
-    const handleHostTransferred = (data: any) => {
-      console.log('👑 방장 위임:', data)
-      setPlayers(data.players || [])
-    }
-
-    // 방 삭제
-    const handleRoomDeleted = (data: any) => {
-      console.log('❌ 방 삭제:', data)
-      alert(data.message || '방이 삭제되었습니다.')
-      navigate('/rooms')
-    }
 
     // 이벤트 리스너 등록
     socket.on('room-joined', handleRoomJoined)
@@ -129,6 +148,7 @@ export default function GameRoom() {
     socket.on('player-ready-changed', handlePlayerReadyChanged)
     socket.on('game-started', handleGameStarted)
     socket.on('host-transferred', handleHostTransferred)
+    socket.on('host-changed', handleHostChanged)
     socket.on('room-deleted', handleRoomDeleted)
 
     // cleanup
@@ -138,9 +158,10 @@ export default function GameRoom() {
       socket.off('player-ready-changed', handlePlayerReadyChanged)
       socket.off('game-started', handleGameStarted)
       socket.off('host-transferred', handleHostTransferred)
+      socket.off('host-changed', handleHostChanged)
       socket.off('room-deleted', handleRoomDeleted)
     }
-  }, [socket, user?.id, navigate, roomCode])
+  }, [socket, handleRoomJoined, handleRoomUpdated, handlePlayerReadyChanged, handleGameStarted, handleHostTransferred, handleHostChanged, handleRoomDeleted])
 
   // 에러 상태 동기화
   useEffect(() => {
@@ -212,21 +233,25 @@ export default function GameRoom() {
   }, [closeContextMenu])
 
   // 현재 유저가 방장인지 확인 - backendUserId로 비교
-  const isHost = players.some(p => p.userId === user?.backendUserId && p.isHost)
+  const isHost = useMemo(() => {
+    const result = players.some(p => p.userId === user?.backendUserId && p.isHost)
 
-  // 방장 확인 로그
-  console.log('👑 방장 확인 로그:', {
-    supabaseId: user?.id,  // Supabase UUID
-    backendUserId: user?.backendUserId,  // Backend User ID
-    userNickname: user?.user_metadata?.nickname,
-    players: players.map(p => ({
-      userId: p.userId,
-      nickname: p.nickname,
-      isHost: p.isHost,
-      status: p.status
-    })),
-    isHostResult: isHost
-  })
+    // 방장 확인 로그
+    console.log('👑 방장 확인 로그:', {
+      supabaseId: user?.id,  // Supabase UUID
+      backendUserId: user?.backendUserId,  // Backend User ID
+      userNickname: user?.user_metadata?.nickname,
+      players: players.map(p => ({
+        userId: p.userId,
+        nickname: p.nickname,
+        isHost: p.isHost,
+        status: p.status
+      })),
+      isHostResult: result
+    })
+
+    return result
+  }, [players, user?.backendUserId, user?.id, user?.user_metadata?.nickname])
 
   // 게임 시작 가능 여부
   const canStartGame = room &&

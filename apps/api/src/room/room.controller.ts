@@ -35,7 +35,6 @@ export class RoomController {
     console.log(`[RoomController.createRoom] 사용자가 방 생성을 시도합니다:`, {
       userId: user.id,
       userEmail: user.email,
-      userNickname: user.nickname,
       roomTitle: createRoomDto.title
     });
 

@@ -191,6 +191,22 @@ export class RoomService {
   }
 
   /**
+   * 방장 변경
+   */
+  async updateHost(roomId: number, newHostId: number): Promise<void> {
+    const room = await this.roomRepository.findOne({
+      where: { id: roomId, deletedAt: IsNull() },
+    });
+
+    if (!room) {
+      throw new NotFoundException('존재하지 않는 방입니다.');
+    }
+
+    await this.roomRepository.update(roomId, { hostId: newHostId });
+    console.log(`[RoomService.updateHost] 방장 변경 - roomId: ${roomId}, oldHostId: ${room.hostId}, newHostId: ${newHostId}`);
+  }
+
+  /**
    * 방 삭제 (소프트 딜리트)
    */
   async deleteRoom(id: number): Promise<void> {
