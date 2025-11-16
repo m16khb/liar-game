@@ -1,6 +1,8 @@
 // OTP 관련 localStorage 유틸리티
 // OTP 인증 정보를 안전하게 저장하고 관리
 
+import dayjs from 'dayjs'
+
 const OTP_STORAGE_KEY = 'liar_game_otp'
 const OTP_EXPIRY_MINUTES = 10
 
@@ -17,7 +19,7 @@ interface OTPData {
 export const saveOTPToStorage = (email: string): void => {
   const otpData: OTPData = {
     email,
-    timestamp: Date.now(),
+    timestamp: dayjs().valueOf(),
     attempts: 0,
   }
 
@@ -40,7 +42,7 @@ export const getOTPFromStorage = (): OTPData | null => {
     const otpData: OTPData = JSON.parse(stored)
 
     // 유효기간 확인 (10분)
-    const now = Date.now()
+    const now = dayjs().valueOf()
     const expiryTime = otpData.timestamp + (OTP_EXPIRY_MINUTES * 60 * 1000)
 
     if (now > expiryTime) {
@@ -96,7 +98,7 @@ export const getOTPRemainingTime = (): number | null => {
   const otpData = getOTPFromStorage()
   if (!otpData) return null
 
-  const now = Date.now()
+  const now = dayjs().valueOf()
   const expiryTime = otpData.timestamp + (OTP_EXPIRY_MINUTES * 60 * 1000)
   const remaining = Math.max(0, Math.floor((expiryTime - now) / 1000))
 

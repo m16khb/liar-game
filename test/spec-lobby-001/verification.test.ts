@@ -9,6 +9,7 @@ import { RoomService } from '../apps/api/src/room/room.service';
 import { RoomEntity, RoomStatus, GameDifficulty } from '../apps/api/src/room/entities/room.entity';
 import { CreateRoomDto } from '../apps/api/src/room/dto/create-room.dto';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 // Mock RoomEntity 생성
 const createMockRoomEntity = (overrides: Partial<RoomEntity> = {}): RoomEntity => ({
@@ -27,8 +28,8 @@ const createMockRoomEntity = (overrides: Partial<RoomEntity> = {}): RoomEntity =
   description: overrides.description,
   host: overrides.host,
   hostId: overrides.hostId,
-  createdAt: overrides.createdAt ?? new Date(),
-  updatedAt: overrides.updatedAt ?? new Date(),
+  createdAt: overrides.createdAt ?? dayjs().toDate(),
+  updatedAt: overrides.updatedAt ?? dayjs().toDate(),
   deletedAt: overrides.deletedAt,
 });
 
@@ -79,8 +80,8 @@ describe('SPEC-LOBBY-001: Room Service Verification (Unit Tests)', () => {
         code: 'testcode12345678901234567890123456',
         hostId: undefined,
         currentPlayers: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
       }));
 
       // THEN: 생성된 방의 hostId가 undefined이어야 함 (인증 처리되지 않음)
@@ -112,8 +113,8 @@ describe('SPEC-LOBBY-001: Room Service Verification (Unit Tests)', () => {
         code: 'testcode12345678901234567890123456',
         hostId: 1,
         currentPlayers: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
       }));
 
       const result = await roomService.createRoom(createRoomDto);
@@ -149,8 +150,8 @@ describe('SPEC-LOBBY-001: Room Service Verification (Unit Tests)', () => {
         code: 'testcode12345678901234567890123456',
         hostId: 1,
         currentPlayers: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
       }));
 
       const result = await roomService.createRoom(createRoomDto);
@@ -183,8 +184,8 @@ describe('SPEC-LOBBY-001: Room Service Verification (Unit Tests)', () => {
         code: 'testcode12345678901234567890123456',
         hostId: 1,
         currentPlayers: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
       }));
 
       // THEN: 서비스 레벨에서는 성공하지만, Controller 레벨에서 오류 발생
@@ -221,8 +222,8 @@ describe('SPEC-LOBBY-001: Room Service Verification (Unit Tests)', () => {
         code: 'testcode12345678901234567890123456',
         hostId: 1,
         currentPlayers: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
       }));
 
       // THEN: BadRequestException 발생해야 함
@@ -432,8 +433,8 @@ describe('SPEC-LOBBY-001: Room Service Verification (Unit Tests)', () => {
         code: 'testcode12345678901234567890123456',
         hostId: 1,
         currentPlayers: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
       }));
 
       const result = await roomService.createRoom(createRoomDto);
@@ -467,8 +468,8 @@ describe('SPEC-LOBBY-001: Room Service Verification (Unit Tests)', () => {
         code: 'testcode12345678901234567890123456',
         hostId: 1,
         currentPlayers: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
       }));
 
       const result = await roomService.createRoom(createRoomDto);
@@ -506,8 +507,8 @@ describe('SPEC-LOBBY-001: Room Service Verification (Unit Tests)', () => {
         code: 'testcode12345678901234567890123456',
         hostId: 1,
         currentPlayers: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
       }));
 
       const result = await roomService.createRoom(createRoomDto);
@@ -558,7 +559,7 @@ describe('SPEC-LOBBY-001: Room Service Verification (Unit Tests)', () => {
         isPrivate: false,
       };
 
-      const now = new Date();
+      const now = dayjs().toDate();
       mockRoomRepository.create.mockReturnValue(createMockRoomEntity({
         ...createRoomDto,
         code: 'testcode12345678901234567890123456',
@@ -612,8 +613,8 @@ describe('SPEC-LOBBY-001: Room Service Verification (Unit Tests)', () => {
         code: 'testcode12345678901234567890123456',
         hostId: undefined,
         currentPlayers: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
       }));
 
       const result = await roomService.createRoom(createRoomDto);
@@ -630,16 +631,16 @@ describe('SPEC-LOBBY-001: Room Service Verification (Unit Tests)', () => {
           code: 'old123',
           title: '오래된 방',
           status: RoomStatus.WAITING,
-          createdAt: new Date('2023-01-01'),
-          updatedAt: new Date(),
+          createdAt: dayjs('2023-01-01').toDate(),
+          updatedAt: dayjs().toDate(),
         }),
         createMockRoomEntity({
           id: 2,
           code: 'new456',
           title: '새로운 방',
           status: RoomStatus.WAITING,
-          createdAt: new Date('2023-12-01'),
-          updatedAt: new Date(),
+          createdAt: dayjs('2023-12-01').toDate(),
+          updatedAt: dayjs().toDate(),
         }),
       ];
 
@@ -677,8 +678,8 @@ describe('SPEC-LOBBY-001: Room Service Verification (Unit Tests)', () => {
         code: 'testcode12345678901234567890123456',
         hostId: 1,
         currentPlayers: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
       }));
 
       const result = await roomService.createRoom(minimalCreateRoomDto);
@@ -718,8 +719,8 @@ describe('SPEC-LOBBY-001: Room Service Verification (Unit Tests)', () => {
         code: 'successcode12345678901234567890123456',
         hostId: 1,
         currentPlayers: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
       }));
 
       const result = await roomService.createRoom(createRoomDto);
@@ -836,8 +837,8 @@ describe('SPEC-LOBBY-001: Room Service Verification (Unit Tests)', () => {
         code: 'testcode12345678901234567890123456',
         hostId: 1,
         currentPlayers: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
       }));
 
       const result = await roomService.createRoom(createRoomDto);
