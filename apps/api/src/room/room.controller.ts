@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Query, Body, UseGuards, ValidationPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Query, Body, UseGuards, ValidationPipe, Param, UseFilters } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { RoomService } from './room.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { RoomResponseDto } from './dto/room-response.dto';
@@ -10,9 +10,11 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Public } from '@/common/decorators/public.decorator';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { SecurityExceptionFilter } from '@/common/filters/security-exception.filter';
 
 @ApiTags('rooms')
 @Controller('rooms')
+@UseFilters(SecurityExceptionFilter)
 export class RoomController {
   constructor(private readonly roomService: RoomService) {}
 
@@ -54,6 +56,28 @@ export class RoomController {
       title: room.title
     });
 
+    return this.roomService.mapToRoomResponseDto(room);
+  }
+
+  /**
+   * 방 참가 (인증 필요)
+   */
+  @Post(':code/join')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '방 참가' })
+  @ApiParam({ name: 'code', description: '방 코드 (32자)', example: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6' })
+  @ApiResponse({ status: 200, description: '방 참가 성공', type: RoomResponseDto })
+  @ApiResponse({ status: 400, description: '잘못된 요청' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 404, description: '존재하지 않는 방' })
+  async joinRoom(
+    @Param('code') code: string,
+    @Body() body: { password?: string },
+    @CurrentUser() user: UserEntity,
+  ): Promise<RoomResponseDto> {
+    const room = await this.roomService.joinRoom(code, user.id, body.password);
     return this.roomService.mapToRoomResponseDto(room);
   }
 

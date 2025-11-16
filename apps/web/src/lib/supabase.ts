@@ -2,6 +2,7 @@
 // 프론트엔드에서 Supabase Auth 및 Database 접근
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import dayjs from 'dayjs'
 
 // 환경 변수 (Vite는 VITE_ 접두사 사용)
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -20,7 +21,7 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKe
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flow: 'pkce', // 더 안전한 PKCE flow 사용
+    flowType: 'pkce', // 더 안전한 PKCE flow 사용
   },
 })
 
@@ -296,7 +297,7 @@ export const completeSignUp = async (email: string, password: string, otpToken?:
       data: {
         signup_completed: true,
         signup_method: 'otp_password',
-        completed_at: new Date().toISOString()
+        completed_at: dayjs().toISOString()
       }
     })
 
@@ -319,7 +320,7 @@ export const completeSignUp = async (email: string, password: string, otpToken?:
         data: {
           signup_method: 'otp_password',
           signup_completed: true,
-          created_at: new Date().toISOString()
+          created_at: dayjs().toISOString()
         }
       }
     })
@@ -442,7 +443,7 @@ export const getAccessToken = async (): Promise<string | null> => {
         email: payload.email,
         user_tier: payload.user_tier,
         user_role: payload.user_role,
-        exp: new Date(payload.exp * 1000).toLocaleString()
+        exp: dayjs(payload.exp * 1000).toLocaleString()
       });
     } catch (error) {
       console.error('토큰 디코딩 실패:', error);

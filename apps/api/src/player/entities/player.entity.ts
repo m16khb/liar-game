@@ -2,14 +2,16 @@ import { Entity, Column, Index, ManyToOne, OneToMany, JoinColumn, Unique } from 
 import { BaseEntity } from '../../common/entities/base.entity';
 import { UserEntity } from '../../user/entities/user.entity';
 import { RoomEntity } from '../../room/entities/room.entity';
-import { GameEntity } from '../../game/entities/game.entity';
-import { GameActionEntity } from '../../game/entities/game-action.entity';
+import { GameRoleType } from '../../game/entities/game-role.enum';
 
 export enum PlayerStatus {
   READY = 'ready',
   NOT_READY = 'not_ready',
   PLAYING = 'playing',
   ELIMINATED = 'eliminated',
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  DISCONNECTED = 'DISCONNECTED',
 }
 
 export enum GameRoleType {

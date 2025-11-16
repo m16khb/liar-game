@@ -2,12 +2,18 @@ import { Entity, Column, Index, ManyToOne, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../common/entities/base.entity';
 import { UserEntity } from '../../user/entities/user.entity';
 import { PlayerEntity } from '../../player/entities/player.entity';
-import { GameEntity } from '../../game/entities/game.entity';
 
 export enum RoomStatus {
   WAITING = 'waiting',
   PLAYING = 'playing',
   FINISHED = 'finished',
+}
+
+export enum GamePhase {
+  LOBBY = 'lobby',
+  DISCUSSION = 'discussion',
+  VOTING = 'voting',
+  RESULT = 'result',
 }
 
 export enum GameDifficulty {
@@ -32,6 +38,13 @@ export class RoomEntity extends BaseEntity {
     default: RoomStatus.WAITING,
   })
   status: RoomStatus;
+
+  @Column({
+    type: 'enum',
+    enum: GamePhase,
+    default: GamePhase.LOBBY,
+  })
+  phase: GamePhase;
 
   @Column({
     type: 'enum',

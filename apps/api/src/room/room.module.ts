@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { RoomController } from './room.controller';
@@ -21,4 +21,8 @@ import { PlayerModule } from '../player/player.module';
   providers: [RoomService, RoomGateway],
   exports: [RoomService],
 })
-export class RoomModule {}
+export class RoomModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // No middleware configuration needed
+  }
+}
