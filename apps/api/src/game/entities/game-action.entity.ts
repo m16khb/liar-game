@@ -4,8 +4,6 @@ import {
   Index,
   ManyToOne,
 } from 'typeorm';
-import { GameEntity } from './game.entity';
-import { PlayerEntity } from '../../player/entities/player.entity';
 import { BaseEntity } from '../../common/entities/base.entity';
 
 export enum GameActionType {
@@ -27,14 +25,14 @@ export class GameActionEntity extends BaseEntity {
   @Column({ type: 'int', unsigned: true })
   gameId: number;
 
-  @ManyToOne(() => GameEntity, (game) => game.actions)
-  game: GameEntity;
+  @ManyToOne(() => 'GameEntity', (game) => game.actions)
+  game: any;
 
   @Column({ type: 'int', unsigned: true })
   playerId: number;
 
-  @ManyToOne(() => PlayerEntity, (player) => player.actions)
-  player: PlayerEntity;
+  @ManyToOne(() => 'PlayerEntity', (player) => player.actions)
+  player: any;
 
   @Column({
     type: 'enum',

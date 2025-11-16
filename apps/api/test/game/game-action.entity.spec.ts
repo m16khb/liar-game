@@ -14,15 +14,15 @@ import dayjs from 'dayjs';
 const createMockGameActionEntity = (overrides: Partial<GameActionEntity> = {}): GameActionEntity => ({
   id: overrides.id ?? 1,
   gameId: overrides.gameId ?? 1,
-  game: overrides.game,
+  game: overrides.game ?? {} as any,
   playerId: overrides.playerId ?? 1,
-  player: overrides.player,
+  player: overrides.player ?? {} as any,
   type: overrides.type ?? GameActionType.JOIN,
   actionData: overrides.actionData ?? {},
   timestamp: overrides.timestamp ?? dayjs().toDate(),
   createdAt: overrides.createdAt ?? dayjs().toDate(),
   updatedAt: overrides.updatedAt ?? dayjs().toDate(),
-  deletedAt: overrides.deletedAt,
+  deletedAt: overrides.deletedAt ?? null,
 });
 
 // Mock GameEntity 생성

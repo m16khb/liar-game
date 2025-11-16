@@ -2,6 +2,7 @@ import { Entity, Column, Index, ManyToOne, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../common/entities/base.entity';
 import { UserEntity } from '../../user/entities/user.entity';
 import { PlayerEntity } from '../../player/entities/player.entity';
+import { GameEntity } from '../../game/entities/game.entity';
 
 export enum RoomStatus {
   WAITING = 'waiting',
@@ -72,8 +73,8 @@ export class RoomEntity extends BaseEntity {
   @Column({ type: 'timestamp', nullable: true, comment: '마지막 활동 시간' })
   lastActiveAt: Date | null;
 
-  @OneToMany(() => PlayerEntity, (player) => player.room)
-  players: PlayerEntity[];
+  @OneToMany(() => 'PlayerEntity', (player) => player.room)
+  players: any[];
 
   @OneToMany(() => 'GameEntity', (game) => game.room)
   games: any[];

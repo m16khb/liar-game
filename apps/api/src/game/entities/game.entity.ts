@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { RoomEntity } from '../../room/entities/room.entity';
 import { PlayerEntity } from '../../player/entities/player.entity';
+import { GameActionEntity } from './game-action.entity';
 import { BaseEntity } from '../../common/entities/base.entity';
 
 export enum GameStatus {
@@ -60,8 +61,8 @@ export class GameEntity extends BaseEntity {
   @Column({ type: 'json', nullable: true, comment: '게임 설정' })
   gameSettings: Record<string, any> | null;
 
-  @OneToMany(() => PlayerEntity, (player) => player.game)
-  players: PlayerEntity[];
+  @OneToMany(() => 'PlayerEntity', (player) => player.game)
+  players: any[];
 
   @OneToMany(() => 'GameActionEntity', (action) => action.game)
   actions: any[];
