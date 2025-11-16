@@ -1,0 +1,15 @@
+export enum GameStatus {
+  WAITING = 'WAITING',
+  PLAYING = 'PLAYING',
+  FINISHED = 'FINISHED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum GamePhase {
+  LOBBY = 'LOBBY',
+  ASSIGNMENT = 'ASSIGNMENT',
+  DISCUSSION = 'DISCUSSION',
+  VOTING = 'VOTING',
+  RESULT = 'RESULT',
+  FINISHED = 'FINISHED',
+}
