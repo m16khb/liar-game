@@ -59,6 +59,7 @@ docs_backup_*/
 Thumbs.db
 # Test coverage
 .moai/reports/*-draft.*
+.moai/cache/*
 *.bak
 venv/
 .env*
