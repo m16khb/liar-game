@@ -63,14 +63,8 @@ export class PlayerEntity extends BaseEntity {
   voteData: Record<string, any> | null;
 
   @Column({ type: 'json', nullable: true, comment: '게임별 추가 데이터' })
-  gameData: Record<string, any>;
+  gameData: Record<string, any> | null;
 
   @Column({ type: 'timestamp', nullable: true, comment: '마지막 활동 시간' })
   lastActiveAt: Date | null;
-
-  @ManyToOne(() => 'GameEntity', { nullable: true })
-  game: any;
-
-  @OneToMany(() => 'GameActionEntity', (action) => action.player)
-  actions: any[];
 }

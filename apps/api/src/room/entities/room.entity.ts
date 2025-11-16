@@ -72,10 +72,4 @@ export class RoomEntity extends BaseEntity {
 
   @Column({ type: 'timestamp', nullable: true, comment: '마지막 활동 시간' })
   lastActiveAt: Date | null;
-
-  @OneToMany(() => 'PlayerEntity', (player) => player.room)
-  players: any[];
-
-  @OneToMany(() => 'GameEntity', (game) => game.room)
-  games: any[];
 }

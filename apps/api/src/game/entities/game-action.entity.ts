@@ -25,14 +25,8 @@ export class GameActionEntity extends BaseEntity {
   @Column({ type: 'int', unsigned: true })
   gameId: number;
 
-  @ManyToOne(() => 'GameEntity', (game) => game.actions)
-  game: any;
-
   @Column({ type: 'int', unsigned: true })
   playerId: number;
-
-  @ManyToOne(() => 'PlayerEntity', (player) => player.actions)
-  player: any;
 
   @Column({
     type: 'enum',

@@ -29,9 +29,6 @@ export class GameEntity extends BaseEntity {
   @Column({ type: 'int', unsigned: true })
   roomId: number;
 
-  @ManyToOne(() => RoomEntity, (room) => room.games)
-  room: RoomEntity;
-
   @Column({
     type: 'enum',
     enum: GameStatus,
@@ -60,12 +57,6 @@ export class GameEntity extends BaseEntity {
 
   @Column({ type: 'json', nullable: true, comment: '게임 설정' })
   gameSettings: Record<string, any> | null;
-
-  @OneToMany(() => 'PlayerEntity', (player) => player.game)
-  players: any[];
-
-  @OneToMany(() => 'GameActionEntity', (action) => action.game)
-  actions: any[];
 
   @Column({ type: 'int', default: 1, comment: '낙관적 잠금 버전' })
   version: number;
