@@ -11,7 +11,6 @@ import { AuthModule } from './auth/auth.module'
 import { UserModule } from './user/user.module'
 import { RoomModule } from './room/room.module'
 import { PlayerModule } from './player/player.module'
-import redisConfig from './config/redis.config'
 
 // TODO: 향후 추가할 모듈들
 // import { GameModule } from './game/game.module'
@@ -22,7 +21,6 @@ import redisConfig from './config/redis.config'
     ConfigModule.forRoot({
       isGlobal: true, // 전역에서 환경 변수 접근 가능
       envFilePath: '../../.env',
-      load: [redisConfig],
     }),
 
     // TypeORM 데이터베이스 연결 활성화

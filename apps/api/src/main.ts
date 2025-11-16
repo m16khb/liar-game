@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -6,6 +6,7 @@ import 'reflect-metadata';
 import { AppModule } from './app.module';
 import { configureDayjs } from './common/utils/dayjs.config';
 import { setupMainSwagger, setupAdminSwagger } from './common/utils/swagger-setup.util';
+import { SecurityExceptionFilter } from './common/filters/security-exception.filter';
 
 configureDayjs();
 
@@ -86,6 +87,11 @@ async function bootstrap(): Promise<void> {
       forbidNonWhitelisted: true,
     })
   );
+
+  // Global security exception filter
+  const logger = new Logger('Bootstrap');
+  app.useGlobalFilters(new SecurityExceptionFilter());
+  logger.log('✅ Security exception filter applied globally');
 
   // 실시간 업데이트가 필요한 경로에 대한 캐시 방지 헤더 추가
   const fastifyInstance = app.getHttpAdapter().getInstance();

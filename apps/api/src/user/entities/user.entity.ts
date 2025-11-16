@@ -49,6 +49,12 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   oauthId: string | null;
 
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  nickname: string | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  avatar: string | null;
+
   @Column({ type: 'timestamp', nullable: true })
   lastLoginAt: Date | null;
 
