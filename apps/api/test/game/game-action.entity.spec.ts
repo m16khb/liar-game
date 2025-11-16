@@ -11,51 +11,61 @@ import { PlayerEntity } from '../../src/player/entities/player.entity';
 import dayjs from 'dayjs';
 
 // Mock GameActionEntity 생성
-const createMockGameActionEntity = (overrides: Partial<GameActionEntity> = {}): GameActionEntity => ({
-  id: overrides.id ?? 1,
-  gameId: overrides.gameId ?? 1,
-  game: overrides.game ?? {} as any,
-  playerId: overrides.playerId ?? 1,
-  player: overrides.player ?? {} as any,
-  type: overrides.type ?? GameActionType.JOIN,
-  actionData: overrides.actionData ?? {},
-  timestamp: overrides.timestamp ?? dayjs().toDate(),
-  createdAt: overrides.createdAt ?? dayjs().toDate(),
-  updatedAt: overrides.updatedAt ?? dayjs().toDate(),
-  deletedAt: overrides.deletedAt ?? null,
-});
+const createMockGameActionEntity = (overrides: Partial<GameActionEntity> = {}): GameActionEntity => {
+  const entity = new GameActionEntity();
+  entity.id = overrides.id ?? 1;
+  entity.gameId = overrides.gameId ?? 1;
+  entity.playerId = overrides.playerId ?? 1;
+  entity.type = overrides.type ?? GameActionType.JOIN;
+  entity.actionData = overrides.actionData ?? {};
+  entity.timestamp = overrides.timestamp ?? dayjs().toDate();
+  entity.createdAt = overrides.createdAt ?? dayjs().toDate();
+  entity.updatedAt = overrides.updatedAt ?? dayjs().toDate();
+  entity.deletedAt = overrides.deletedAt ?? null;
+  return entity;
+};
 
 // Mock GameEntity 생성
-const createMockGame = (overrides: Partial<GameEntity> = {}): GameEntity => ({
-  id: overrides.id ?? 1,
-  roomId: overrides.roomId ?? 1,
-  status: overrides.status ?? 'waiting' as any,
-  difficulty: overrides.difficulty ?? 'normal' as any,
-  currentRound: overrides.currentRound ?? 1,
-  totalRounds: overrides.totalRounds ?? 5,
-  version: overrides.version ?? 1,
-  createdAt: overrides.createdAt ?? dayjs().toDate(),
-  updatedAt: overrides.updatedAt ?? dayjs().toDate(),
-  deletedAt: overrides.deletedAt,
-});
+const createMockGame = (overrides: Partial<GameEntity> = {}): GameEntity => {
+  const entity = new GameEntity();
+  entity.id = overrides.id ?? 1;
+  entity.roomId = overrides.roomId ?? 1;
+  entity.status = overrides.status ?? 'waiting' as any;
+  entity.difficulty = overrides.difficulty ?? 'normal' as any;
+  entity.currentRound = overrides.currentRound ?? 1;
+  entity.totalRounds = overrides.totalRounds ?? 5;
+  entity.currentPlayerTurn = overrides.currentPlayerTurn ?? 1;
+  entity.timeLimit = overrides.timeLimit ?? 300;
+  entity.gameSettings = overrides.gameSettings ?? {};
+  entity.version = overrides.version ?? 1;
+  entity.createdAt = overrides.createdAt ?? dayjs().toDate();
+  entity.updatedAt = overrides.updatedAt ?? dayjs().toDate();
+  entity.deletedAt = overrides.deletedAt || null;
+  return entity;
+};
 
 // Mock PlayerEntity 생성
-const createMockPlayer = (overrides: Partial<PlayerEntity> = {}): PlayerEntity => ({
-  id: overrides.id ?? 1,
-  roomId: overrides.roomId ?? 1,
-  userId: overrides.userId ?? 1,
-  status: overrides.status ?? 'ready' as any,
-  joinOrder: overrides.joinOrder ?? 1,
-  isHost: overrides.isHost ?? false,
-  gameRole: overrides.gameRole ?? null,
-  hasVoted: overrides.hasVoted ?? false,
-  voteData: overrides.voteData ?? null,
-  gameData: overrides.gameData ?? null,
-  lastActiveAt: overrides.lastActiveAt ?? null,
-  createdAt: overrides.createdAt ?? dayjs().toDate(),
-  updatedAt: overrides.updatedAt ?? dayjs().toDate(),
-  deletedAt: overrides.deletedAt,
-});
+const createMockPlayer = (overrides: Partial<PlayerEntity> = {}): PlayerEntity => {
+  const entity = new PlayerEntity();
+  entity.id = overrides.id ?? 1;
+  entity.roomId = overrides.roomId ?? 1;
+  entity.userId = overrides.userId ?? 1;
+  entity.status = overrides.status ?? 'ready' as any;
+  entity.joinOrder = overrides.joinOrder ?? 1;
+  entity.isHost = overrides.isHost ?? false;
+  entity.gameRole = overrides.gameRole ?? null;
+  entity.hasVoted = overrides.hasVoted ?? false;
+  entity.voteData = overrides.voteData ?? null;
+  entity.gameData = overrides.gameData ?? null;
+  entity.lastActiveAt = overrides.lastActiveAt ?? null;
+  entity.createdAt = overrides.createdAt ?? dayjs().toDate();
+  entity.updatedAt = overrides.updatedAt ?? dayjs().toDate();
+  entity.deletedAt = overrides.deletedAt || null;
+  // 관계 객체는 mock으로 설정
+  (entity as any).room = overrides.room ?? null;
+  (entity as any).user = overrides.user ?? null;
+  return entity;
+};
 
 describe('TAG-DATA-MODEL-001: GameActionEntity (Unit Tests)', () => {
   let mockGameActionRepository: any;
@@ -142,7 +152,8 @@ describe('TAG-DATA-MODEL-001: GameActionEntity (Unit Tests)', () => {
       expect(() => {
         // @ts-ignore - 유효하지 않은 타입 강제 설정
         const action = new GameActionEntity();
-        action.type = 'INVALID_ACTION_TYPE';
+        // @ts-ignore - 테스트를 위한 유효하지 않은 타입 설정
+        action.type = 'INVALID_ACTION_TYPE' as any;
         // 유효성 검사 로직 필요
       }).toThrow('Invalid action type');
     });
@@ -359,7 +370,8 @@ describe('TAG-DATA-MODEL-001: GameActionEntity (Unit Tests)', () => {
       expect(() => {
         const action = new GameActionEntity();
         action.gameId = 1;
-        action.game = deletedGame;
+        // action.game 속성은 엔티티에 없으므로 gameId로만 설정
+        action.gameId = deletedGame.id;
         // 관계 무결성 검증 로직 필요
       }).toThrow('Action cannot reference a deleted game');
     });
@@ -427,7 +439,7 @@ describe('TAG-DATA-MODEL-001: GameActionEntity (Unit Tests)', () => {
       const action = createMockGameActionEntity({
         id: 1,
         gameId: 1,
-        game: game,
+        // game: game, // 속성이 없으므로 주석 처리
         type: GameActionType.JOIN,
       });
 
@@ -441,8 +453,9 @@ describe('TAG-DATA-MODEL-001: GameActionEntity (Unit Tests)', () => {
       // THEN: 순환 참조는 방지되어야 함
       expect(() => {
         const newAction = new GameActionEntity();
-        newAction.game = game;
-        game.actions = [newAction]; // 순환 참조
+        // 순환 참조 테스트 - game과 actions 속성이 없으므로 패스
+        // newAction.game = game; // 속성 없음
+        // game.actions = [newAction]; // 속성 없음
         // 순환 참조 검증 로직 필요
       }).toThrow('Circular reference detected');
     });
@@ -774,7 +787,7 @@ describe('TAG-DATA-MODEL-001: GameActionEntity (Unit Tests)', () => {
       const game = createMockGame({ id: 1 });
       const player = createMockPlayer({ id: 1 });
 
-      const actionStateMapping = {
+      const actionStateMapping: Record<string, string[]> = {
         [GameActionType.JOIN]: ['waiting'],
         [GameActionType.VOTE]: ['playing'],
         [GameActionType.CHAT]: ['waiting', 'playing'],
@@ -782,9 +795,12 @@ describe('TAG-DATA-MODEL-001: GameActionEntity (Unit Tests)', () => {
       };
 
       // WHEN: 특정 상태에서 허용되는 액션 확인
-      const gameStatus = 'waiting' as any;
+      const gameStatus = 'waiting';
       const allowedActions = Object.keys(actionStateMapping).filter(
-        actionType => actionStateMapping[actionType].includes(gameStatus)
+        actionType => {
+          const actions = actionStateMapping[actionType];
+          return actions ? actions.includes(gameStatus) : false;
+        }
       );
 
       // THEN: 허용된 액션만 있어야 함

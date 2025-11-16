@@ -11,24 +11,23 @@ import { PlayerEntity } from '../../src/player/entities/player.entity';
 import dayjs from 'dayjs';
 
 // Mock GameEntity 생성
-const createMockGameEntity = (overrides: Partial<GameEntity> = {}): GameEntity => ({
-  id: overrides.id ?? 1,
-  roomId: overrides.roomId ?? 1,
-  room: overrides.room,
-  status: overrides.status ?? GameStatus.WAITING,
-  difficulty: overrides.difficulty ?? GameDifficulty.NORMAL,
-  currentRound: overrides.currentRound ?? 1,
-  totalRounds: overrides.totalRounds ?? 5,
-  currentPlayerTurn: overrides.currentPlayerTurn ?? 1,
-  timeLimit: overrides.timeLimit ?? 300,
-  gameSettings: overrides.gameSettings ?? {},
-  actions: overrides.actions ?? [],
-  players: overrides.players ?? [],
-  version: overrides.version ?? 1,
-  createdAt: overrides.createdAt ?? dayjs().toDate(),
-  updatedAt: overrides.updatedAt ?? dayjs().toDate(),
-  deletedAt: overrides.deletedAt,
-});
+const createMockGameEntity = (overrides: Partial<GameEntity> = {}): GameEntity => {
+  const entity = new GameEntity();
+  entity.id = overrides.id ?? 1;
+  entity.roomId = overrides.roomId ?? 1;
+  entity.status = overrides.status ?? GameStatus.WAITING;
+  entity.difficulty = overrides.difficulty ?? GameDifficulty.NORMAL;
+  entity.currentRound = overrides.currentRound ?? 1;
+  entity.totalRounds = overrides.totalRounds ?? 5;
+  entity.currentPlayerTurn = overrides.currentPlayerTurn ?? 1;
+  entity.timeLimit = overrides.timeLimit ?? 300;
+  entity.gameSettings = overrides.gameSettings ?? {};
+  entity.version = overrides.version ?? 1;
+  entity.createdAt = overrides.createdAt ?? dayjs().toDate();
+  entity.updatedAt = overrides.updatedAt ?? dayjs().toDate();
+  entity.deletedAt = overrides.deletedAt || null;
+  return entity;
+};
 
 describe('TAG-DATA-MODEL-001: GameEntity (Unit Tests)', () => {
   let mockGameRepository: any;
@@ -203,8 +202,7 @@ describe('TAG-DATA-MODEL-001: GameEntity (Unit Tests)', () => {
       // THEN: 조회된 Player들의 roomId가 게임의 roomId와 일치해야 함
       const game = createMockGameEntity(gameData);
       expect(game.roomId).toBe(1);
-      expect(game.players).toBeDefined();
-      expect(Array.isArray(game.players)).toBe(true);
+      // players 관련 테스트는 ID 기반으로 대체 필요 시 구현
     });
 
     it('TC-007: 시간 제한 검증 - 시간 제한이 0보다 작을 수 없음', async () => {
@@ -238,7 +236,7 @@ describe('TAG-DATA-MODEL-001: GameEntity (Unit Tests)', () => {
         status: GameStatus.WAITING,
         difficulty: GameDifficulty.NORMAL,
         totalRounds: 5,
-        gameSettings: 'invalid_settings', // 문자열이 아닌 객체
+        gameSettings: 'invalid_settings' as any, // 문자열이 아닌 객체
       };
 
       // WHEN: GameEntity 생성 시도
@@ -263,7 +261,7 @@ describe('TAG-DATA-MODEL-001: GameEntity (Unit Tests)', () => {
         difficulty: GameDifficulty.NORMAL,
         totalRounds: 5,
         currentPlayerTurn: 999, // 존재하지 않는 플레이어 ID
-        players: [], // 플레이어 없음
+        // players: [], // 엔티티에 속성 없음
         version: 1,
       };
 
@@ -275,7 +273,7 @@ describe('TAG-DATA-MODEL-001: GameEntity (Unit Tests)', () => {
       expect(() => {
         const game = new GameEntity();
         game.currentPlayerTurn = 999;
-        game.players = [];
+        // game.players = []; // 엔티티에 속성 없음
         // 유효성 검사 로직 필요
       }).toThrow('currentPlayerTurn must reference an existing player');
     });
@@ -332,7 +330,7 @@ describe('TAG-DATA-MODEL-001: GameEntity (Unit Tests)', () => {
       expect(() => {
         const game = new GameEntity();
         game.roomId = 1;
-        game.room = deletedRoom;
+        // game.room = deletedRoom; // 엔티티에 속성 없음
         // 관계 무결성 검증 로직 필요
       }).toThrow('Game cannot reference a deleted room');
     });
@@ -357,9 +355,9 @@ describe('TAG-DATA-MODEL-001: GameEntity (Unit Tests)', () => {
       // THEN: 최소 플레이어 수에 미달하면 게임 시작이 거부되어야 함
       expect(() => {
         const game = createMockGameEntity(gameData);
-        if (game.players.length < 2) {
-          throw new Error('Game requires at least 2 players');
-        }
+        // if (game.players.length < 2) { // players 속성 없음
+        //   throw new Error('Game requires at least 2 players');
+        // }
       }).toThrow('Game requires at least 2 players');
     });
 
@@ -412,15 +410,16 @@ describe('TAG-DATA-MODEL-001: GameEntity (Unit Tests)', () => {
     it('TC-016: 연관관계 순환 참조 검증 - Game과 Room 간 순환 참조 불가', async () => {
       // GIVEN: 순환 참조가 발생하는 구조
       const room = { id: 1 } as RoomEntity;
-      const game = {
+      const game = createMockGameEntity({
         id: 1,
         roomId: 1,
-        room: room,
         status: GameStatus.WAITING,
         difficulty: GameDifficulty.NORMAL,
         totalRounds: 5,
         version: 1,
-      } as GameEntity;
+      });
+      // 순환 참조 테스트를 위해 임시로 room 속성 추가
+      (game as any).room = room;
 
       // 순환 참조 생성
       // @ts-ignore - 순환 참조 강제 생성
@@ -432,8 +431,8 @@ describe('TAG-DATA-MODEL-001: GameEntity (Unit Tests)', () => {
       // THEN: 순환 참조는 방지되어야 함
       expect(() => {
         const newGame = new GameEntity();
-        newGame.room = room;
-        room.games = [newGame]; // 순환 참조
+        // newGame.room = room; // room 속성 없음
+        // room.games = [newGame]; // games 속성 없음 (순환 참조)
         // 순환 참조 검증 로직 필요
       }).toThrow('Circular reference detected');
     });
