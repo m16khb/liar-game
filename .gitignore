@@ -39,3 +39,69 @@ docker/volumes/
 k8s/*
 nginx/*
 tmp/
+.uv_cache
+hooks_backup_*/
+__pycache__/
+env/
+# Build artifacts
+# Temporary files
+/CLAUDE.md
+.tscache/
+.venv/
+.moai/*.tmp
+.playwright-mcp
+# Logs
+.moai/temp/
+.idea/
+docs_backup_*/
+# Backups
+*.pyo
+Thumbs.db
+# Test coverage
+.moai/reports/*-draft.*
+*.bak
+venv/
+.env*
+# OS
+# MoAI reports (임시 보고서만 무시)
+# MoAI dynamic content (로컬 프로젝트만 무시, but package templates are tracked)
+*.backup
+.mypy_cache
+.moai/logs/
+.uv-cache
+.vercel/
+# Cache
+*.pyc
+# Package templates (src/moai_adk/templates/) are tracked
+*-backup/
+*~
+*.temp
+# Next.js build output
+docs/.next/
+.aws/
+*_backup_*/
+.netlify/
+logs/
+.vscode/
+*.egg-info/
+*.egg
+*.backup/
+.pytest_cache/
+*.tsbuildinfo
+.venv_issue43_py313
+# Environment variables and deployment secrets
+.firebase/
+*.swp
+*.tmp
+.moai-backups/
+.moai/reports/*.tmp
+coverage.json
+docs/out/
+.ruff_cache
+*.log
+# Virtual environment
+# IDE
+*.swo
+.coverage
+.env/
+# Claude and MoAI configuration (user-specific, root only)
