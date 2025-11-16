@@ -1,7 +1,7 @@
 {
-  "branch": "main",
-  "last_commit": "cf89b81 feat: MoAI-ADK \ud504\ub85c\uc81d\ud2b8 \uc124\uc815 \ubc0f \ubb38\uc11c\ud654",
-  "commit_time": "3 minutes ago",
-  "changes": 4,
-  "last_check": "2025-11-16T14:40:28.462917"
+  "branch": "feature/SPEC-DATA-001",
+  "last_commit": "2e65b1f feat: 데이터베이스 엔티티 아키텍처 개선 및 SPEC-DATA-001 구현",
+  "commit_time": "just now",
+  "changes": 15,
+  "last_check": "2025-11-16T18:25:00.000000"
 }
