@@ -100,9 +100,6 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-<<<<<<< HEAD
-    "testEnvironment": "node"
-=======
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1",
       "^@common/(.*)$": "<rootDir>/src/common/$1"
@@ -110,6 +107,5 @@
     "setupFiles": [
       "./test/setup.ts"
     ]
->>>>>>> 2e65b1f (feat: 데이터베이스 엔티티 아키텍처 개선 및 SPEC-DATA-001 구현)
   }
 }

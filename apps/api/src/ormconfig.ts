@@ -30,11 +30,11 @@ console.log('🎯 [ormconfig] Connection details:', {
 });
 
 const AppDataSource = new DataSource({
-  type: 'postgres',
+  type: 'mysql',
   host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
+  port: parseInt(process.env.DB_PORT || '3306'),
+  username: process.env.DB_USERNAME || 'candle_user',
+  password: process.env.DB_PASSWORD || 'candle_pass',
   database: dbName,
   entities: ['dist/**/*.entity.js'],
   migrations: ['dist/migrations/*.js'],
