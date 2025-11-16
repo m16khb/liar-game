@@ -12,7 +12,7 @@ export interface SecurityErrorResponse {
   statusCode: number;
   message: string;
   error: string;
-  timestamp: string;
+  timestamp: dayjs().format('YYYY-MM-DD HH:mm:ss');
   path: string;
   details?: any;
   requestId?: string;

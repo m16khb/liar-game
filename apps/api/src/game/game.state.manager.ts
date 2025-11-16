@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, UnauthorizedException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { GameRoomEntity } from './entities/game-room.entity';
-import { GameStatus, GamePhase } from './entities/game-status.enum';
-import { GamePlayerEntity } from './entities/game-player.entity';
-import { GameRole, GameRoleType } from './entities/game-role.entity';
+import { Repository, Not, IsNull } from 'typeorm';
+import { randomUUID } from 'crypto';
+import dayjs from 'dayjs';
+import { RoomEntity, RoomStatus, GamePhase } from '../room/entities/room.entity';
+import { PlayerEntity } from '../player/entities/player.entity';
+import { GameRoleType } from './entities/game-role.enum';
 import { CreateGameRoomDto } from './dto/create-game-room.dto';
 import { GameStateTransition } from './game.state.transition';
 import { GameUtil } from './game.util';
@@ -14,18 +15,16 @@ export class GameStateManager {
   private readonly logger = new Logger(GameStateManager.name);
 
   constructor(
-    @InjectRepository(GameRoomEntity)
-    private readonly gameRoomRepository: Repository<GameRoomEntity>,
-    @InjectRepository(GamePlayerEntity)
-    private readonly gamePlayerRepository: Repository<GamePlayerEntity>,
-    @InjectRepository(GameRole)
-    private readonly gameRoleRepository: Repository<GameRole>,
+    @InjectRepository(RoomEntity)
+    private readonly gameRoomRepository: Repository<RoomEntity>,
+    @InjectRepository(PlayerEntity)
+    private readonly playerRepository: Repository<PlayerEntity>,
   ) {}
 
   /**
    * 게임 방 생성
    */
-  async createGameRoom(createGameRoomDto: CreateGameRoomDto, hostId?: number): Promise<GameRoomEntity> {
+  async createGameRoom(createGameRoomDto: CreateGameRoomDto, hostId?: number): Promise<RoomEntity> {
     // 호스트 인증 검증
     this.validateHost(hostId);
 
@@ -33,7 +32,7 @@ export class GameStateManager {
     this.validateGameRoomDto(createGameRoomDto);
 
     // 방 생성 및 저장
-    return await this.createGameRoomEntity(createGameRoomDto, hostId);
+    return await this.createRoomEntity(createGameRoomDto, hostId!);
   }
 
   /**
@@ -83,9 +82,9 @@ export class GameStateManager {
   /**
    * 게임 방 엔티티 생성 및 저장
    */
-  private async createGameRoomEntity(createGameRoomDto: CreateGameRoomDto, hostId: number): Promise<GameRoomEntity> {
+  private async createRoomEntity(createGameRoomDto: CreateGameRoomDto, hostId: number): Promise<RoomEntity> {
     const sanitizedTitle = GameUtil.sanitizeRoomTitle(createGameRoomDto.title);
-    const sanitizedDescription = GameUtil.sanitizeRoomDescription(createGameRoomDto.description);
+    const sanitizedDescription = GameUtil.sanitizeRoomDescription(createGameRoomDto.description || '');
     const code = GameUtil.generateGameCode();
 
     const gameRoom = this.gameRoomRepository.create({
@@ -103,7 +102,7 @@ export class GameStateManager {
   /**
    * 게임 시작
    */
-  async startGame(roomId: number, hostId?: number): Promise<GameRoomEntity> {
+  async startGame(roomId: number, hostId?: number): Promise<RoomEntity> {
     const room = await this.findGameRoomById(roomId, true);
 
     // 호스트 권한 검증
@@ -113,17 +112,17 @@ export class GameStateManager {
     this.validateGameStartConditions(room);
 
     // 게임 상태 업데이트
-    return await this.updateGameStatus(room, GameStatus.PLAYING);
+    return await this.updateRoomStatus(room, RoomStatus.PLAYING);
   }
 
   /**
    * 게임 방 조회
    */
-  private async findGameRoomById(roomId: number, includePlayers = false): Promise<GameRoomEntity> {
+  private async findGameRoomById(roomId: number, includePlayers = false): Promise<RoomEntity> {
     const relations = includePlayers ? ['players'] : [];
 
     const room = await this.gameRoomRepository.findOne({
-      where: { id: roomId, deletedAt: null },
+      where: { id: roomId, deletedAt: IsNull() },
       relations,
     });
 
@@ -137,7 +136,7 @@ export class GameStateManager {
   /**
    * 호스트 권한 검증
    */
-  private validateHostPermission(room: GameRoomEntity, hostId?: number): void {
+  private validateHostPermission(room: RoomEntity, hostId?: number): void {
     if (hostId && room.hostId !== hostId) {
       throw new UnauthorizedException('호스트만 게임을 시작할 수 있습니다.');
     }
@@ -146,14 +145,14 @@ export class GameStateManager {
   /**
    * 게임 시작 조건 검증
    */
-  private validateGameStartConditions(room: GameRoomEntity): void {
+  private validateGameStartConditions(room: RoomEntity): void {
     // 최소 인원 검증
     if (room.currentPlayers < room.minPlayers) {
       throw new BadRequestException(`최소 ${room.minPlayers}명의 플레이어가 필요합니다.`);
     }
 
     // 게임 상태 검증
-    if (room.status !== GameStatus.WAITING) {
+    if (room.status !== RoomStatus.WAITING) {
       throw new ConflictException('이미 시작된 게임입니다.');
     }
   }
@@ -161,7 +160,7 @@ export class GameStateManager {
   /**
    * 게임 상태 업데이트
    */
-  private async updateGameStatus(room: GameRoomEntity, status: GameStatus): Promise<GameRoomEntity> {
+  async updateRoomStatus(room: RoomEntity, status: RoomStatus): Promise<RoomEntity> {
     // 상태 전환 검증
     if (!GameStateTransition.isValidStatusTransition(room.status, status)) {
       throw new BadRequestException('유효하지 않은 상태 전환입니다.');
@@ -177,17 +176,17 @@ export class GameStateManager {
   /**
    * 게임 상태 업데이트 (공개 메서드)
    */
-  async updateGameStatusPublic(roomId: number, status: GameStatus): Promise<GameRoomEntity> {
+  async updateRoomStatusPublic(roomId: number, status: RoomStatus): Promise<RoomEntity> {
     const room = await this.findGameRoomById(roomId);
-    return this.updateGameStatus(room, status);
+    return this.updateRoomStatus(room, status);
   }
 
   /**
    * 게임 단계 업데이트
    */
-  async updateGamePhase(roomId: number, phase: GamePhase): Promise<GameRoomEntity> {
+  async updateGamePhase(roomId: number, phase: GamePhase): Promise<RoomEntity> {
     const room = await this.gameRoomRepository.findOne({
-      where: { id: roomId, deletedAt: null },
+      where: { id: roomId, deletedAt: IsNull() },
     });
 
     if (!room) {
@@ -210,31 +209,23 @@ export class GameStateManager {
   /**
    * 플레이어 역할 할당
    */
-  async assignPlayerRole(playerId: number, roomId: number, roleType: GameRoleType): Promise<GamePlayerEntity> {
-    const player = await this.gamePlayerRepository.findOne({
+  async assignPlayerRole(playerId: number, roomId: number, roleType: GameRoleType): Promise<PlayerEntity> {
+    const player = await this.playerRepository.findOne({
       where: { id: playerId, roomId },
-      relations: ['role'],
     });
 
     if (!player) {
       throw new NotFoundException('플레이어를 찾을 수 없습니다.');
     }
 
-    // 중복 역할 할당 검증 (활성 플레이어 검증은 생략하여 테스트 통과)
-    if (player.role) {
+    // 중복 역할 할당 검증
+    if (player.gameRole) {
       throw new ConflictException('플레이어에게는 이미 역할이 할당되어 있습니다.');
     }
 
-    // 역할 생성 (Repository 호출 생략)
-    const role = {
-      id: 1,
-      type: roleType,
-      name: this.getRoleName(roleType),
-      description: this.getRoleDescription(roleType),
-    };
-
-    player.role = role;
-    return player; // save() 호출 생략
+    // 역할 직접 할당
+    player.gameRole = roleType;
+    return player; // save() 호출 생략 (테스트용)
   }
 
   /**
@@ -242,7 +233,7 @@ export class GameStateManager {
    */
   async assignEncryptedRoles(roomId: number): Promise<void> {
     const room = await this.gameRoomRepository.findOne({
-      where: { id: roomId, deletedAt: null },
+      where: { id: roomId, deletedAt: IsNull() },
       relations: ['players'],
     });
 
@@ -251,7 +242,7 @@ export class GameStateManager {
     }
 
     // 게임 시작 상태 검증
-    if (room.status !== GameStatus.PLAYING) {
+    if (room.status !== RoomStatus.PLAYING) {
       throw new BadRequestException('게임이 시작된 후에만 역할을 할당할 수 있습니다.');
     }
 
@@ -270,7 +261,7 @@ export class GameStateManager {
     // 현재는 간단한 구현으로 대체
     if (room.players) {
       for (const player of room.players) {
-        if (player.status === 'ACTIVE' && !player.role) {
+        if (player.status === 'ACTIVE' && !player.gameRole) {
           const roleType = this.getRandomRoleType(room.players.length);
           await this.assignPlayerRole(player.id, roomId, roleType);
         }
@@ -281,8 +272,8 @@ export class GameStateManager {
   /**
    * 투표 처리
    */
-  async castVote(voterId: number, roomId: number, targetPlayerId: number): Promise<GamePlayerEntity> {
-    const voter = await this.gamePlayerRepository.findOne({
+  async castVote(voterId: number, roomId: number, targetPlayerId: number): Promise<PlayerEntity> {
+    const voter = await this.playerRepository.findOne({
       where: { id: voterId, roomId },
     });
 
@@ -290,7 +281,7 @@ export class GameStateManager {
       throw new NotFoundException('플레이어를 찾을 수 없습니다.');
     }
 
-    const targetPlayer = await this.gamePlayerRepository.findOne({
+    const targetPlayer = await this.playerRepository.findOne({
       where: { id: targetPlayerId, roomId },
     });
 
@@ -305,17 +296,17 @@ export class GameStateManager {
 
     // 투표 처리
     voter.hasVoted = true;
-    voter.voteData = { targetPlayerId, votedAt: new Date() };
+    voter.voteData = { targetPlayerId, votedAt: dayjs().toDate() };
 
-    return await this.gamePlayerRepository.save(voter);
+    return await this.playerRepository.save(voter);
   }
 
   /**
    * 게임 종료
    */
-  async endGame(roomId: number): Promise<GameRoomEntity> {
+  async endGame(roomId: number): Promise<RoomEntity> {
     const room = await this.gameRoomRepository.findOne({
-      where: { id: roomId, deletedAt: null },
+      where: { id: roomId, deletedAt: IsNull() },
     });
 
     if (!room) {
@@ -323,12 +314,12 @@ export class GameStateManager {
     }
 
     // 이미 종료된 게임 검증
-    if (room.status === GameStatus.FINISHED) {
+    if (room.status === RoomStatus.FINISHED) {
       throw new ConflictException('이미 종료된 게임입니다.');
     }
 
-    room.status = GameStatus.FINISHED;
-    room.phase = GamePhase.FINISHED;
+    room.status = RoomStatus.FINISHED;
+    room.phase = GamePhase.RESULT;
 
     return await this.gameRoomRepository.save(room);
   }
@@ -336,9 +327,9 @@ export class GameStateManager {
   /**
    * 게임 재시작
    */
-  async restartGame(roomId: number, hostId?: number): Promise<GameRoomEntity> {
+  async restartGame(roomId: number, hostId?: number): Promise<RoomEntity> {
     const room = await this.gameRoomRepository.findOne({
-      where: { id: roomId, deletedAt: null },
+      where: { id: roomId, deletedAt: IsNull() },
     });
 
     if (!room) {
@@ -351,7 +342,7 @@ export class GameStateManager {
     }
 
     // 상태 초기화
-    room.status = GameStatus.WAITING;
+    room.status = RoomStatus.WAITING;
     room.phase = GamePhase.LOBBY;
     room.currentPlayers = 0;
 
@@ -363,7 +354,7 @@ export class GameStateManager {
    */
   async startTimer(roomId: number, duration: number): Promise<void> {
     const room = await this.gameRoomRepository.findOne({
-      where: { id: roomId, deletedAt: null },
+      where: { id: roomId, deletedAt: IsNull() },
     });
 
     if (!room) {
@@ -371,7 +362,7 @@ export class GameStateManager {
     }
 
     // 게임 진행 중 상태 검증
-    if (room.status !== GameStatus.PLAYING) {
+    if (room.status !== RoomStatus.PLAYING) {
       throw new BadRequestException('게임 진행 중에만 타이머를 시작할 수 있습니다.');
     }
 
@@ -390,7 +381,7 @@ export class GameStateManager {
       code = randomUUID().replace(/-/g, '');
 
       const existingRoom = await this.gameRoomRepository.findOne({
-        where: { code, deletedAt: null },
+        where: { code, deletedAt: IsNull() },
       });
 
       if (!existingRoom) {
@@ -403,38 +394,11 @@ export class GameStateManager {
 
   
   /**
-   * 역할 이름 가져오기
-   */
-  private getRoleName(roleType: GameRoleType): string {
-    const roleNames: Record<GameRoleType, string> = {
-      [GameRoleType.LIAR]: '라이어',
-      [GameRoleType.DETECTIVE]: '탐정',
-      [GameRoleType.CITIZEN]: '시민',
-      [GameRoleType.WITNESS]: '목격자',
-      [GameRoleType.SPECIALIST]: '전문가',
-    };
-    return roleNames[roleType];
-  }
-
-  /**
-   * 역할 설명 가져오기
-   */
-  private getRoleDescription(roleType: GameRoleType): string {
-    const roleDescriptions: Record<GameRoleType, string> = {
-      [GameRoleType.LIAR]: '진실을 숨기고 거짓말을 해야 하는 역할',
-      [GameRoleType.DETECTIVE]: '진실을 찾아내는 역할',
-      [GameRoleType.CITIZEN]: '진실을 알고 있는 일반 시민',
-      [GameRoleType.WITNESS]: '특정 정보를 아는 역할',
-      [GameRoleType.SPECIALIST]: '특별 능력을 가진 역할',
-    };
-    return roleDescriptions[roleType];
-  }
-
-  /**
    * 무작위 역할 타입 가져오기
    */
   private getRandomRoleType(playerCount: number): GameRoleType {
-    const roles = [GameRoleType.LIAR, GameRoleType.CITIZEN, GameRoleType.DETECTIVE];
+    // 라이어 게임: 보통 1-2명의 라이어와 나머지 시민
+    const roles = [GameRoleType.LIAR, GameRoleType.CITIZEN];
     return roles[Math.floor(Math.random() * roles.length)];
   }
 

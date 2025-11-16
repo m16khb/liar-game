@@ -4,13 +4,13 @@
  */
 
 import { GameStateManager } from './game.state.manager';
-import { GameRoomEntity } from './entities/game-room.entity';
-import { GamePlayerEntity } from './entities/game-player.entity';
-import { GameRole, GameRoleType } from './entities/game-role.entity';
+import { RoomEntity, RoomStatus, GamePhase, GameDifficulty } from '../room/entities/room.entity';
+import { PlayerEntity, PlayerStatus } from '../player/entities/player.entity';
+import { GameRoleType } from './entities/game-role.enum';
 import { CreateGameRoomDto } from './dto/create-game-room.dto';
-import { GameStatus, GamePhase } from './entities/game-status.enum';
 import { NotFoundException, BadRequestException, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import dayjs from 'dayjs';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,33 +18,27 @@ import { ConfigService } from '@nestjs/config';
 
 describe('SPEC-GAME-001: Game State Management', () => {
   let gameStateManager: GameStateManager;
-  let gameRoomRepository: Repository<GameRoomEntity>;
-  let gamePlayerRepository: Repository<GamePlayerEntity>;
-  let gameRoleRepository: Repository<GameRole>;
-
+  let gameRoomRepository: Repository<RoomEntity>;
+  let playerRepository: Repository<PlayerEntity>;
+  
   beforeEach(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
         GameStateManager,
         {
-          provide: getRepositoryToken(GameRoomEntity),
+          provide: getRepositoryToken(RoomEntity),
           useClass: Repository,
         },
         {
-          provide: getRepositoryToken(GamePlayerEntity),
-          useClass: Repository,
-        },
-        {
-          provide: getRepositoryToken(GameRole),
+          provide: getRepositoryToken(PlayerEntity),
           useClass: Repository,
         },
       ],
     }).compile();
 
     gameStateManager = moduleRef.get<GameStateManager>(GameStateManager);
-    gameRoomRepository = moduleRef.get<Repository<GameRoomEntity>>(getRepositoryToken(GameRoomEntity));
-    gamePlayerRepository = moduleRef.get<Repository<GamePlayerEntity>>(getRepositoryToken(GamePlayerEntity));
-    gameRoleRepository = moduleRef.get<Repository<GameRole>>(getRepositoryToken(GameRole));
+    gameRoomRepository = moduleRef.get<Repository<RoomEntity>>(getRepositoryToken(RoomEntity));
+    playerRepository = moduleRef.get<Repository<PlayerEntity>>(getRepositoryToken(PlayerEntity));
   });
 
   describe('RED: 실패 테스트 - 게임 상태 전환 요구사항 검증', () => {
@@ -55,25 +49,59 @@ describe('SPEC-GAME-001: Game State Management', () => {
         id: 1,
         code: 'testgame12345678901234567890123456',
         title: '테스트 게임',
-        status: GameStatus.WAITING,
+        status: RoomStatus.WAITING,
         phase: GamePhase.LOBBY,
         minPlayers: 4,
         maxPlayers: 8,
         currentPlayers: 2, // 최소 인원 미달
-        difficulty: 'NORMAL',
+        difficulty: GameDifficulty.NORMAL,
         isPrivate: false,
         timeLimit: 600,
         gameSettings: {},
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
         deletedAt: null,
-      } as unknown as GameRoomEntity;
+      } as unknown as RoomEntity;
 
       const mockFindOne = jest.spyOn(gameRoomRepository, 'findOne').mockResolvedValue(room);
-      const mockFind = jest.spyOn(gamePlayerRepository, 'find').mockResolvedValue([
-        { id: 1, userId: 1, roomId: 1, role: null, isActive: true },
-        { id: 2, userId: 2, roomId: 1, role: null, isActive: true },
-      ] as GamePlayerEntity[]);
+      const mockFind = jest.spyOn(playerRepository, 'find').mockResolvedValue([
+        {
+          id: 1,
+          roomId: 1,
+          userId: 1,
+          room: {} as RoomEntity,
+          user: {} as any,
+          status: PlayerStatus.ACTIVE,
+          joinOrder: 1,
+          isHost: false,
+          gameRole: null,
+          hasVoted: false,
+          voteData: null,
+          gameData: null,
+          lastActiveAt: null,
+          createdAt: dayjs().toDate(),
+          updatedAt: dayjs().toDate(),
+          deletedAt: null,
+        },
+        {
+          id: 2,
+          roomId: 1,
+          userId: 2,
+          room: {} as RoomEntity,
+          user: {} as any,
+          status: PlayerStatus.ACTIVE,
+          joinOrder: 2,
+          isHost: false,
+          gameRole: null,
+          hasVoted: false,
+          voteData: null,
+          gameData: null,
+          lastActiveAt: null,
+          createdAt: dayjs().toDate(),
+          updatedAt: dayjs().toDate(),
+          deletedAt: null,
+        },
+      ] as PlayerEntity[]);
 
       // WHEN: 게임 시작 시도
       // THEN: BadRequestException 발생해야 함
@@ -89,19 +117,19 @@ describe('SPEC-GAME-001: Game State Management', () => {
         id: 1,
         code: 'testgame12345678901234567890123456',
         title: '진행중인 게임',
-        status: GameStatus.PLAYING, // 이미 PLAYING 상태
+        status: RoomStatus.PLAYING, // 이미 PLAYING 상태
         phase: GamePhase.DISCUSSION,
         minPlayers: 4,
         maxPlayers: 8,
         currentPlayers: 6,
-        difficulty: 'NORMAL',
+        difficulty: GameDifficulty.NORMAL,
         isPrivate: false,
         timeLimit: 600,
         gameSettings: {},
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
         deletedAt: null,
-      } as unknown as GameRoomEntity;
+      } as unknown as RoomEntity;
 
       const mockFindOne = jest.spyOn(gameRoomRepository, 'findOne').mockResolvedValue(room);
 
@@ -118,20 +146,20 @@ describe('SPEC-GAME-001: Game State Management', () => {
         id: 1,
         code: 'testgame12345678901234567890123456',
         title: '테스트 게임',
-        status: GameStatus.WAITING,
+        status: RoomStatus.WAITING,
         phase: GamePhase.LOBBY,
         minPlayers: 4,
         maxPlayers: 8,
         currentPlayers: 6,
-        difficulty: 'NORMAL',
+        difficulty: GameDifficulty.NORMAL,
         isPrivate: false,
         timeLimit: 600,
         gameSettings: {},
         hostId: 1, // 호스트 ID가 1
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
         deletedAt: null,
-      } as unknown as GameRoomEntity;
+      } as unknown as RoomEntity;
 
       const mockFindOne = jest.spyOn(gameRoomRepository, 'findOne').mockResolvedValue(room);
 
@@ -148,26 +176,26 @@ describe('SPEC-GAME-001: Game State Management', () => {
         id: 1,
         code: 'testgame12345678901234567890123456',
         title: '테스트 게임',
-        status: GameStatus.WAITING,
+        status: RoomStatus.WAITING,
         phase: GamePhase.LOBBY,
         minPlayers: 4,
         maxPlayers: 8,
         currentPlayers: 6,
-        difficulty: 'NORMAL',
+        difficulty: GameDifficulty.NORMAL,
         isPrivate: false,
         timeLimit: 600,
         gameSettings: {},
         hostId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
         deletedAt: null,
-      } as unknown as GameRoomEntity;
+      } as unknown as RoomEntity;
 
       const mockFindOne = jest.spyOn(gameRoomRepository, 'findOne').mockResolvedValue(room);
 
       // WHEN: 유효하지 않은 상태로 직접 전환 시도
       // THEN: BadRequestException 발생해야 함
-      await expect(gameStateManager.updateGameStatus(room.id, 'INVALID' as GameStatus)).rejects.toThrow(BadRequestException);
+      await expect(gameStateManager.updateRoomStatus(room, 'INVALID' as RoomStatus)).rejects.toThrow(BadRequestException);
 
       mockFindOne.mockRestore();
     });
@@ -178,26 +206,26 @@ describe('SPEC-GAME-001: Game State Management', () => {
         id: 1,
         code: 'testgame12345678901234567890123456',
         title: '테스트 게임',
-        status: GameStatus.WAITING,
+        status: RoomStatus.WAITING,
         phase: GamePhase.LOBBY,
         minPlayers: 4,
         maxPlayers: 8,
         currentPlayers: 6,
-        difficulty: 'NORMAL',
+        difficulty: GameDifficulty.NORMAL,
         isPrivate: false,
         timeLimit: 600,
         gameSettings: {},
         hostId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
         deletedAt: null,
-      } as unknown as GameRoomEntity;
+      } as unknown as RoomEntity;
 
       const mockFindOne = jest.spyOn(gameRoomRepository, 'findOne').mockResolvedValue(room);
 
       // WHEN: 대기중인 상태에서 FINISHED 상태로 직접 전환 시도
       // THEN: BadRequestException 발생해야 함 (중간 상태 건너뛰기)
-      await expect(gameStateManager.updateGameStatus(room.id, GameStatus.FINISHED)).rejects.toThrow('유효하지 않은 상태 전환입니다.');
+      await expect(gameStateManager.updateRoomStatus(room, RoomStatus.FINISHED)).rejects.toThrow('유효하지 않은 상태 전환입니다.');
 
       mockFindOne.mockRestore();
     });
@@ -206,24 +234,35 @@ describe('SPEC-GAME-001: Game State Management', () => {
       // GIVEN: 이미 역할이 할당된 플레이어
       const existingPlayer = {
         id: 1,
-        userId: 1,
         roomId: 1,
-        role: { id: 1, type: GameRoleType.LIAR, name: '라이어' } as GameRole,
-        isActive: true,
-      } as GamePlayerEntity;
+        userId: 1,
+        room: {} as RoomEntity,
+        user: {} as any,
+        status: PlayerStatus.ACTIVE,
+        joinOrder: 1,
+        isHost: false,
+        gameRole: GameRoleType.LIAR,
+        hasVoted: false,
+        voteData: null,
+        gameData: null,
+        lastActiveAt: null,
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
+        deletedAt: null,
+      } as PlayerEntity;
 
-      const mockFindOne = jest.spyOn(gamePlayerRepository, 'findOne').mockResolvedValue(existingPlayer);
+      const mockFindOne = jest.spyOn(playerRepository, 'findOne').mockResolvedValue(existingPlayer);
 
       // WHEN: 동일한 플레이어에게 다른 역할 할당 시도
       // THEN: ConflictException 발생해야 함
-      await expect(gameStateManager.assignPlayerRole(1, 1, GameRoleType.DETECTIVE)).rejects.toThrow('플레이어에게는 이미 역할이 할당되어 있습니다.');
+      await expect(gameStateManager.assignPlayerRole(1, 1, GameRoleType.CITIZEN)).rejects.toThrow('플레이어에게는 이미 역할이 할당되어 있습니다.');
 
       mockFindOne.mockRestore();
     });
 
     it('TC-007: 플레이어 역할 할당 검증 - 존재하지 않는 플레이어에게 역할 할당 불가', async () => {
       // GIVEN: 존재하지 않는 플레이어
-      const mockFindOne = jest.spyOn(gamePlayerRepository, 'findOne').mockResolvedValue(null);
+      const mockFindOne = jest.spyOn(playerRepository, 'findOne').mockResolvedValue(null);
 
       // WHEN: 존재하지 않는 플레이어에게 역할 할당 시도
       // THEN: NotFoundException 발생해야 함
@@ -238,20 +277,20 @@ describe('SPEC-GAME-001: Game State Management', () => {
         id: 1,
         code: 'testgame12345678901234567890123456',
         title: '토론 중인 게임',
-        status: GameStatus.PLAYING,
+        status: RoomStatus.PLAYING,
         phase: GamePhase.DISCUSSION, // 현재 토론 단계
         minPlayers: 4,
         maxPlayers: 8,
         currentPlayers: 6,
-        difficulty: 'NORMAL',
+        difficulty: GameDifficulty.NORMAL,
         isPrivate: false,
         timeLimit: 600,
         gameSettings: {},
         hostId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
         deletedAt: null,
-      } as unknown as GameRoomEntity;
+      } as unknown as RoomEntity;
 
       const mockFindOne = jest.spyOn(gameRoomRepository, 'findOne').mockResolvedValue(room);
 
@@ -268,20 +307,20 @@ describe('SPEC-GAME-001: Game State Management', () => {
         id: 1,
         code: 'testgame12345678901234567890123456',
         title: '종료된 게임',
-        status: GameStatus.FINISHED, // 이미 종료된 상태
-        phase: GamePhase.FINISHED,
+        status: RoomStatus.FINISHED, // 이미 종료된 상태
+        phase: GamePhase.RESULT,
         minPlayers: 4,
         maxPlayers: 8,
         currentPlayers: 6,
-        difficulty: 'NORMAL',
+        difficulty: GameDifficulty.NORMAL,
         isPrivate: false,
         timeLimit: 600,
         gameSettings: {},
         hostId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
         deletedAt: null,
-      } as unknown as GameRoomEntity;
+      } as unknown as RoomEntity;
 
       const mockFindOne = jest.spyOn(gameRoomRepository, 'findOne').mockResolvedValue(room);
 
@@ -298,20 +337,20 @@ describe('SPEC-GAME-001: Game State Management', () => {
         id: 1,
         code: 'testgame12345678901234567890123456',
         title: '대기중인 방',
-        status: GameStatus.WAITING, // 게임 상태가 아님
+        status: RoomStatus.WAITING, // 게임 상태가 아님
         phase: GamePhase.LOBBY,
         minPlayers: 4,
         maxPlayers: 8,
         currentPlayers: 6,
-        difficulty: 'NORMAL',
+        difficulty: GameDifficulty.NORMAL,
         isPrivate: false,
         timeLimit: 600,
         gameSettings: {},
         hostId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
         deletedAt: null,
-      } as unknown as GameRoomEntity;
+      } as unknown as RoomEntity;
 
       const mockFindOne = jest.spyOn(gameRoomRepository, 'findOne').mockResolvedValue(room);
 
@@ -328,20 +367,20 @@ describe('SPEC-GAME-001: Game State Management', () => {
         id: 1,
         code: 'testgame12345678901234567890123456',
         title: '대기중인 게임',
-        status: GameStatus.WAITING,
+        status: RoomStatus.WAITING,
         phase: GamePhase.LOBBY,
         minPlayers: 4,
         maxPlayers: 8,
         currentPlayers: 6,
-        difficulty: 'NORMAL',
+        difficulty: GameDifficulty.NORMAL,
         isPrivate: false,
         timeLimit: 600,
         gameSettings: {},
         hostId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
         deletedAt: null,
-      } as unknown as GameRoomEntity;
+      } as unknown as RoomEntity;
 
       const mockFindOne = jest.spyOn(gameRoomRepository, 'findOne').mockResolvedValue(room);
 
@@ -354,7 +393,7 @@ describe('SPEC-GAME-001: Game State Management', () => {
 
     it('TC-012: 익명 투표 검증 - 참가하지 않은 플레이어 투표 불가', async () => {
       // GIVEN: 참가하지 않은 사용자
-      const mockFindOne = jest.spyOn(gamePlayerRepository, 'findOne').mockResolvedValue(null);
+      const mockFindOne = jest.spyOn(playerRepository, 'findOne').mockResolvedValue(null);
 
       // WHEN: 참가하지 않은 사용자의 투표 시도
       // THEN: NotFoundException 발생해야 함
@@ -367,14 +406,24 @@ describe('SPEC-GAME-001: Game State Management', () => {
       // GIVEN: 이미 투표한 플레이어
       const player = {
         id: 1,
-        userId: 1,
         roomId: 1,
-        role: null,
-        isActive: true,
+        userId: 1,
+        room: {} as RoomEntity,
+        user: {} as any,
+        status: PlayerStatus.ACTIVE,
+        joinOrder: 1,
+        isHost: false,
+        gameRole: null,
         hasVoted: true, // 이미 투표함
-      } as GamePlayerEntity;
+        voteData: null,
+        gameData: null,
+        lastActiveAt: null,
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
+        deletedAt: null,
+      } as PlayerEntity;
 
-      const mockFindOne = jest.spyOn(gamePlayerRepository, 'findOne').mockResolvedValue(player);
+      const mockFindOne = jest.spyOn(playerRepository, 'findOne').mockResolvedValue(player);
 
       // WHEN: 이미 투표한 플레이어의 재투표 시도
       // THEN: ConflictException 발생해야 함
@@ -387,15 +436,25 @@ describe('SPEC-GAME-001: Game State Management', () => {
       // GIVEN: 존재하는 플레이어 (투표자)
       const voter = {
         id: 1,
-        userId: 1,
         roomId: 1,
-        role: null,
-        isActive: true,
+        userId: 1,
+        room: {} as RoomEntity,
+        user: {} as any,
+        status: PlayerStatus.ACTIVE,
+        joinOrder: 1,
+        isHost: false,
+        gameRole: null,
         hasVoted: false,
-      } as GamePlayerEntity;
+        voteData: null,
+        gameData: null,
+        lastActiveAt: null,
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
+        deletedAt: null,
+      } as PlayerEntity;
 
       // WHEN: 존재하지 않는 대상 플레이어에게 투표 시도
-      const mockFindOneVoter = jest.spyOn(gamePlayerRepository, 'findOne').mockImplementation(async (options) => {
+      const mockFindOneVoter = jest.spyOn(playerRepository, 'findOne').mockImplementation(async (options) => {
         if ((options as any).where.id === 1) {
           return voter;
         }
@@ -414,20 +473,20 @@ describe('SPEC-GAME-001: Game State Management', () => {
         id: 1,
         code: 'testgame12345678901234567890123456',
         title: '완전 종료된 게임',
-        status: GameStatus.FINISHED,
-        phase: GamePhase.FINISHED,
+        status: RoomStatus.FINISHED,
+        phase: GamePhase.RESULT,
         minPlayers: 4,
         maxPlayers: 8,
         currentPlayers: 6,
-        difficulty: 'NORMAL',
+        difficulty: GameDifficulty.NORMAL,
         isPrivate: false,
         timeLimit: 600,
         gameSettings: {},
         hostId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
         deletedAt: null,
-      } as unknown as GameRoomEntity;
+      } as unknown as RoomEntity;
 
       const mockFindOne = jest.spyOn(gameRoomRepository, 'findOne').mockResolvedValue(room);
 
@@ -444,20 +503,20 @@ describe('SPEC-GAME-001: Game State Management', () => {
         id: 1,
         code: 'testgame12345678901234567890123456',
         title: '테스트 게임',
-        status: GameStatus.FINISHED,
-        phase: GamePhase.FINISHED,
+        status: RoomStatus.FINISHED,
+        phase: GamePhase.RESULT,
         minPlayers: 4,
         maxPlayers: 8,
         currentPlayers: 6,
-        difficulty: 'NORMAL',
+        difficulty: GameDifficulty.NORMAL,
         isPrivate: false,
         timeLimit: 600,
         gameSettings: {},
         hostId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
         deletedAt: null,
-      } as unknown as GameRoomEntity;
+      } as unknown as RoomEntity;
 
       const mockFindOne = jest.spyOn(gameRoomRepository, 'findOne').mockResolvedValue(room);
 
@@ -472,17 +531,28 @@ describe('SPEC-GAME-001: Game State Management', () => {
       // GIVEN: 이미 역할이 할당된 플레이어
       const playerWithRole = {
         id: 1,
-        userId: 1,
         roomId: 1,
-        role: { id: 1, type: GameRoleType.LIAR, name: '라이어' } as GameRole,
-        isActive: true,
-      } as GamePlayerEntity;
+        userId: 1,
+        room: {} as RoomEntity,
+        user: {} as any,
+        status: PlayerStatus.ACTIVE,
+        joinOrder: 1,
+        isHost: false,
+        gameRole: GameRoleType.LIAR,
+        hasVoted: false,
+        voteData: null,
+        gameData: null,
+        lastActiveAt: null,
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
+        deletedAt: null,
+      } as PlayerEntity;
 
-      const mockFindOne = jest.spyOn(gamePlayerRepository, 'findOne').mockResolvedValue(playerWithRole);
+      const mockFindOne = jest.spyOn(playerRepository, 'findOne').mockResolvedValue(playerWithRole);
 
       // WHEN: 이미 역할이 있는 플레이어에게 새 역할 할당 시도
       // THEN: ConflictException 발생해야 함
-      await expect(gameStateManager.assignPlayerRole(1, 1, GameRoleType.DETECTIVE)).rejects.toThrow('플레이어에게는 이미 역할이 할당되어 있습니다.');
+      await expect(gameStateManager.assignPlayerRole(1, 1, GameRoleType.CITIZEN)).rejects.toThrow('플레이어에게는 이미 역할이 할당되어 있습니다.');
 
       mockFindOne.mockRestore();
     });
@@ -493,20 +563,20 @@ describe('SPEC-GAME-001: Game State Management', () => {
         id: 1,
         code: 'testgame12345678901234567890123456',
         title: '테스트 게임',
-        status: GameStatus.PLAYING,
-        phase: GamePhase.ASSIGNMENT,
+        status: RoomStatus.PLAYING,
+        phase: GamePhase.DISCUSSION,
         minPlayers: 4,
         maxPlayers: 8,
         currentPlayers: 7, // 7명 플레이어
-        difficulty: 'NORMAL',
+        difficulty: GameDifficulty.NORMAL,
         isPrivate: false,
         timeLimit: 600,
         gameSettings: {},
         hostId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
         deletedAt: null,
-      } as unknown as GameRoomEntity;
+      } as unknown as RoomEntity;
 
       const mockFindOne = jest.spyOn(gameRoomRepository, 'findOne').mockResolvedValue(room);
 
@@ -523,7 +593,7 @@ describe('SPEC-GAME-001: Game State Management', () => {
         title: '테스트 게임',
         minPlayers: 4,
         maxPlayers: 8,
-        difficulty: 'NORMAL',
+        difficulty: GameDifficulty.NORMAL,
         isPrivate: false,
         timeLimit: 0, // 유효하지 않은 시간 제한 (0초)
       };
@@ -539,20 +609,20 @@ describe('SPEC-GAME-001: Game State Management', () => {
         id: 1,
         code: 'testgame12345678901234567890123456',
         title: '테스트 게임',
-        status: GameStatus.WAITING,
+        status: RoomStatus.WAITING,
         phase: GamePhase.LOBBY,
         minPlayers: 4,
         maxPlayers: 8,
         currentPlayers: 6,
-        difficulty: 'NORMAL',
+        difficulty: GameDifficulty.NORMAL,
         isPrivate: false,
         timeLimit: 600,
         gameSettings: {},
         hostId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
         deletedAt: null,
-      } as unknown as GameRoomEntity;
+      } as unknown as RoomEntity;
 
       const mockFindOne = jest.spyOn(gameRoomRepository, 'findOne').mockResolvedValue(room);
 

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { PlayerEntity, PlayerStatus } from './entities/player.entity';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class PlayerService {
@@ -37,7 +38,7 @@ export class PlayerService {
         existingPlayer.deletedAt = null;
         existingPlayer.isHost = isHost;
         existingPlayer.status = isHost ? PlayerStatus.READY : PlayerStatus.NOT_READY;
-        existingPlayer.lastActiveAt = new Date();
+        existingPlayer.lastActiveAt = dayjs().toDate();
         return await this.playerRepository.save(existingPlayer);
       } else {
         throw new ConflictException('이미 방에 참여 중입니다.');
@@ -59,7 +60,7 @@ export class PlayerService {
       isHost,
       status: isHost ? PlayerStatus.READY : PlayerStatus.NOT_READY,
       joinOrder,
-      lastActiveAt: new Date(),
+      lastActiveAt: dayjs().toDate(),
     });
 
     console.log(`[PlayerService.addPlayer] 새 플레이어 생성:`, {
@@ -136,7 +137,7 @@ export class PlayerService {
     }
 
     player.status = status;
-    player.lastActiveAt = new Date();
+    player.lastActiveAt = dayjs().toDate();
 
     return await this.playerRepository.save(player);
   }
@@ -150,7 +151,7 @@ export class PlayerService {
       .update(PlayerEntity)
       .set({
         status,
-        lastActiveAt: new Date(),
+        lastActiveAt: dayjs().toDate(),
       })
       .where('roomId = :roomId', { roomId })
       .execute();
@@ -211,7 +212,7 @@ export class PlayerService {
     await this.playerRepository
       .createQueryBuilder()
       .update(PlayerEntity)
-      .set({ lastActiveAt: new Date() })
+      .set({ lastActiveAt: dayjs().toDate() })
       .where('roomId = :roomId', { roomId })
       .andWhere('userId = :userId', { userId: userId })
       .execute();
@@ -221,7 +222,7 @@ export class PlayerService {
    * 비활성 플레이어 정리 (일정 시간 동안 활동 없는 플레이어)
    */
   async cleanupInactivePlayers(timeoutMinutes: number = 10): Promise<void> {
-    const cutoffTime = new Date();
+    const cutoffTime = dayjs().toDate();
     cutoffTime.setMinutes(cutoffTime.getMinutes() - timeoutMinutes);
 
     await this.playerRepository

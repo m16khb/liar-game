@@ -41,14 +41,13 @@
     "@nestjs/platform-fastify": "^11.0.10",
     "@nestjs/platform-socket.io": "^11.1.8",
     "@nestjs/swagger": "^11.2.1",
-    "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.6",
     "@supabase/supabase-js": "^2.45.7",
     "@types/jsonwebtoken": "^9.0.10",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
-    "dayjs": "^1.11.13",
+    "dayjs": "^1.11.18",
     "dotenv": "^17.2.3",
     "fastify": "^5.6.1",
     "jsonwebtoken": "^9.0.2",
@@ -62,6 +61,7 @@
     "@nestjs/cli": "^11.0.5",
     "@nestjs/schematics": "^11.0.1",
     "@nestjs/testing": "^11.0.10",
+    "@nestjs/typeorm": "^11.0.0",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
@@ -80,6 +80,7 @@
     "standardwebhooks": "^1.0.0",
     "supertest": "^7.0.0",
     "ts-jest": "^29.4.5",
+    "ts-jest-resolver": "^2.0.1",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
@@ -101,6 +102,13 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapping": {
+      "^@/(.*)$": "<rootDir>/src/$1",
+      "^@common/(.*)$": "<rootDir>/src/common/$1"
+    },
+    "setupFilesAfterEnv": [
+      "./src/test/setup.ts"
+    ]
   }
 }

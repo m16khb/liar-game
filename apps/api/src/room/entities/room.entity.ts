@@ -1,10 +1,18 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index, ManyToOne, OneToMany } from 'typeorm';
 import { UserEntity } from '../../user/entities/user.entity';
+import { PlayerEntity } from '../../player/entities/player.entity';
 
 export enum RoomStatus {
   WAITING = 'waiting',
   PLAYING = 'playing',
   FINISHED = 'finished',
+}
+
+export enum GamePhase {
+  LOBBY = 'lobby',
+  DISCUSSION = 'discussion',
+  VOTING = 'voting',
+  RESULT = 'result',
 }
 
 export enum GameDifficulty {
@@ -32,6 +40,13 @@ export class RoomEntity {
     default: RoomStatus.WAITING,
   })
   status: RoomStatus;
+
+  @Column({
+    type: 'enum',
+    enum: GamePhase,
+    default: GamePhase.LOBBY,
+  })
+  phase: GamePhase;
 
   @Column({
     type: 'enum',
@@ -70,12 +85,18 @@ export class RoomEntity {
   @Column({ nullable: true, type: 'int', unsigned: true, comment: '방장 ID' })
   hostId: number;
 
+  @Column({ type: 'timestamp', nullable: true, comment: '마지막 활동 시간' })
+  lastActiveAt: Date | null;
+
+  @OneToMany(() => PlayerEntity, (player) => player.room)
+  players: PlayerEntity[];
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
 
-  @DeleteDateColumn({ type: 'timestamp' })
-  deletedAt: Date;
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deletedAt: Date | null;
 }

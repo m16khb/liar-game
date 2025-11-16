@@ -14,6 +14,7 @@ import { RoomService } from './room.service';
 import { RoomEntity, RoomStatus, GameDifficulty } from './entities/room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { SanitizeUtil } from '@/common/utils/sanitize.util';
+import dayjs from 'dayjs';
 
 describe('RoomService Security Tests', () => {
   let roomService: RoomService;
@@ -92,8 +93,8 @@ describe('RoomService Security Tests', () => {
         code: 'testcode12345678901234567890123456',
         hostId: 1,
         currentPlayers: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
       } as RoomEntity);
 
       // When
@@ -131,8 +132,8 @@ describe('RoomService Security Tests', () => {
         code: 'testcode12345678901234567890123456',
         hostId: 1,
         currentPlayers: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: dayjs().toDate(),
+        updatedAt: dayjs().toDate(),
       } as RoomEntity);
 
       // When

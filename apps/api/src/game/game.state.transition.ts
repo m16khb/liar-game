@@ -1,4 +1,4 @@
-import { GameStatus, GamePhase } from './entities/game-status.enum';
+import { RoomStatus, GamePhase } from '../room/entities/room.entity';
 
 /**
  * 게임 상태 전환 관리 클래스
@@ -8,12 +8,11 @@ export class GameStateTransition {
   /**
    * 유효한 상태 전환 검증
    */
-  static isValidStatusTransition(current: GameStatus, target: GameStatus): boolean {
-    const validTransitions: Record<GameStatus, GameStatus[]> = {
-      [GameStatus.WAITING]: [GameStatus.PLAYING],
-      [GameStatus.PLAYING]: [GameStatus.FINISHED],
-      [GameStatus.FINISHED]: [],
-      [GameStatus.CANCELLED]: [],
+  static isValidStatusTransition(current: RoomStatus, target: RoomStatus): boolean {
+    const validTransitions: Record<RoomStatus, RoomStatus[]> = {
+      [RoomStatus.WAITING]: [RoomStatus.PLAYING],
+      [RoomStatus.PLAYING]: [RoomStatus.FINISHED],
+      [RoomStatus.FINISHED]: [],
     };
 
     return validTransitions[current]?.includes(target) || false;
@@ -24,12 +23,10 @@ export class GameStateTransition {
    */
   static isValidPhaseTransition(current: GamePhase, target: GamePhase): boolean {
     const validTransitions: Record<GamePhase, GamePhase[]> = {
-      [GamePhase.LOBBY]: [GamePhase.ASSIGNMENT],
-      [GamePhase.ASSIGNMENT]: [GamePhase.DISCUSSION],
+      [GamePhase.LOBBY]: [GamePhase.DISCUSSION],
       [GamePhase.DISCUSSION]: [GamePhase.VOTING],
       [GamePhase.VOTING]: [GamePhase.RESULT],
-      [GamePhase.RESULT]: [GamePhase.FINISHED],
-      [GamePhase.FINISHED]: [],
+      [GamePhase.RESULT]: [],
     };
 
     return validTransitions[current]?.includes(target) || false;
@@ -38,16 +35,14 @@ export class GameStateTransition {
   /**
    * 상태 업데이트 시 단계 자동 설정
    */
-  static updatePhaseBasedOnStatus(status: GameStatus): GamePhase {
+  static updatePhaseBasedOnStatus(status: RoomStatus): GamePhase {
     switch (status) {
-      case GameStatus.WAITING:
+      case RoomStatus.WAITING:
         return GamePhase.LOBBY;
-      case GameStatus.PLAYING:
-        return GamePhase.ASSIGNMENT;
-      case GameStatus.FINISHED:
-        return GamePhase.FINISHED;
-      case GameStatus.CANCELLED:
-        return GamePhase.LOBBY;
+      case RoomStatus.PLAYING:
+        return GamePhase.DISCUSSION;
+      case RoomStatus.FINISHED:
+        return GamePhase.RESULT;
       default:
         return GamePhase.LOBBY;
     }

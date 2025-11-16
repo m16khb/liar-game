@@ -1,5 +1,5 @@
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min, Max, ValidateIf, IsBoolean, IsObject } from 'class-validator';
-import { GameDifficulty } from '@/room/dto/create-room.dto';
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min, Max, ValidateIf, IsBoolean, IsObject, MinLength, MaxLength } from 'class-validator';
+import { GameDifficulty } from '@/room/entities/room.entity';
 
 export class CreateGameRoomDto {
   @IsString()
