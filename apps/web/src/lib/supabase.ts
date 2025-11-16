@@ -21,7 +21,7 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKe
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flow: 'pkce', // 더 안전한 PKCE flow 사용
+    flowType: 'pkce', // 더 안전한 PKCE flow 사용
   },
 })
 
