@@ -23,6 +23,7 @@ export const databaseConfig = (configService: ConfigService): TypeOrmModuleOptio
   timezone: 'Z', // ✅ UTC 타임존 설정 (MySQL timestamp 컬럼에 UTC 저장)
   ssl: false,
   charset: 'utf8mb4',
-});
+  driver: require('mysql2'),
+  });
 
 export default databaseConfig;

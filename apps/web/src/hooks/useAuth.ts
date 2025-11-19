@@ -109,20 +109,42 @@ export const useAuth = () => {
 
   // 초기 인증 상태 확인
   useEffect(() => {
+    let mounted = true
+
     const initializeAuth = async () => {
       try {
+        console.log('🔍 [useAuth] 초기 인증 상태 확인 시작')
+
+        // 브라우저 로컬 스토리지 확인
+        const supabaseAuth = localStorage.getItem('supabase.auth.token')
+        console.log('💾 [useAuth] 로컬 스토리지 상태:', supabaseAuth ? '있음' : '없음')
+
         // URL에 hash fragment가 있는지 확인 (OAuth 콜백)
         if (window.location.hash && window.location.hash.includes('access_token')) {
+          console.log('🔗 [useAuth] OAuth 콜백 감지:', window.location.hash)
           // Supabase가 자동으로 hash를 처리하도록 잠시 대기
-          await new Promise(resolve => setTimeout(resolve, 500))
+          await new Promise(resolve => setTimeout(resolve, 1000))
 
           // hash를 정리해서 URL을 깔끔하게 유지
           window.history.replaceState({}, document.title, window.location.pathname)
+          console.log('🧹 [useAuth] URL 정리 완료')
         }
 
-        const session = await getCurrentSession()
+        // Supabase 클라이언트에서 직접 세션 확인
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        if (!mounted) return
+
+        if (error) {
+          console.error('❌ [useAuth] 세션 확인 오류:', error)
+        } else {
+          console.log('✅ [useAuth] 세션 확인 결과:', session?.user?.email || '없음')
+        }
+
         updateAuthState(session)
       } catch (error) {
+        if (!mounted) return
+        console.error('❌ [useAuth] 초기화 오류:', error)
         handleError(error as Error)
       }
     }
@@ -131,10 +153,13 @@ export const useAuth = () => {
 
     // 인증 상태 변화 리스너 설정
     const { subscription } = onAuthStateChange((event, session) => {
+      if (!mounted) return
+      console.log('🔄 [useAuth] 인증 상태 변경:', { event, user: session?.user?.email })
       updateAuthState(session)
     })
 
     return () => {
+      mounted = false
       subscription?.unsubscribe()
     }
   }, [updateAuthState, handleError])

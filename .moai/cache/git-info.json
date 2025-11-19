@@ -1,7 +1,7 @@
 {
   "branch": "main",
-  "last_commit": "9369c20 fix: @nestjs/typeorm \ubaa8\ub4c8 \uc124\uce58 \ubc0f import \uc5d0\ub7ec \ud574\uacb0, Date \u2192 dayjs \ubcc0\uacbd",
-  "commit_time": "4 minutes ago",
-  "changes": 0,
-  "last_check": "2025-11-16T18:08:19.292930"
+  "last_commit": "58832f6 Revert \"Merge pull request #1 from m16khb/feature/SPEC-DATA-001\"",
+  "commit_time": "3 hours ago",
+  "changes": 9,
+  "last_check": "2025-11-19T21:49:06.426607"
 }

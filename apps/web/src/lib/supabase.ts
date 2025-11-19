@@ -21,7 +21,8 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKe
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'pkce', // 더 안전한 PKCE flow 사용
+    flowType: 'pkce', // PKCE flow 사용 (더 안전)
+    debug: false, // 디버그 모드 비활성화
   },
 })
 
@@ -78,7 +79,11 @@ export const signInWithGoogle = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      // redirectTo를 제거하고 기본 동작에 맡김
+      redirectTo: `${window.location.origin}/auth/callback`,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent',
+      }
     },
   })
 
@@ -96,7 +101,7 @@ export const signInWithGitHub = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'github',
     options: {
-      // redirectTo를 제거하고 기본 동작에 맡김
+      redirectTo: `${window.location.origin}/auth/callback`,
     },
   })
 
@@ -114,7 +119,7 @@ export const signInWithDiscord = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'discord',
     options: {
-      // redirectTo를 제거하고 기본 동작에 맡김
+      redirectTo: `${window.location.origin}/auth/callback`,
     },
   })
 

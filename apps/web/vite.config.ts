@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
       host: true,
-      allowedHosts: ['dev.m16khb.xyz', 'localhost', '127.0.0.1'],
+      allowedHosts: ['dev-web-service', 'localhost', '127.0.0.1', 'dev.m16khb.xyz']
     },
     build: {
       outDir: 'dist',

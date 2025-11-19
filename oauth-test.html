@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OAuth 로그인 테스트</title>
+    <script>
+        // 환경 변수 설정
+        const supabaseUrl = import.meta?.env?.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
+        const supabaseAnonKey = import.meta?.env?.VITE_SUPABASE_ANON_KEY || '';
+
+        // 페이지 로드 시 실행
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('=== OAuth 디버깅 시작 ===');
+
+            // 1. URL 파라미터 확인
+            const urlParams = new URLSearchParams(window.location.search);
+            console.log('URL 파라미터:', Object.fromEntries(urlParams));
+
+            // 2. Hash 파라미터 확인 (OAuth 리디렉션 토큰)
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            console.log('Hash 파라미터:', Object.fromEntries(hashParams));
+
+            // 3. localStorage 확인
+            const authStorage = localStorage.getItem(`supabase.auth.token`);
+            console.log('localStorage 인증 정보:', authStorage);
+
+            // 4. 쿠키 확인
+            console.log('쿠키:', document.cookie);
+
+            // 5. 현재 페이지 정보
+            console.log('현재 URL:', window.location.href);
+            console.log('Origin:', window.location.origin);
+        });
+
+        // OAuth 테스트 함수들
+        async function testGoogleOAuth() {
+            console.log('\n=== Google OAuth 테스트 ===');
+            try {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: `${window.location.origin}/auth/callback`,
+                        queryParams: {
+                            access_type: 'offline',
+                            prompt: 'consent',
+                        }
+                    }
+                });
+
+                if (error) {
+                    console.error('Google OAuth 에러:', error);
+                    alert(`Google OAuth 에러: ${error.message}`);
+                } else {
+                    console.log('Google OAuth 성공:', data);
+                }
+            } catch (e) {
+                console.error('Google OAuth 예외:', e);
+                alert(`Google OAuth 예외: ${e.message}`);
+            }
+        }
+
+        async function testGitHubOAuth() {
+            console.log('\n=== GitHub OAuth 테스트 ===');
+            try {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'github',
+                    options: {
+                        redirectTo: `${window.location.origin}/auth/callback`
+                    }
+                });
+
+                if (error) {
+                    console.error('GitHub OAuth 에러:', error);
+                    alert(`GitHub OAuth 에러: ${error.message}`);
+                } else {
+                    console.log('GitHub OAuth 성공:', data);
+                }
+            } catch (e) {
+                console.error('GitHub OAuth 예외:', e);
+                alert(`GitHub OAuth 예외: ${e.message}`);
+            }
+        }
+
+        async function testDiscordOAuth() {
+            console.log('\n=== Discord OAuth 테스트 ===');
+            try {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'discord',
+                    options: {
+                        redirectTo: `${window.location.origin}/auth/callback`
+                    }
+                });
+
+                if (error) {
+                    console.error('Discord OAuth 에러:', error);
+                    alert(`Discord OAuth 에러: ${error.message}`);
+                } else {
+                    console.log('Discord OAuth 성공:', data);
+                }
+            } catch (e) {
+                console.error('Discord OAuth 예외:', e);
+                alert(`Discord OAuth 예외: ${e.message}`);
+            }
+        }
+
+        // 현재 세션 확인
+        async function checkCurrentSession() {
+            console.log('\n=== 현재 세션 확인 ===');
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                console.log('세션 정보:', session);
+                if (error) console.error('세션 에러:', error);
+
+                // JWT 토큰 디코딩
+                if (session?.access_token) {
+                    const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+                    console.log('JWT 페이로드:', payload);
+                }
+
+                return session;
+            } catch (e) {
+                console.error('세션 확인 예외:', e);
+            }
+        }
+
+        // 인증 상태 구독
+        supabase.auth.onAuthStateChange((event, session) => {
+            console.log('\n=== 인증 상태 변경 ===');
+            console.log('이벤트:', event);
+            console.log('세션:', session);
+        });
+    </script>
+</head>
+<body>
+    <h1>OAuth 로그인 테스트</h1>
+    <button onclick="testGoogleOAuth()">Google 로그인 테스트</button>
+    <button onclick="testGitHubOAuth()">GitHub 로그인 테스트</button>
+    <button onclick="testDiscordOAuth()">Discord 로그인 테스트</button>
+    <button onclick="checkCurrentSession()">현재 세션 확인</button>
+    <br><br>
+    <div id="result"></div>
+
+    <!-- Supabase CDN 추가 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Supabase 클라이언트 초기화
+        window.supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                debug: true, // 디버그 모드 활성화
+            }
+        });
+    </script>
+</body>
+</html>
