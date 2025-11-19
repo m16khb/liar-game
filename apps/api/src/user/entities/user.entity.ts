@@ -1,9 +1,12 @@
 import {
   Column,
+  CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   Index,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
 
 export enum UserTier {
   GUEST = 'guest',
@@ -19,7 +22,10 @@ export enum UserRole {
 @Entity({ name: 'users' })
 @Index('unique_email', ['email'], { unique: true })
 @Index('index_tier', ['tier'])
-export class UserEntity extends BaseEntity {
+export class UserEntity {
+  @PrimaryGeneratedColumn('increment', { type: 'int', unsigned: true })
+  id: number;
+
   @Column({ type: 'varchar', length: 255 })
   email: string;
 
@@ -51,4 +57,13 @@ export class UserEntity extends BaseEntity {
 
   @Column({ type: 'timestamp', nullable: true })
   lastLoginAt: Date | null;
+
+  @CreateDateColumn({ type: 'timestamp' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  updatedAt: Date;
+
+  @DeleteDateColumn({ type: 'timestamp' })
+  deletedAt: Date | null;
 }

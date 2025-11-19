@@ -1,5 +1,4 @@
-import { Entity, Column, Index, ManyToOne, OneToMany, JoinColumn, Unique } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index, ManyToOne, JoinColumn, Unique } from 'typeorm';
 import { UserEntity } from '../../user/entities/user.entity';
 import { RoomEntity } from '../../room/entities/room.entity';
 import { GameRoleType } from '../../game/entities/game-role.enum';
@@ -14,15 +13,13 @@ export enum PlayerStatus {
   DISCONNECTED = 'DISCONNECTED',
 }
 
-export enum GameRoleType {
-  LIAR = 'liar',
-  CITIZEN = 'citizen',
-}
-
 @Entity('players')
 @Index('unique_roomId_userId', ['roomId', 'userId'], { unique: true })
 @Index('index_roomId_status', ['roomId', 'status'])
-export class PlayerEntity extends BaseEntity {
+export class PlayerEntity {
+  @PrimaryGeneratedColumn('increment', { type: 'int', unsigned: true })
+  id: number;
+
   @Column({ type: 'int', unsigned: true, comment: '방 ID' })
   roomId: number;
 
@@ -69,4 +66,13 @@ export class PlayerEntity extends BaseEntity {
 
   @Column({ type: 'timestamp', nullable: true, comment: '마지막 활동 시간' })
   lastActiveAt: Date | null;
+
+  @CreateDateColumn({ type: 'timestamp' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  updatedAt: Date;
+
+  @DeleteDateColumn({ type: 'timestamp' })
+  deletedAt: Date | null;
 }

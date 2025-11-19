@@ -34,7 +34,7 @@ const AppDataSource = new DataSource({
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '3306'),
   username: process.env.DB_USERNAME || 'candle_user',
-  password: process.env.DB_PASSWORD || 'candle_pass',
+  password: process.env.DB_PASSWORD || 'mysql123',
   database: dbName,
   entities: ['dist/**/*.entity.js'],
   migrations: ['dist/migrations/*.js'],
