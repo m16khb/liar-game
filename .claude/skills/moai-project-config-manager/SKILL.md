@@ -1,21 +1,35 @@
 ---
-name: "moai-project-config-manager"
-version: "4.0.0"
+name: moai-project-config-manager
+version: 4.0.0
 created: 2025-11-05
-updated: 2025-11-13
+updated: '2025-11-18'
 status: stable
 tier: specialization
-description: "Complete config.json CRUD operations with validation, merge strategy, and error recovery. Use for project initialization, setting updates, and configuration management with intelligent backup and recovery."
-allowed-tools: "Read, Write, Edit, AskUserQuestion, Bash, TodoWrite"
-primary-agent: "alfred"
+description: Complete config.json CRUD operations with validation, merge strategy,
+  and error recovery. Use for project initialization, setting updates, and configuration
+  management with intelligent backup and recovery.
+allowed-tools: Read, Write, Edit, AskUserQuestion, Bash, TodoWrite
+primary-agent: alfred
 secondary-agents: []
-keywords: [project, config, manager, validation, crud]
-tags: [project-configuration, management, validation, backup, recovery]
-orchestration: 
+keywords:
+- project
+- config
+- manager
+- validation
+- crud
+tags:
+- project-configuration
+- management
+- validation
+- backup
+- recovery
+orchestration: null
 can_resume: true
-typical_chain_position: "middle"
+typical_chain_position: middle
 depends_on: []
+stability: stable
 ---
+
 
 # moai-project-config-manager
 
@@ -275,7 +289,7 @@ def optimize_config_for_performance(config):
 - `/alfred:3-sync` - Update configuration based on project changes
 
 **With Other Skills**:
-- `moai-alfred-ask-user-questions` - Interactive setting collection
+- `moai-core-ask-user-questions` - Interactive setting collection
 - `moai-skill-factory` - Skill configuration management
 - Domain-specific skills - Respect configuration settings for behavior
 
@@ -324,7 +338,7 @@ class RestoreError(ConfigError):
 
 ## 📈 Version History
 
-**v4.0.0** (2025-11-13)
+** .0** (2025-11-13)
 - ✨ Optimized 4-layer Progressive Disclosure structure
 - ✨ Reduced from 707 to 260 lines (63% reduction)
 - ✨ Enhanced configuration templates and profiles
@@ -348,7 +362,7 @@ class RestoreError(ConfigError):
 
 ---
 
-**Generated with**: MoAI-ADK Skill Factory v4.0  
+**Generated with**: MoAI-ADK Skill Factory    
 **Last Updated**: 2025-11-13  
 **Maintained by**: Primary Agent (alfred)  
 **Optimization**: 63% size reduction while preserving all functionality

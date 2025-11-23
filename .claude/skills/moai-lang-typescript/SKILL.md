@@ -1,16 +1,20 @@
 ---
-name: "moai-lang-typescript"
-version: "4.0.0"
-description: Enterprise TypeScript with strict typing and modern ecosystem TypeScript 5.9.3, Next.js 16, Turbopack, React 19, tRPC, Zod for type-safe schemas; activates for full-stack development, API contract definition, type safety enforcement, and framework-agnostic TypeScript patterns.
-allowed-tools:
-  - Read
-  - Bash
-  - WebSearch
-  - WebFetch
+name: moai-lang-typescript
+version: 4.0.0
+updated: '2025-11-19'
 status: stable
+stability: stable
+description: Enterprise TypeScript with strict typing and modern ecosystem TypeScript
+allowed-tools:
+- Read
+- Bash
+- WebSearch
+- WebFetch
 ---
 
-# Modern TypeScript Development — Enterprise v4.0
+
+
+# Modern TypeScript Development — Enterprise  
 
 ## Quick Summary
 

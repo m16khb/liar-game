@@ -1,20 +1,20 @@
 ---
-name: "moai-lang-shell"
-version: "4.0.0"
-tier: Language
-description: Enterprise Shell scripting with Bash 5.2, ShellCheck, bats-core testing, POSIX compliance, and Context7 MCP integration for defensive scripting patterns.
-primary-agent: "alfred"
-secondary-agents: ["tdd-implementer", "test-engineer", "code-reviewer"]
-keywords: ["shell", "bash", "shellcheck", "bats", "posix", "scripting", "testing", "linting"]
+name: moai-lang-shell
+version: 4.0.0
+updated: '2025-11-19'
 status: stable
+stability: stable
+description: Enterprise Shell scripting with Bash 5.2, ShellCheck, bats-core testing,
 allowed-tools:
-  - Read
-  - Bash
-  - mcp__context7__resolve-library-id
-  - mcp__context7__get-library-docs
+- Read
+- Bash
+- WebSearch
+- WebFetch
 ---
 
-# moai-lang-shell - Enterprise v4.0.0
+
+
+# moai-lang-shell - Enterprise 
 
 ## Skill Overview
 
@@ -450,11 +450,11 @@ This skill integrates with Context7 for real-time documentation access:
 
 ## Changelog
 
-- **v4.0.0** (2025-11-13): Refactored to Progressive Disclosure with comprehensive examples.md and reference.md
+- ** .0** (2025-11-13): Refactored to Progressive Disclosure with comprehensive examples.md and reference.md
 - **v3.0.0** (2025-03-15): Added POSIX compliance guide
 - **v2.0.0** (2025-01-10): Testing and linting guide
 - **v1.0.0** (2024-12-01): Initial release
 
 ---
 
-_Last updated: 2025-11-13_
+_Last updated: 2025-11-18_

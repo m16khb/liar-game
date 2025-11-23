@@ -1,19 +1,20 @@
 ---
-name: "moai-lang-kotlin"
-version: "4.0.0"
-created: 2025-10-22
-updated: 2025-11-13
+name: moai-lang-kotlin
+version: 4.0.0
+updated: '2025-11-19'
 status: stable
-description: Kotlin 2.0 Multiplatform Enterprise Development with KMP, Coroutines, Compose Multiplatform, and Context7 MCP integration. Advanced patterns for mobile, backend, and cross-platform development.
-keywords: ['kotlin', 'kmp', 'coroutines', 'compose', 'android', 'multiplatform', 'enterprise', 'context7']
+stability: stable
+description: Kotlin 2.0 Multiplatform Enterprise Development with KMP, Coroutines,
 allowed-tools:
-  - Read
-  - Bash
-  - mcp__context7__resolve-library-id
-  - mcp__context7__get-library-docs
+- Read
+- Bash
+- WebSearch
+- WebFetch
 ---
 
-# Lang Kotlin Skill - Enterprise v4.0.0
+
+
+# Lang Kotlin Skill - Enterprise 
 
 ## Skill Overview
 
@@ -498,11 +499,11 @@ val client = HttpClient {
 
 ## Changelog
 
-- **v4.0.0** (2025-11-13): Refactored to Progressive Disclosure with comprehensive examples.md and reference.md
+- ** .0** (2025-11-13): Refactored to Progressive Disclosure with comprehensive examples.md and reference.md
 - **v3.0.0** (2025-03-15): Added KMP and multiplatform patterns
 - **v2.0.0** (2025-01-10): Basic Kotlin patterns and best practices
 - **v1.0.0** (2024-12-01): Initial release
 
 ---
 
-_Last updated: 2025-11-13_
+_Last updated: 2025-11-18_

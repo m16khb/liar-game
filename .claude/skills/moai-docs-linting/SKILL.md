@@ -1,21 +1,32 @@
 ---
-name: "moai-docs-linting"
-version: "4.0.0"
+name: moai-docs-linting
+version: 4.0.0
 created: 2025-11-12
-updated: 2025-11-12
+updated: '2025-11-18'
 status: stable
 tier: specialization
-description: "Enhanced docs linting with AI-powered features. Enhanced with Context7 MCP for up-to-date documentation."
-allowed-tools: "Read, Glob, Grep, WebSearch, WebFetch, mcp__context7__resolve-library-id, mcp__context7__get-library-docs"
-primary-agent: "doc-syncer"
-secondary-agents: [alfred]
-keywords: [docs, linting, cd, spec, ci]
-tags: [documentation]
-orchestration: 
+description: Enhanced docs linting with AI-powered features. Enhanced with Context7
+  MCP for up-to-date documentation.
+allowed-tools: Read, Glob, Grep, WebSearch, WebFetch, mcp__context7__resolve-library-id,
+  mcp__context7__get-library-docs
+primary-agent: doc-syncer
+secondary-agents:
+- alfred
+keywords:
+- docs
+- linting
+- cd
+- spec
+- ci
+tags:
+- documentation
+orchestration: null
 can_resume: true
-typical_chain_position: "terminal"
+typical_chain_position: terminal
 depends_on: []
+stability: stable
 ---
+
 
 # moai-docs-linting
 
@@ -440,7 +451,7 @@ context7_references:
 
 ## 📈 Version History
 
-**v4.0.0** (2025-11-12)
+** .0** (2025-11-12)
 - ✨ Context7 MCP integration
 - ✨ Progressive Disclosure structure
 - ✨ 10+ code examples
@@ -453,6 +464,6 @@ context7_references:
 
 ---
 
-**Generated with**: MoAI-ADK Skill Factory v4.0  
+**Generated with**: MoAI-ADK Skill Factory    
 **Last Updated**: 2025-11-12  
 **Maintained by**: Primary Agent (doc-syncer)

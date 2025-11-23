@@ -1,16 +1,18 @@
 ---
-name: "moai-lang-c"
-version: "2.0.0"
-created: 2025-10-22
-updated: 2025-11-11
+name: moai-lang-c
+version: 4.0.0
+updated: '2025-11-19'
 status: stable
-description: C programming language patterns, memory management, and systems programming best practices. Use when writing C applications, managing memory manually, or implementing low-level optimizations.
-keywords: ['c', 'memory-management', 'systems-programming', 'low-level', 'performance']
-allowed-tools: 
-  - Read
-  - Bash
-  - Glob
+stability: stable
+description: C programming language patterns, memory management, and systems programming
+allowed-tools:
+- Read
+- Bash
+- WebSearch
+- WebFetch
 ---
+
+
 
 # C Programming Language Skill
 

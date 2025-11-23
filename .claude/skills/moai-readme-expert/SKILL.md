@@ -2,14 +2,28 @@
 name: moai-readme-expert
 version: 4.0.0
 status: production
-description: |
-  README.md generation specialist with dynamic project analysis capabilities. 
-  Master professional README creation, specialized templates, and automated 
-  documentation generation. Create comprehensive, engaging README files that 
-  showcase projects effectively and follow best practices.
-allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "WebFetch", "WebSearch"]
-tags: ["readme", "documentation", "markdown", "project-templates", "automated-generation"]
+description: "README.md generation specialist with dynamic project analysis capabilities.\
+  \ \nMaster professional README creation, specialized templates, and automated \n\
+  documentation generation. Create comprehensive, engaging README files that \nshowcase\
+  \ projects effectively and follow best practices.\n"
+allowed-tools:
+- Read
+- Write
+- Edit
+- Bash
+- Glob
+- WebFetch
+- WebSearch
+tags:
+- readme
+- documentation
+- markdown
+- project-templates
+- automated-generation
+updated: '2025-11-18'
+stability: stable
 ---
+
 
 # README.md Expert
 
@@ -423,7 +437,7 @@ require {package_path} {version}
 
 - **moai-document-processing**: Document generation and formatting
 - **moai-domain-testing**: Documentation testing and validation
-- **moai-alfred-workflow**: README generation automation
+- **moai-core-workflow**: README generation automation
 - **moai-essentials-refactor**: Content optimization and refactoring
 
 ## Quick Start Checklist

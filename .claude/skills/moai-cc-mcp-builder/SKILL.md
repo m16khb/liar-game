@@ -1,23 +1,38 @@
 ---
-name: "moai-cc-mcp-builder"
-description: AI-powered enterprise MCP (Model Context Protocol) server development orchestrator with Context7 integration, intelligent code generation, automated architecture design, and enterprise-grade server deployment patterns for advanced LLM service integration
-allowed-tools: 
-  - Read
-  - Bash
-  - Write
-  - Edit
-  - TodoWrite
-  - WebFetch
-  - mcp__context7__resolve-library-id
-  - mcp__context7__get-library-docs
-version: "4.0.0"
+name: moai-cc-mcp-builder
+description: AI-powered enterprise MCP (Model Context Protocol) server development
+  orchestrator with Context7 integration, intelligent code generation, automated architecture
+  design, and enterprise-grade server deployment patterns for advanced LLM service
+  integration
+allowed-tools:
+- Read
+- Bash
+- Write
+- Edit
+- TodoWrite
+- WebFetch
+- mcp__context7__resolve-library-id
+- mcp__context7__get-library-docs
+version: 4.0.0
 created: 2025-11-11
-updated: 2025-11-11
+updated: '2025-11-18'
 status: stable
-keywords: ['ai-mcp-development', 'context7-integration', 'mcp-server-architecture', 'llm-integration', 'enterprise-mcp', 'automated-code-generation', 'mcp-best-practices', 'agent-centric-design', 'mcp-deployment', 'intelligent-api-design']
+keywords:
+- ai-mcp-development
+- context7-integration
+- mcp-server-architecture
+- llm-integration
+- enterprise-mcp
+- automated-code-generation
+- mcp-best-practices
+- agent-centric-design
+- mcp-deployment
+- intelligent-api-design
+stability: stable
 ---
 
-# AI-Powered Enterprise MCP Server Development Skill v4.0.0
+
+# AI-Powered Enterprise MCP Server Development Skill 
 
 ## Skill Metadata
 
@@ -507,7 +522,7 @@ class AIMCPDevelopmentLearner:
 
 ---
 
-**End of AI-Powered Enterprise MCP Server Development Skill v4.0.0**  
+**End of AI-Powered Enterprise MCP Server Development Skill **  
 *Enhanced with Context7 MCP integration and revolutionary AI capabilities*
 
 ---

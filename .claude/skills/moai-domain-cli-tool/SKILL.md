@@ -1,17 +1,35 @@
 ---
-name: "moai-domain-cli-tool"
-version: "4.0.0"
+name: moai-domain-cli-tool
+version: 4.0.0
 tier: Domain Architecture
 created: 2025-11-13
-updated: 2025-11-13
-tags: [CLI, Rust, Go, Node.js, command-line-tools, argument-parsing, UX/DX]
-trigger_keywords: [CLI tool, command-line, argparse, Clap, Cobra, Commander]
-allowed-tools: [WebSearch, WebFetch]
+updated: '2025-11-18'
+tags:
+- CLI
+- Rust
+- Go
+- Node.js
+- command-line-tools
+- argument-parsing
+- UX/DX
+trigger_keywords:
+- CLI tool
+- command-line
+- argparse
+- Clap
+- Cobra
+- Commander
+allowed-tools:
+- WebSearch
+- WebFetch
 status: stable
-description: "Enterprise CLI tool architecture with multi-language patterns, UX/DX optimization, and production deployment strategies"
+description: Enterprise CLI tool architecture with multi-language patterns, UX/DX
+  optimization, and production deployment strategies
+stability: stable
 ---
 
-# Enterprise CLI Tool Architecture - v4.0.0
+
+# Enterprise CLI Tool Architecture - 
 
 ## Level 1: Quick Reference
 
@@ -284,7 +302,7 @@ async fn handle_init(name: String, template: Option<String>) -> Result<()> {
     
     let config = ProjectConfig {
         name: name.clone(),
-        version: "0.1.0".to_string(),
+        version: "4.0.0".to_string(),
         targets: vec!["x86_64-unknown-linux-gnu".to_string()],
     };
     
@@ -361,5 +379,5 @@ ENTRYPOINT ["myapp"]
 ---
 
 **Version**: 4.0.0 Enterprise  
-**Last Updated**: 2025-11-13  
+**Last Updated**: 2025-11-18  
 **Status**: Production Ready

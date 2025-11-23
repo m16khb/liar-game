@@ -1,19 +1,20 @@
 ---
-name: "moai-lang-csharp"
-version: "4.0.0"
-created: 2025-11-11
-updated: 2025-11-12
+name: moai-lang-csharp
+version: 4.0.0
+updated: '2025-11-19'
 status: stable
-description: "Enterprise C# 13 development with .NET 9, async/await, LINQ, Entity Framework Core, ASP.NET Core, and Context7 MCP integration for modern backend and enterprise applications."
-keywords: [csharp, dotnet9, csharp13, aspnetcore, entityframework, backend, async, context7, enterprise]
+stability: stable
+description: Enterprise C# 13 development with .NET 9, async/await, LINQ, Entity Framework
 allowed-tools:
-  - Read
-  - Bash
-  - mcp__context7__resolve-library-id
-  - mcp__context7__get-library-docs
+- Read
+- Bash
+- WebSearch
+- WebFetch
 ---
 
-# C# - Enterprise v4.0.0
+
+
+# C# - Enterprise 
 
 ## Metadata
 
@@ -342,7 +343,7 @@ aspnetcore_docs = get_library_docs(
 
 ## Changelog
 
-- **v4.0.0** (2025-11-12): Enterprise upgrade - Progressive Disclosure structure, 83% content reduction, Context7 integration
+- ** .0** (2025-11-12): Enterprise upgrade - Progressive Disclosure structure, 83% content reduction, Context7 integration
 - **v3.0.0** (2025-03-15): C# 12 and .NET 8 patterns
 - **v2.0.0** (2025-01-10): Basic C# async/await patterns
 - **v1.0.0** (2024-12-01): Initial release
@@ -359,4 +360,4 @@ aspnetcore_docs = get_library_docs(
 
 ---
 
-_Last updated: 2025-11-12 | Maintained by moai-adk team_
+_Last updated: 2025-11-18 | Maintained by moai-adk team_

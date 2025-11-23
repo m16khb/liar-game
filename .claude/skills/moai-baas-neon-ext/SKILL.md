@@ -1,24 +1,37 @@
 ---
-name: "moai-baas-neon-ext"
-version: "4.0.0"
+name: moai-baas-neon-ext
+version: 4.0.0
 created: 2025-11-11
-updated: 2025-11-13
+updated: '2025-11-18'
 status: stable
-description: Enterprise Neon Serverless PostgreSQL Platform with AI-powered database architecture, Context7 integration, and intelligent branching orchestration for scalable modern applications
-keywords: ['neon', 'postgresql', 'serverless-database', 'database-branching', 'autoscaling', 'pg-bouncer', 'context7-integration', 'ai-orchestration', 'production-deployment']
-allowed-tools: 
-  - Read
-  - Bash
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - WebFetch
-  - mcp__context7__resolve-library-id
-  - mcp__context7__get-library-docs
+description: Enterprise Neon Serverless PostgreSQL Platform with AI-powered database
+  architecture, Context7 integration, and intelligent branching orchestration for
+  scalable modern applications
+keywords:
+- neon
+- postgresql
+- serverless-database
+- database-branching
+- autoscaling
+- pg-bouncer
+- context7-integration
+- ai-orchestration
+- production-deployment
+allowed-tools:
+- Read
+- Bash
+- Write
+- Edit
+- Glob
+- Grep
+- WebFetch
+- mcp__context7__resolve-library-id
+- mcp__context7__get-library-docs
+stability: stable
 ---
 
-# Enterprise Neon Serverless PostgreSQL Expert v4.0.0
+
+# Enterprise Neon Serverless PostgreSQL Expert 
 
 ## Skill Metadata
 
@@ -36,7 +49,7 @@ allowed-tools:
 
 Enterprise Neon Serverless PostgreSQL Platform expert with AI-powered database architecture, Context7 integration, and intelligent branching orchestration for scalable modern applications.
 
-**Revolutionary v4.0.0 capabilities**:
+**Revolutionary  capabilities**:
 - 🤖 **AI-Powered Neon Architecture** using Context7 MCP for latest PostgreSQL documentation
 - 📊 **Intelligent Database Branching** with automated development workflow optimization
 - 🚀 **Real-time Performance Analytics** with AI-driven PostgreSQL optimization insights
@@ -388,7 +401,7 @@ class PostgreSQLToNeonMigrator:
 
 ## Changelog
 
-- **v4.0.0** (2025-11-13): Complete Enterprise v4.0 rewrite with 40% content reduction, 4-layer Progressive Disclosure structure, Context7 integration, November 2025 Neon platform updates, and advanced branching workflows
+- ** .0** (2025-11-13): Complete Enterprise   rewrite with 40% content reduction, 4-layer Progressive Disclosure structure, Context7 integration, November 2025 Neon platform updates, and advanced branching workflows
 - **v2.0.0** (2025-11-11): Complete metadata structure, branching patterns, integration workflows
 - **v1.0.0** (2025-11-11): Initial Neon serverless PostgreSQL platform
 
@@ -412,4 +425,4 @@ class PostgreSQLToNeonMigrator:
 
 ---
 
-**End of Enterprise Neon Serverless PostgreSQL Expert v4.0.0**
+**End of Enterprise Neon Serverless PostgreSQL Expert **

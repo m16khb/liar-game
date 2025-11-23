@@ -1,21 +1,33 @@
 ---
-name: "moai-change-logger"
-version: "4.0.0"
+name: moai-change-logger
+version: 4.0.0
 created: 2025-11-05
-updated: 2025-11-12
+updated: '2025-11-18'
 status: stable
 tier: specialization
-description: "Comprehensive change tracking and audit logging system that monitors file modifications, code changes, and project evolution. Use when tracking project history, maintaining audit trails, analyzing development patterns, or when detailed change documentation is required for compliance and team collaboration.. Enhanced with Context7 MCP for up-to-date documentation."
-allowed-tools: "Read, Glob, Bash, Write, WebSearch, WebFetch, mcp__context7__resolve-library-id, mcp__context7__get-library-docs"
-primary-agent: "alfred"
+description: Comprehensive change tracking and audit logging system that monitors
+  file modifications, code changes, and project evolution. Use when tracking project
+  history, maintaining audit trails, analyzing development patterns, or when detailed
+  change documentation is required for compliance and team collaboration.. Enhanced
+  with Context7 MCP for up-to-date documentation.
+allowed-tools: Read, Glob, Bash, Write, WebSearch, WebFetch, mcp__context7__resolve-library-id,
+  mcp__context7__get-library-docs
+primary-agent: alfred
 secondary-agents: []
-keywords: [change, logger, auth, test, git]
+keywords:
+- change
+- logger
+- auth
+- test
+- git
 tags: []
-orchestration: 
+orchestration: null
 can_resume: true
-typical_chain_position: "middle"
+typical_chain_position: middle
 depends_on: []
+stability: stable
 ---
+
 
 # moai-change-logger
 
@@ -486,7 +498,7 @@ Start
 
 ## 📈 Version History
 
-**v4.0.0** (2025-11-12)
+** .0** (2025-11-12)
 - ✨ Context7 MCP integration
 - ✨ Progressive Disclosure structure
 - ✨ 10+ code examples
@@ -499,6 +511,6 @@ Start
 
 ---
 
-**Generated with**: MoAI-ADK Skill Factory v4.0  
+**Generated with**: MoAI-ADK Skill Factory    
 **Last Updated**: 2025-11-12  
 **Maintained by**: Primary Agent (alfred)

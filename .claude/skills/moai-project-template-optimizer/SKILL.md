@@ -1,21 +1,36 @@
 ---
-name: "moai-project-template-optimizer"
-version: "4.0.0"
+name: moai-project-template-optimizer
+version: 4.0.0
 created: 2025-11-12
-updated: 2025-11-12
+updated: '2025-11-18'
 status: stable
 tier: specialization
-description: "Handle template comparison and optimization workflows including backup detection, smart merging, and update completion reporting. Enhanced with Context7 MCP for up-to-date documentation."
-allowed-tools: "Read, Glob, Grep, WebSearch, WebFetch, mcp__context7__resolve-library-id, mcp__context7__get-library-docs"
-primary-agent: "alfred"
+description: Handle template comparison and optimization workflows including backup
+  detection, smart merging, and update completion reporting. Enhanced with Context7
+  MCP for up-to-date documentation.
+allowed-tools: Read, Glob, Grep, WebSearch, WebFetch, mcp__context7__resolve-library-id,
+  mcp__context7__get-library-docs
+primary-agent: alfred
 secondary-agents: []
-keywords: [project, template, optimizer, test]
-tags: [project, template, optimization, backup, merge, comparison]
-orchestration: 
+keywords:
+- project
+- template
+- optimizer
+- test
+tags:
+- project
+- template
+- optimization
+- backup
+- merge
+- comparison
+orchestration: null
 can_resume: true
-typical_chain_position: "middle"
+typical_chain_position: middle
 depends_on: []
+stability: stable
 ---
+
 
 # moai-project-template-optimizer
 
@@ -400,7 +415,7 @@ Start
 
 ## 📈 Version History
 
-**v4.0.0** (2025-11-12)
+** .0** (2025-11-12)
 - ✨ Context7 MCP integration
 - ✨ Progressive Disclosure structure
 - ✨ 10+ code examples
@@ -413,6 +428,6 @@ Start
 
 ---
 
-**Generated with**: MoAI-ADK Skill Factory v4.0  
+**Generated with**: MoAI-ADK Skill Factory    
 **Last Updated**: 2025-11-12  
 **Maintained by**: Primary Agent (alfred)

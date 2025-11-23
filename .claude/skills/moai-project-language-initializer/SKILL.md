@@ -1,20 +1,30 @@
 ---
-name: "moai-project-language-initializer"
-version: "1.0.0"
+name: moai-project-language-initializer
+version: 4.0.0
 created: 2025-11-05
-updated: 2025-11-05
+updated: '2025-11-18'
 status: stable
-description: Handle comprehensive project language and user setup workflows including language selection, agent prompt configuration, user profiles, team settings, and domain selection
-keywords: ['project', 'initialization', 'language', 'configuration', 'batch-questions', 'team-setup']
-allowed-tools: 
-  - Read
-  - Write
-  - Edit
-  - MultiEdit
-  - Glob
-  - TodoWrite
-  - AskUserQuestion
+description: Handle comprehensive project language and user setup workflows including
+  language selection, agent prompt configuration, user profiles, team settings, and
+  domain selection
+keywords:
+- project
+- initialization
+- language
+- configuration
+- batch-questions
+- team-setup
+allowed-tools:
+- Read
+- Write
+- Edit
+- MultiEdit
+- Glob
+- TodoWrite
+- AskUserQuestion
+stability: stable
 ---
+
 
 # MoAI Project Language & User Initializer
 
@@ -180,9 +190,9 @@ The skill automatically manages `.moai/config/config.json` persistence:
 - `/alfred:3-sync`: Respects report generation settings
 
 ### With Other Skills
-- `moai-alfred-ask-user-questions`: Uses TUI survey patterns
+- `moai-core-ask-user-questions`: Uses TUI survey patterns
 - `moai-skill-factory`: Can be invoked for skill template application
-- `moai-alfred-agent-guide`: Provides agent lineup based on domains
+- `moai-core-agent-guide`: Provides agent lineup based on domains
 
 ### Configuration Dependencies
 - `.moai/config/config.json`: Primary configuration store
