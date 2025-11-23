@@ -1,28 +1,9 @@
 {
   "companyAnnouncements": [
-    "SPEC-First: Use /alfred:1-plan to define requirements first and everything connects together",
-    "TDD Cycle: RED (write tests) → GREEN (minimal code) → REFACTOR (improve) ensures quality",
-    "4-Phase Workflow: /alfred:1-plan plan → /alfred:2-run implement → /alfred:3-sync validate → git deploy",
-    "TRUST 5 Principles: Test(≥85%) + Readable + Unified + Secured(OWASP) + Trackable = Quality",
-    "Alfred Agents: 19 expert team members automatically handle planning, implementation, testing, validation",
-    "Conversation Style: /output-style r2d2 (hands-on partner) or /output-style yoda (deep learning) available",
-    "Task Tracking: TodoWrite keeps progress visible and prevents any tasks from being missed",
-    "55+ Skill Library: Verified patterns and best practices enable hallucination-free implementation",
-    "Auto Validation: After coding, TRUST 5, test coverage, and security checks run automatically",
-    "GitFlow Strategy: feature/SPEC-XXX → develop → main structure for safe deployment pipeline",
-    "Context7 Updates: All library versions stay current with real-time API information",
-    "Parallel Processing: Independent tasks (tests, docs, deployment) run simultaneously to save time",
-    "Health Check: moai-adk doctor diagnoses configuration, version, and dependency issues in seconds",
-    "Doc Sync: /alfred:3-sync auto synchronizes tests, code, and documentation automatically",
-    "Language Separation: Communicate in your language, write code in project language, package in English",
-    "Multi-language Support: Korean, English, Japanese, Spanish, and 25+ languages for conversation",
-    "Safe Updates: moai-adk update brings new features automatically while preserving existing settings",
-    "Auto Cleanup: Session end automatically cleans .moai/temp/ cache and logs to save space",
-    "Error Recovery: Failed commits and merge conflicts are auto-analyzed with solutions provided",
-    "Security First: Environment variables, API keys, and credentials auto-added to .gitignore for protection",
-    "Context Optimization: Efficient use of 200K token window enables handling of large projects",
-    "Quick Feedback: Questions? Ask immediately - Alfred interprets intent and clarifies automatically",
-    "Clean Exit: End sessions with /clear to reset context and prepare for the next task"
+    "MoAI-ADK: SPEC-First TDD with 135+ Skills and Context7 integration",
+    "Commands: /moai:1-plan → /moai:2-run → /moai:3-sync → git deploy",
+    "Quality: TRUST 5 principles with ≥85% test coverage enforced",
+    "Context7: Real-time library documentation for hallucination-free code"
   ],
   "hooks": {
     "SessionStart": [
@@ -30,11 +11,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/hooks/alfred/session_start__show_project_info.py"
-          },
-          {
-            "type": "command",
-            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/hooks/alfred/session_start__config_health_check.py"
+            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/hooks/moai/session_start__show_project_info.py"
           }
         ]
       }
@@ -45,27 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/hooks/alfred/pre_tool__auto_checkpoint.py"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/hooks/alfred/user_prompt__jit_load_docs.py"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/hooks/alfred/session_end__auto_cleanup.py"
+            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/hooks/moai/pre_tool__document_management.py"
           }
         ]
       }
@@ -74,13 +31,16 @@
   "permissions": {
     "defaultMode": "default",
     "allow": [
+      "AskUserQuestion",
       "Bash(alfred:*)",
       "Bash(black:*)",
+      "Bash(cat:*)",
       "Bash(comm:*)",
       "Bash(coverage:*)",
       "Bash(cp:*)",
       "Bash(diff:*)",
       "Bash(echo:*)",
+      "Bash(find:*)",
       "Bash(gh issue:*)",
       "Bash(gh pr create:*)",
       "Bash(gh pr list:*)",
@@ -99,12 +59,15 @@
       "Bash(make:*)",
       "Bash(mkdir:*)",
       "Bash(moai-adk:*)",
+      "Bash(moai:*)",
       "Bash(mv:*)",
       "Bash(mypy:*)",
       "Bash(pytest:*)",
+      "Bash(python3:*)",
       "Bash(python:*)",
       "Bash(rg:*)",
       "Bash(ruff:*)",
+      "Bash(sed:*)",
       "Bash(sort:*)",
       "Bash(time:*)",
       "Bash(touch:*)",
@@ -122,11 +85,14 @@
       "MultiEdit",
       "NotebookEdit",
       "Read",
+      "Skill",
       "Task",
       "TodoWrite",
       "WebFetch",
       "WebSearch",
-      "Write"
+      "Write",
+      "mcp__context7__get-library-docs",
+      "mcp__context7__resolve-library-id"
     ],
     "ask": [
       "Bash(gh pr merge:*)",
@@ -145,15 +111,31 @@
       "Bash(rm:*)",
       "Bash(sudo:*)",
       "Bash(uv add:*)",
-      "Bash(uv remove:*)"
+      "Bash(uv remove:*)",
+      "Read(./.env)",
+      "Read(./.env.*)"
     ],
     "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)",
       "Read(./secrets/**)",
       "Read(~/.ssh/**)",
       "Read(~/.aws/**)",
       "Read(~/.config/gcloud/**)",
+      "Write(./secrets/**)",
+      "Write(~/.ssh/**)",
+      "Write(~/.aws/**)",
+      "Write(~/.config/gcloud/**)",
+      "Edit(./secrets/**)",
+      "Edit(~/.ssh/**)",
+      "Edit(~/.aws/**)",
+      "Edit(~/.config/gcloud/**)",
+      "Grep(./secrets/**)",
+      "Grep(~/.ssh/**)",
+      "Grep(~/.aws/**)",
+      "Grep(~/.config/gcloud/**)",
+      "Glob(./secrets/**)",
+      "Glob(~/.ssh/**)",
+      "Glob(~/.aws/**)",
+      "Glob(~/.config/gcloud/**)",
       "Bash(rm -rf /:*)",
       "Bash(rm -rf /*:*)",
       "Bash(rm -rf C\\:/:*)",
@@ -175,10 +157,13 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "uv run python -m moai_adk.statusline.main",
-    "padding": 0
+    "command": "uv run moai-adk statusline",
+    "padding": 0,
+    "refreshInterval": 300
   },
   "spinnerTipsEnabled": true,
   "outputStyle": "🤖 R2-D2",
+  "includeCoAuthoredBy": false,
+  "cleanupPeriodDays": 30,
   "env": {}
 }

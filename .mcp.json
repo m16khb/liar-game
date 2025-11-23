@@ -5,18 +5,14 @@
       "args": [
         "-y",
         "@upstash/context7-mcp@latest"
-      ],
-      "timeout": 30000,
-      "retries": 3
+      ]
     },
     "playwright": {
       "command": "npx",
       "args": [
         "-y",
         "@playwright/mcp@latest"
-      ],
-      "timeout": 30000,
-      "retries": 3
+      ]
     },
     "sequential-thinking": {
       "command": "npx",
@@ -26,6 +22,10 @@
       ],
       "timeout": 30000,
       "retries": 3
+    },
+    "figma-dev-mode-mcp-server": {
+      "type": "sse",
+      "url": "http://127.0.0.1:3845/sse"
     }
   }
 }
