@@ -1,7 +1,7 @@
 {
   "branch": "main",
-  "last_commit": "58832f6 Revert \"Merge pull request #1 from m16khb/feature/SPEC-DATA-001\"",
-  "commit_time": "3 hours ago",
-  "changes": 9,
-  "last_check": "2025-11-19T21:49:06.426607"
+  "last_commit": "e867816 fix: Supabase \ub514\ubc84\uadf8 \ubaa8\ub4dc \ube44\ud65c\uc131\ud654 \ubc0f \uac1c\ubc1c \ud658\uacbd \uc124\uc815 \uac1c\uc120",
+  "commit_time": "4 days ago",
+  "changes": 221,
+  "last_check": "2025-11-23T18:27:04.694809"
 }
