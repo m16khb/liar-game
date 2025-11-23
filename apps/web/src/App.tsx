@@ -9,7 +9,7 @@ import SetPasswordForm from './components/auth/SetPasswordForm'
 import RoomList from './components/game/RoomList'
 import GameRoom from './components/game/GameRoom'
 import { supabase, getCurrentSession } from './lib/supabase'
-import { useAuth } from './hooks/useAuth'
+import { useAuth, AuthProvider } from './hooks/useAuth'
 
 /**
  * 메인 애플리케이션 컴포넌트
@@ -260,14 +260,10 @@ function AuthCallbackPage() {
   const [searchParams] = useSearchParams()
 
   useEffect(() => {
-    // Supabase 콜백 처리 - Supabase가 자동으로 hash를 처리하도록 함
+    // Supabase 콜백 처리
     const handleAuthCallback = async () => {
       try {
-        console.log('🔄 Auth callback 시작:', window.location.href)
-        console.log('🔍 Search params:', window.location.search)
-        console.log('🔗 URL hash:', window.location.hash)
-        console.log('📍 Origin:', window.location.origin)
-        console.log('📋 Pathname:', window.location.pathname)
+        console.log('🔄 [AuthCallback] 시작:', window.location.href)
 
         // URL에서 에러 확인
         const urlParams = new URLSearchParams(window.location.search)
@@ -275,93 +271,95 @@ function AuthCallbackPage() {
         const errorDescription = urlParams.get('error_description')
 
         if (error) {
-          console.error('❌ OAuth 에러:', { error, errorDescription })
-          console.error('에러 코드:', urlParams.get('error_code'))
+          console.error('❌ [AuthCallback] OAuth 에러:', { error, errorDescription })
           alert(`로그인 실패: ${errorDescription || error}`)
           window.location.href = '/'
           return
         }
 
-        // URL hash 확인 - OAuth 토큰이 있는지
-        const hash = window.location.hash
-        console.log('🔗 URL hash 길이:', hash.length)
-        console.log('🔍 Hash 내 access_token 포함:', hash.includes('access_token'))
+        // PKCE flow: code가 query parameter로 옴
+        const code = urlParams.get('code')
+        if (code) {
+          console.log('🔑 [AuthCallback] PKCE code 발견')
 
-        if (hash && hash.includes('access_token')) {
-          console.log('✅ OAuth 토큰 발견!')
-          console.log('📋 전체 hash:', hash)
-
-          // hash 파싱
-          const hashParams = new URLSearchParams(hash.substring(1))
-          const accessToken = hashParams.get('access_token')
-          const refreshToken = hashParams.get('refresh_token')
-          const expiresIn = hashParams.get('expires_in')
-          const provider = hashParams.get('provider')
-
-          console.log('🎫 토큰 정보:')
-          console.log('  - access_token:', accessToken?.substring(0, 20) + '...')
-          console.log('  - refresh_token:', refreshToken?.substring(0, 10) + '...')
-          console.log('  - expires_in:', expiresIn)
-          console.log('  - provider:', provider)
-
-          // Supabase가 hash를 처리할 시간을 충분히 줌
-          console.log('⏳ Supabase 자동 처리 대기 (2초)...')
-          await new Promise(resolve => setTimeout(resolve, 2000))
-
-          // 세션이 설정되었는지 확인
-          console.log('🔍 세션 확인 중...')
-          const session = await getCurrentSession()
-
-          if (session?.user) {
-            console.log('✅ OAuth 로그인 성공!')
-            console.log('👤 사용자 정보:', {
-              id: session.user.id,
-              email: session.user.email,
-              provider: session.user.app_metadata?.provider,
-              created_at: session.user.created_at,
-            })
-
-            // URL 정리 (hash 제거)
-            console.log('🧹 URL 정리 (hash 제거)')
-            window.history.replaceState({}, '', window.location.pathname)
-
-            // 리디렉션 경로 확인
-            const redirectPath = sessionStorage.getItem('redirectAfterLogin')
-            sessionStorage.removeItem('redirectAfterLogin')
-
-            console.log('🎯 리디렉션 경로:', redirectPath || '/rooms')
-
-            if (redirectPath && redirectPath !== '/') {
-              console.log('🎉 OAuth 성공 - 저장된 경로로 이동:', redirectPath)
-              window.location.href = redirectPath
-            } else {
-              console.log('🎉 OAuth 성공 - 방 목록(/rooms)로 이동')
-              window.location.href = '/rooms'
-            }
-          } else {
-            console.error('❌ 세션 설정 실패')
-            console.log('상세 정보:')
-            console.log('  - Hash:', hash)
-            console.log('  - URL:', window.location.href)
-            console.log('  - Origin:', window.location.origin)
-            console.log('  - Pathname:', window.location.pathname)
-            alert('로그인 처리에 실패했습니다. 다시 시도해주세요.')
-            window.location.href = '/'
+          // 먼저 세션이 이미 있는지 확인 (Supabase가 자동으로 처리했을 수 있음)
+          const { data: { session: existingSession } } = await supabase.auth.getSession()
+          if (existingSession) {
+            console.log('✅ [AuthCallback] 세션 이미 존재:', existingSession.user?.email)
+            navigateAfterLogin()
+            return
           }
-        } else {
-          console.log('❌ OAuth 토큰 없음')
-          console.log('URL 정보:')
-          console.log('  - Hash:', hash)
-          console.log('  - Search:', window.location.search)
-          console.log('  - Origin:', window.location.origin)
-          window.location.href = '/'
+
+          // 세션이 없으면 code로 교환 시도
+          console.log('🔄 [AuthCallback] 세션 교환 중...')
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+
+          if (exchangeError) {
+            console.error('❌ [AuthCallback] Code 교환 실패:', exchangeError.message)
+            // 에러가 발생해도 세션이 설정되었을 수 있으므로 다시 확인
+            const { data: { session: retrySession } } = await supabase.auth.getSession()
+            if (retrySession) {
+              console.log('✅ [AuthCallback] 재확인 - 세션 존재:', retrySession.user?.email)
+              navigateAfterLogin()
+              return
+            }
+            alert('로그인 처리에 실패했습니다.')
+            window.location.href = '/'
+            return
+          }
+
+          if (data.session) {
+            console.log('✅ [AuthCallback] PKCE 세션 설정 성공:', data.session.user?.email)
+            navigateAfterLogin()
+            return
+          }
         }
-      } catch (error) {
-        console.error('❌ Auth callback 에러:', error)
-        console.error('에러 스택트레이스:', error.stack)
+
+        // Implicit flow: hash에 access_token이 옴
+        const hash = window.location.hash
+        if (hash && hash.includes('access_token')) {
+          console.log('🔑 [AuthCallback] Hash 토큰 발견, 세션 설정 중...')
+
+          // Supabase가 hash를 자동으로 처리하도록 대기
+          await new Promise(resolve => setTimeout(resolve, 1000))
+
+          // 세션 확인
+          const { data: { session } } = await supabase.auth.getSession()
+
+          if (session) {
+            console.log('✅ [AuthCallback] Hash 세션 설정 성공:', session.user?.email)
+            window.history.replaceState({}, '', window.location.pathname)
+            navigateAfterLogin()
+            return
+          }
+        }
+
+        // 세션이 이미 있는지 확인 (다른 탭에서 로그인된 경우)
+        const { data: { session: existingSession } } = await supabase.auth.getSession()
+        if (existingSession) {
+          console.log('✅ [AuthCallback] 기존 세션 발견:', existingSession.user?.email)
+          navigateAfterLogin()
+          return
+        }
+
+        console.log('❌ [AuthCallback] 세션 설정 실패 - 토큰/코드 없음')
+        window.location.href = '/'
+
+      } catch (err) {
+        console.error('❌ [AuthCallback] 에러:', err)
         alert('로그인 처리 중 오류가 발생했습니다.')
         window.location.href = '/'
       }
+    }
+
+    // 로그인 후 리디렉션 처리
+    const navigateAfterLogin = () => {
+      const redirectPath = sessionStorage.getItem('redirectAfterLogin')
+      sessionStorage.removeItem('redirectAfterLogin')
+
+      const target = redirectPath && redirectPath !== '/' ? redirectPath : '/rooms'
+      console.log('🎯 [AuthCallback] 이동:', target)
+      window.location.href = target
     }
 
     handleAuthCallback()
@@ -409,18 +407,20 @@ function RoomListPage() {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<MainApp />} />
-        <Route path="/rooms" element={<RoomListPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/otp-verification" element={<OtpVerificationPage />} />
-        <Route path="/set-password" element={<SetPasswordPage />} />
-        <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        {/* 게임 방 대기 페이지 */}
-        <Route path="/game/:roomCode" element={<GameRoom />} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<MainApp />} />
+          <Route path="/rooms" element={<RoomListPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/otp-verification" element={<OtpVerificationPage />} />
+          <Route path="/set-password" element={<SetPasswordPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          {/* 게임 방 대기 페이지 */}
+          <Route path="/game/:roomCode" element={<GameRoom />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   )
 }
 

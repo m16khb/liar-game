@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
-import { sendEmailVerification } from '../../lib/supabase'
+import { sendEmailVerification, supabase } from '../../lib/supabase'
 import { saveOTPToStorage, canSendOTP } from '../../utils/otpStorage'
 import GoogleLoginButton from './GoogleLoginButton'
 import EmailSignupModal from './EmailSignupModal'
@@ -114,11 +114,33 @@ export default function LoginForm({
     }
 
     setIsSubmitting(true)
+    console.log('🚀 [LoginForm] 로그인 시도:', formData.email)
 
     try {
-      await login({
+      console.log('📤 [LoginForm] login() 호출 전')
+      const result = await login({
         email: formData.email,
         password: formData.password,
+      })
+      console.log('📥 [LoginForm] login() 호출 완료:', result)
+
+      // 세션이 완전히 저장될 때까지 대기 (Race Condition 방지)
+      console.log('🔄 [LoginForm] 세션 저장 완료 대기 중...')
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          subscription.unsubscribe()
+          console.log('⚠️ 세션 저장 타임아웃, 계속 진행')
+          resolve() // 타임아웃 시에도 진행
+        }, 3000) // 3초 타임아웃
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+          if (event === 'SIGNED_IN') {
+            clearTimeout(timeout)
+            subscription.unsubscribe()
+            console.log('✅ 세션 저장 완료 확인')
+            resolve()
+          }
+        })
       })
 
       onLoginSuccess?.()
