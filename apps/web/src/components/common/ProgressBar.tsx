@@ -22,13 +22,13 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   const getSizeStyles = () => {
     switch (size) {
       case 'small':
-        return { height: '4px', fontSize: '12px' }
+        return { height: 4, fontSize: '12px' }
       case 'medium':
-        return { height: '6px', fontSize: '13px' }
+        return { height: 6, fontSize: '13px' }
       case 'large':
-        return { height: '8px', fontSize: '14px' }
+        return { height: 8, fontSize: '14px' }
       default:
-        return { height: '6px', fontSize: '13px' }
+        return { height: 6, fontSize: '13px' }
     }
   }
 

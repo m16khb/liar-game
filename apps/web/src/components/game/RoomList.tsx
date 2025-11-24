@@ -8,7 +8,7 @@ import JoinRoomByCode from './JoinRoomByCode'
 import CreateRoomModal, { CreateRoomRequest } from './CreateRoomModal'
 import { useAuth } from '../../hooks/useAuth'
 import { useRooms } from '../../hooks/useRooms'
-import { RoomResponse, GameDifficulty } from '@/types/api'
+import { RoomResponse, GameDifficulty, RoomStatus } from '@/types/api'
 
 // 윈도우 크기를 추적하는 커스텀 훅
 function useWindowSize() {
@@ -54,7 +54,7 @@ export default function RoomList({
   const { isAuthenticated, user } = useAuth() // 직접 인증 상태 구독
 
   // useRooms 훅을 사용하여 방 목록 관리
-  const { rooms, loading, error, setError: setRoomsError, refresh, createRoom: createNewRoom } = useRooms('waiting')
+  const { rooms, loading, error, setError: setRoomsError, refresh, createRoom: createNewRoom } = useRooms(RoomStatus.WAITING)
 
   // 페이지가 보일 때마다 방 목록 새로고침
   useEffect(() => {
@@ -329,7 +329,7 @@ export default function RoomList({
           }}>
             <span style={{ flex: 1 }}>{error}</span>
             <button
-              onClick={() => setError(null)}
+              onClick={() => setRoomsError(null)}
               style={{
                 background: 'none',
                 border: 'none',

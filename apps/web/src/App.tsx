@@ -8,8 +8,11 @@ import OtpVerification from './components/auth/OtpVerification'
 import SetPasswordForm from './components/auth/SetPasswordForm'
 import RoomList from './components/game/RoomList'
 import GameRoom from './components/game/GameRoom'
+import ErrorPage from './components/common/ErrorPage'
+import LoadingSpinner from './components/common/LoadingSpinner'
 import { supabase, getCurrentSession } from './lib/supabase'
 import { useAuth, AuthProvider } from './hooks/useAuth'
+import { SocketProvider } from './hooks/useSocket'
 
 /**
  * 메인 애플리케이션 컴포넌트
@@ -73,25 +76,10 @@ function LoginPage() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f9fafb',
-      padding: '48px 16px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '448px'
-      }}>
-        <header style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{
-            fontSize: '32px',
-            fontWeight: 'bold',
-            color: '#1f2937',
-            marginBottom: '8px'
-          }}>
+    <div className="min-h-screen bg-gray-50 px-4 py-12 flex items-center justify-center">
+      <div className="w-full max-w-md">
+        <header className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
             라이어 게임
           </h1>
         </header>
@@ -118,44 +106,7 @@ function SetPasswordPage() {
 
   if (!email) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        backgroundColor: '#f9fafb',
-        padding: '48px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{
-          width: '100%',
-          maxWidth: '448px',
-          textAlign: 'center',
-          padding: '32px',
-          backgroundColor: '#ffffff',
-          borderRadius: '8px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h2 style={{ color: '#dc2626', marginBottom: '16px' }}>
-            잘못된 접근입니다
-          </h2>
-          <p style={{ color: '#6b7280', marginBottom: '24px' }}>
-            이메일 인증 링크를 통해서만 접근할 수 있습니다.
-          </p>
-          <button
-            onClick={() => window.location.href = '/'}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#2563eb',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer'
-            }}
-          >
-            로그인 페이지로 가기
-          </button>
-        </div>
-      </div>
+      <ErrorPage message="이메일 인증 링크를 통해서만 접근할 수 있습니다." />
     )
   }
 
@@ -170,14 +121,7 @@ function SetPasswordPage() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f9fafb',
-      padding: '48px 16px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}>
+    <div className="min-h-screen bg-gray-50 px-4 py-12 flex items-center justify-center">
       <SetPasswordForm
         email={email}
         token={token}
@@ -196,44 +140,7 @@ function OtpVerificationPage() {
 
   if (!email) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        backgroundColor: '#f9fafb',
-        padding: '48px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{
-          width: '100%',
-          maxWidth: '448px',
-          textAlign: 'center',
-          padding: '32px',
-          backgroundColor: '#ffffff',
-          borderRadius: '8px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h2 style={{ color: '#dc2626', marginBottom: '16px' }}>
-            잘못된 접근입니다
-          </h2>
-          <p style={{ color: '#6b7280', marginBottom: '24px' }}>
-            이메일 주소가 필요합니다.
-          </p>
-          <button
-            onClick={() => window.location.href = '/'}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#2563eb',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer'
-            }}
-          >
-            로그인 페이지로 가기
-          </button>
-        </div>
-      </div>
+      <ErrorPage message="이메일 주소가 필요합니다." />
     )
   }
 
@@ -365,38 +272,13 @@ function AuthCallbackPage() {
     handleAuthCallback()
   }, [searchParams])
 
-  return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f9fafb',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid #e5e7eb',
-          borderTop: '4px solid #3b82f6',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite',
-          margin: '0 auto 16px'
-        }} />
-        <p style={{ color: '#6b7280', fontSize: '16px' }}>
-          인증 처리 중...
-        </p>
-      </div>
-    </div>
-  )
+  return <LoadingSpinner message="인증 처리 중..." />
 }
 
 // 메인 페이지 컴포넌트 - 로그인 상태에 따라 다르게 표시
 function MainApp() {
-  const { isAuthenticated } = useAuth()
-
-  // 모든 사용자에게 게임방 목록 표시 (인증 여부와 무관)
-  return <RoomList isAuthenticated={isAuthenticated} />
+  // RoomList 내부에서 useAuth()로 인증 상태를 직접 가져옴
+  return <RoomList />
 }
 
 // 게임방 목록 페이지
@@ -408,18 +290,20 @@ function RoomListPage() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<MainApp />} />
-          <Route path="/rooms" element={<RoomListPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/otp-verification" element={<OtpVerificationPage />} />
-          <Route path="/set-password" element={<SetPasswordPage />} />
-          <Route path="/auth/callback" element={<AuthCallbackPage />} />
-          {/* 게임 방 대기 페이지 */}
-          <Route path="/game/:roomCode" element={<GameRoom />} />
-        </Routes>
-      </Router>
+      <SocketProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<MainApp />} />
+            <Route path="/rooms" element={<RoomListPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/otp-verification" element={<OtpVerificationPage />} />
+            <Route path="/set-password" element={<SetPasswordPage />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            {/* 게임 방 대기 페이지 */}
+            <Route path="/game/:roomCode" element={<GameRoom />} />
+          </Routes>
+        </Router>
+      </SocketProvider>
     </AuthProvider>
   )
 }
