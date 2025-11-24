@@ -83,8 +83,9 @@ export default function LoginForm({
 
       // OTP 인증 페이지로 이동
       navigate(`/otp-verification?email=${encodeURIComponent(formData.email)}`)
-    } catch (error: any) {
-      setSocialError(error.message || '인증 메일 발송에 실패했습니다.')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '인증 메일 발송에 실패했습니다.'
+      setSocialError(message)
     } finally {
       setIsSubmitting(false)
     }

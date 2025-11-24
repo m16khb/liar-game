@@ -1,7 +1,7 @@
 // Supabase 클라이언트 설정
 // 프론트엔드에서 Supabase Auth 및 Database 접근
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient, AuthChangeEvent, Session } from '@supabase/supabase-js'
 import dayjs from 'dayjs'
 
 // 환경 변수 (Vite는 VITE_ 접두사 사용)
@@ -427,7 +427,7 @@ export const updateUserMetadata = async (metadata: Record<string, any>) => {
  * 인증 상태 변경 리스너
  */
 export const onAuthStateChange = (
-  callback: (event: any, session: any) => void
+  callback: (event: AuthChangeEvent, session: Session | null) => void
 ) => {
   return supabase.auth.onAuthStateChange(callback)
 }

@@ -2,6 +2,7 @@
 // 앱 전체에서 하나의 인증 상태를 공유
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import {
   signInWithEmail,
@@ -22,6 +23,7 @@ export interface AuthUser {
   id: string
   backendUserId?: number
   email?: string
+  created_at?: string
   user_metadata?: {
     nickname?: string
     avatar_url?: string
@@ -31,7 +33,7 @@ export interface AuthUser {
 // 인증 상태 타입
 export interface AuthState {
   user: AuthUser | null
-  session: any | null
+  session: Session | null
   loading: boolean
   error: string | null
 }
@@ -84,16 +86,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   })
 
   // 인증 상태 업데이트
-  const updateAuthState = useCallback((session: any | null) => {
-    let user = session?.user || null
+  const updateAuthState = useCallback((session: Session | null) => {
+    // Supabase User를 AuthUser로 변환
+    let authUser: AuthUser | null = session?.user ? {
+      id: session.user.id,
+      email: session.user.email,
+      created_at: session.user.created_at,
+      user_metadata: session.user.user_metadata as AuthUser['user_metadata'],
+    } : null
 
     // JWT 토큰에서 backend user_id 추출
-    if (session?.access_token) {
+    if (session?.access_token && authUser) {
       try {
         const payload = JSON.parse(atob(session.access_token.split('.')[1]))
         if (payload.user_id) {
-          user = {
-            ...user,
+          authUser = {
+            ...authUser,
             backendUserId: payload.user_id,
           }
           console.log('🔑 Backend User ID 설정:', payload.user_id)
@@ -104,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setAuthState({
-      user,
+      user: authUser,
       session,
       loading: false,
       error: null,
@@ -323,6 +331,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return await getAccessToken()
   }, [])
 
+  // React Compiler가 자동 메모이제이션하므로 수동 useMemo 불필요
   const value: AuthContextType = {
     user: authState.user,
     session: authState.session,

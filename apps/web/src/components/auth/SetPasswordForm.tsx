@@ -113,7 +113,7 @@ export default function SetPasswordForm({
             console.log('최종 회원가입 성공:', result.user?.email)
 
             // 최종 회원가입 후 자동 로그인 처리
-            if (result.user && !result.session) {
+            if (result.user && !('session' in result && result.session)) {
               console.log('자동 로그인 처리 중...')
               const { signInWithEmail } = await import('../../lib/supabase')
               const loginResult = await signInWithEmail(email, formData.password)
@@ -124,9 +124,10 @@ export default function SetPasswordForm({
               }
             }
 
-          } catch (signupError: any) {
+          } catch (signupError) {
             console.error('최종 회원가입 실패:', signupError)
-            throw new Error(`회원가입에 실패했습니다: ${signupError.message}`)
+            const message = signupError instanceof Error ? signupError.message : '알 수 없는 오류'
+            throw new Error(`회원가입에 실패했습니다: ${message}`)
           }
         } else {
           throw new Error('OTP 토큰이 없습니다. 다시 인증을 진행해주세요.')

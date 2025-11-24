@@ -163,13 +163,13 @@ export default function OtpVerification({
       window.location.href = url.toString()
 
       // onOtpVerified()는 호출하지 않고 바로 페이지 이동
-    } catch (error: any) {
+    } catch (error) {
       // 실패했을 때만 시도 횟수 감소
       const remaining = incrementOTPAttempts()
       setAttemptsLeft(remaining)
 
       // 더 구체적인 에러 메시지
-      const errorMessage = error.message || '인증 코드가 올바르지 않습니다. 다시 확인해주세요.'
+      const errorMessage = error instanceof Error ? error.message : '인증 코드가 올바르지 않습니다. 다시 확인해주세요.'
 
       if (remaining <= 0) {
         setError('인증 시도 횟수를 초과했습니다. 이메일 재전송 후 다시 시도해주세요.')
