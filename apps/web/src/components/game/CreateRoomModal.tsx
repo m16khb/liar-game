@@ -1,3 +1,5 @@
+// 새 방 생성 모달 - Retro Arcade Theme
+
 import { useState } from 'react'
 import { GameDifficulty } from '@/types/api'
 
@@ -35,88 +37,73 @@ export default function CreateRoomModal({
     description: '',
     timeLimit: undefined
   })
+  const [error, setError] = useState<string | null>(null)
 
   if (!isOpen) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
 
-    // 유효성 검사
     if (!formData.title.trim()) {
-      alert('방 제목을 입력해주세요.')
+      setError('방 제목을 입력해주세요.')
       return
     }
 
     if (formData.minPlayers > formData.maxPlayers) {
-      alert('최소 인원수는 최대 인원수보다 작거나 같아야 합니다.')
+      setError('최소 인원수는 최대 인원수보다 작거나 같아야 합니다.')
       return
     }
 
     if (formData.isPrivate && !formData.password?.trim()) {
-      alert('비공개 방은 비밀번호를 설정해야 합니다.')
+      setError('비공개 방은 비밀번호를 설정해야 합니다.')
       return
     }
 
     try {
       await onCreateRoom(formData)
       onClose()
-    } catch (error) {
-      console.error('방 생성 실패:', error)
+    } catch (err) {
+      console.error('방 생성 실패:', err)
+      setError('방 생성에 실패했습니다.')
     }
+  }
+
+  const difficultyLabels: Record<GameDifficulty, string> = {
+    [GameDifficulty.EASY]: 'EASY',
+    [GameDifficulty.NORMAL]: 'NORMAL',
+    [GameDifficulty.HARD]: 'HARD'
   }
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: '16px'
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose()
-        }
-      }}
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '24px',
-          width: '100%',
-          maxWidth: '480px',
-          maxHeight: '90vh',
-          overflowY: 'auto'
-        }}
-      >
-        <h2 style={{
-          fontSize: '20px',
-          fontWeight: '600',
-          marginBottom: '20px',
-          color: '#1f2937'
-        }}>
-          새 방 생성
+      <div className="bg-arcade-dark border-4 border-arcade-pink p-6 w-full max-w-md max-h-[90vh] overflow-y-auto relative animate-in shadow-[0_0_60px_rgba(255,42,109,0.4)]">
+        {/* 모달 장식 */}
+        <span className="absolute -top-3 left-5 text-xl text-arcade-yellow">◆</span>
+        <span className="absolute -top-3 right-5 text-xl text-arcade-yellow">◆</span>
+
+        {/* 닫기 버튼 */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 font-pixel text-pixel-sm text-arcade-pink hover:text-arcade-yellow transition-colors"
+        >
+          ✕
+        </button>
+
+        {/* 제목 */}
+        <h2 className="font-pixel text-pixel-lg text-arcade-yellow mb-6 pr-8"
+            style={{ textShadow: '2px 2px 0 #ff2a6d' }}>
+          NEW ROOM
         </h2>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* 방 제목 */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '14px',
-              fontWeight: '500',
-              color: '#374151',
-              marginBottom: '6px'
-            }}>
-              방 제목 *
+          <div>
+            <label className="block font-pixel text-pixel-xs text-arcade-cyan uppercase mb-2">
+              ROOM TITLE *
             </label>
             <input
               type="text"
@@ -124,48 +111,19 @@ export default function CreateRoomModal({
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="방 제목을 입력하세요"
               maxLength={100}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'border-color 0.2s'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#3b82f6'
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#d1d5db'
-              }}
+              className="w-full font-retro text-retro-base bg-arcade-dark text-white border-3 border-arcade-cyan px-4 py-3 focus:border-arcade-yellow focus:shadow-neon-yellow transition-all placeholder:text-arcade-cyan/50"
             />
           </div>
 
           {/* 인원수 설정 */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '14px',
-              fontWeight: '500',
-              color: '#374151',
-              marginBottom: '6px'
-            }}>
-              인원수 설정
+          <div>
+            <label className="block font-pixel text-pixel-xs text-arcade-cyan uppercase mb-2">
+              PLAYERS
             </label>
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              alignItems: 'center'
-            }}>
-              <div style={{ flex: 1 }}>
-                <label style={{
-                  display: 'block',
-                  fontSize: '12px',
-                  color: '#6b7280',
-                  marginBottom: '4px'
-                }}>
-                  최소 인원
+            <div className="flex gap-4 items-center">
+              <div className="flex-1">
+                <label className="block font-retro text-retro-sm text-arcade-cyan/70 mb-1">
+                  MIN
                 </label>
                 <select
                   value={formData.minPlayers}
@@ -177,28 +135,17 @@ export default function CreateRoomModal({
                       maxPlayers: Math.max(value, formData.maxPlayers)
                     })
                   }}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    outline: 'none'
-                  }}
+                  className="w-full font-retro text-retro-base bg-arcade-dark text-white border-3 border-arcade-blue px-4 py-3 arcade-select focus:border-arcade-cyan"
                 >
                   {[4, 5, 6, 7, 8].map(num => (
-                    <option key={num} value={num}>{num}명</option>
+                    <option key={num} value={num}>{num}</option>
                   ))}
                 </select>
               </div>
-              <div style={{ flex: 1 }}>
-                <label style={{
-                  display: 'block',
-                  fontSize: '12px',
-                  color: '#6b7280',
-                  marginBottom: '4px'
-                }}>
-                  최대 인원
+              <span className="font-retro text-retro-lg text-arcade-cyan mt-6">~</span>
+              <div className="flex-1">
+                <label className="block font-retro text-retro-sm text-arcade-cyan/70 mb-1">
+                  MAX
                 </label>
                 <select
                   value={formData.maxPlayers}
@@ -210,111 +157,64 @@ export default function CreateRoomModal({
                       minPlayers: Math.min(formData.minPlayers, value)
                     })
                   }}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    outline: 'none'
-                  }}
+                  className="w-full font-retro text-retro-base bg-arcade-dark text-white border-3 border-arcade-blue px-4 py-3 arcade-select focus:border-arcade-cyan"
                 >
                   {[4, 5, 6, 7, 8].map(num => (
                     <option key={num} value={num} disabled={num < formData.minPlayers}>
-                      {num}명
+                      {num}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
-            <p style={{
-              fontSize: '12px',
-              color: '#6b7280',
-              marginTop: '4px'
-            }}>
+            <p className="font-retro text-retro-sm text-arcade-cyan/50 mt-2">
               최소 {formData.minPlayers}명이 준비해야 게임을 시작할 수 있습니다.
             </p>
           </div>
 
           {/* 난이도 */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '14px',
-              fontWeight: '500',
-              color: '#374151',
-              marginBottom: '6px'
-            }}>
-              난이도
+          <div>
+            <label className="block font-pixel text-pixel-xs text-arcade-cyan uppercase mb-2">
+              DIFFICULTY
             </label>
-            <div style={{
-              display: 'flex',
-              gap: '8px'
-            }}>
+            <div className="flex gap-2">
               {Object.values(GameDifficulty).map(difficulty => (
                 <button
                   key={difficulty}
                   type="button"
                   onClick={() => setFormData({ ...formData, difficulty })}
-                  style={{
-                    flex: 1,
-                    padding: '8px 12px',
-                    border: `1px solid ${formData.difficulty === difficulty ? '#3b82f6' : '#d1d5db'}`,
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    backgroundColor: formData.difficulty === difficulty ? '#eff6ff' : 'white',
-                    color: formData.difficulty === difficulty ? '#3b82f6' : '#374151',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
+                  className={`flex-1 font-pixel text-pixel-xs py-3 border-3 transition-all ${
+                    formData.difficulty === difficulty
+                      ? 'bg-arcade-cyan text-arcade-black border-white shadow-neon-cyan'
+                      : 'bg-arcade-dark text-arcade-cyan border-arcade-blue hover:border-arcade-cyan'
+                  }`}
                 >
-                  {difficulty === 'easy' ? '쉬움' :
-                   difficulty === 'normal' ? '보통' : '어려움'}
+                  {difficultyLabels[difficulty]}
                 </button>
               ))}
             </div>
           </div>
 
           {/* 비공개 방 설정 */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              cursor: 'pointer'
-            }}>
+          <div>
+            <label className="flex items-center gap-3 cursor-pointer group">
               <input
                 type="checkbox"
                 checked={formData.isPrivate}
                 onChange={(e) => setFormData({ ...formData, isPrivate: e.target.checked })}
-                style={{
-                  width: '16px',
-                  height: '16px',
-                  cursor: 'pointer'
-                }}
+                className="arcade-checkbox"
               />
-              <span style={{
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#374151'
-              }}>
-                비공개 방
+              <span className="font-pixel text-pixel-xs text-arcade-cyan group-hover:text-arcade-yellow transition-colors">
+                PRIVATE ROOM 🔒
               </span>
             </label>
           </div>
 
-          {/* 비밀번호 (비공개 방일 때만) */}
+          {/* 비밀번호 */}
           {formData.isPrivate && (
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#374151',
-                marginBottom: '6px'
-              }}>
-                비밀번호 *
+            <div>
+              <label className="block font-pixel text-pixel-xs text-arcade-cyan uppercase mb-2">
+                PASSWORD *
               </label>
               <input
                 type="password"
@@ -322,101 +222,56 @@ export default function CreateRoomModal({
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="비밀번호를 입력하세요"
                 maxLength={20}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  outline: 'none',
-                  transition: 'border-color 0.2s'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#3b82f6'
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#d1d5db'
-                }}
+                className="w-full font-retro text-retro-base bg-arcade-dark text-white border-3 border-arcade-pink px-4 py-3 focus:border-arcade-yellow focus:shadow-neon-yellow transition-all placeholder:text-arcade-pink/50"
               />
             </div>
           )}
 
           {/* 방 설명 */}
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '14px',
-              fontWeight: '500',
-              color: '#374151',
-              marginBottom: '6px'
-            }}>
-              방 설명 (선택)
+          <div>
+            <label className="block font-pixel text-pixel-xs text-arcade-cyan uppercase mb-2">
+              DESCRIPTION
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="방에 대한 설명을 입력하세요"
+              placeholder="방에 대한 설명을 입력하세요 (선택)"
               maxLength={500}
               rows={3}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                outline: 'none',
-                resize: 'vertical',
-                fontFamily: 'inherit'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#3b82f6'
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#d1d5db'
-              }}
+              className="w-full font-retro text-retro-base bg-arcade-dark text-white border-3 border-arcade-blue px-4 py-3 arcade-textarea focus:border-arcade-cyan transition-all placeholder:text-arcade-cyan/50"
             />
           </div>
 
+          {/* 에러 메시지 */}
+          {error && (
+            <div className="p-3 bg-arcade-dark border-3 border-arcade-pink">
+              <p className="font-retro text-retro-base text-arcade-pink">⚠️ {error}</p>
+            </div>
+          )}
+
           {/* 버튼 */}
-          <div style={{
-            display: 'flex',
-            gap: '12px',
-            justifyContent: 'flex-end'
-          }}>
+          <div className="flex gap-4 pt-2">
             <button
               type="button"
               onClick={onClose}
               disabled={creating}
-              style={{
-                padding: '10px 20px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: '500',
-                backgroundColor: 'white',
-                color: '#374151',
-                cursor: creating ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s'
-              }}
+              className="flex-1 font-pixel text-pixel-xs py-4 bg-transparent text-arcade-cyan border-3 border-arcade-cyan hover:bg-arcade-cyan/20 transition-all disabled:opacity-50"
             >
-              취소
+              CANCEL
             </button>
             <button
               type="submit"
               disabled={creating}
-              style={{
-                padding: '10px 20px',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: '500',
-                backgroundColor: creating ? '#9ca3af' : '#3b82f6',
-                color: 'white',
-                cursor: creating ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s'
-              }}
+              className="flex-[2] font-pixel text-pixel-xs py-4 bg-arcade-green text-arcade-black border-4 border-white hover:translate-y-[-2px] hover:shadow-[0_6px_30px_rgba(0,255,65,0.5)] transition-all disabled:opacity-50 disabled:transform-none"
             >
-              {creating ? '생성 중...' : '방 생성'}
+              {creating ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="arcade-spinner w-4 h-4" />
+                  CREATING...
+                </span>
+              ) : (
+                'CREATE ▶'
+              )}
             </button>
           </div>
         </form>

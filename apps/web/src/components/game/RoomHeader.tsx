@@ -1,4 +1,4 @@
-// 게임방 헤더 컴포넌트
+// 게임방 헤더 컴포넌트 - Retro Arcade Theme
 // 방 제목, 코드, 난이도, 인원 정보 표시
 
 import { Room } from '../../types/game'
@@ -10,50 +10,82 @@ interface RoomHeaderProps {
 }
 
 export default function RoomHeader({ room, isLeaving, onLeave }: RoomHeaderProps) {
-  const difficultyText = {
-    easy: '쉬움',
-    normal: '보통',
-    hard: '어려움'
+  const difficultyConfig = {
+    easy: { text: 'EASY', color: 'text-arcade-green' },
+    normal: { text: 'NORMAL', color: 'text-arcade-cyan' },
+    hard: { text: 'HARD', color: 'text-arcade-pink' }
   }
 
+  const difficulty = difficultyConfig[room.difficulty] || difficultyConfig.normal
+
   return (
-    <div className="bg-white rounded-xl p-6 mb-6 shadow-md">
+    <div className="bg-arcade-dark border-4 border-arcade-cyan p-6 mb-6 relative shadow-arcade-card">
+      {/* 장식 */}
+      <span className="absolute -top-3 left-5 text-xl text-arcade-yellow">◆</span>
+      <span className="absolute -top-3 right-5 text-xl text-arcade-yellow">◆</span>
+
+      {/* 상단: 상태 + 나가기 버튼 */}
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold text-gray-800">
-          {room.title}
-        </h1>
+        <div className="flex items-center gap-4">
+          <span className="font-pixel text-pixel-xs text-arcade-green animate-blink">
+            ● {room.status === 'waiting' ? 'WAITING' : 'PLAYING'}
+          </span>
+          <span className="font-retro text-retro-base text-arcade-cyan">
+            ROOM: {room.code}
+          </span>
+        </div>
         <button
           onClick={onLeave}
           disabled={isLeaving}
-          className={`px-4 py-2 rounded-md text-sm font-medium text-white transition-colors
+          className={`font-pixel text-pixel-xs px-4 py-2 border-3 border-arcade-pink text-arcade-pink transition-all
             ${isLeaving
-              ? 'bg-gray-400 cursor-not-allowed opacity-70'
-              : 'bg-red-500 hover:bg-red-600 cursor-pointer'
+              ? 'opacity-50 cursor-not-allowed'
+              : 'hover:bg-arcade-pink hover:text-arcade-black hover:shadow-neon-pink cursor-pointer'
             }`}
         >
-          {isLeaving ? '나가는 중...' : '나가기'}
+          {isLeaving ? 'LEAVING...' : 'EXIT'}
         </button>
       </div>
 
-      <div className="flex gap-8 flex-wrap text-sm">
+      {/* 방 제목 */}
+      <h1 className="font-pixel text-pixel-xl text-arcade-yellow mb-4 glitch-hover"
+          style={{ textShadow: '3px 3px 0 #ff2a6d, 6px 6px 0 #05d9e8' }}>
+        {room.title.toUpperCase()}
+      </h1>
+
+      {/* 방 정보 */}
+      <div className="flex gap-6 flex-wrap font-retro text-retro-base">
         <div>
-          <span className="text-gray-500">방 코드: </span>
-          <span className="text-gray-800 font-semibold font-mono">
-            {room.code}
+          <span className="text-arcade-cyan/70">DIFFICULTY: </span>
+          <span className={`font-pixel text-pixel-xs ${difficulty.color}`}>
+            {difficulty.text}
           </span>
         </div>
         <div>
-          <span className="text-gray-500">난이도: </span>
-          <span className="text-gray-800 font-semibold">
-            {difficultyText[room.difficulty]}
+          <span className="text-arcade-cyan/70">PLAYERS: </span>
+          <span className="text-arcade-yellow font-pixel text-pixel-sm">
+            {room.currentPlayers}
           </span>
+          <span className="text-arcade-cyan/50"> / {room.maxPlayers}</span>
         </div>
         <div>
-          <span className="text-gray-500">인원: </span>
-          <span className="text-gray-800 font-semibold">
-            {room.currentPlayers} / {room.maxPlayers}
+          <span className="text-arcade-cyan/70">MIN: </span>
+          <span className="text-arcade-cyan">
+            {room.minPlayers}
           </span>
         </div>
+      </div>
+
+      {/* 프로그레스 바 */}
+      <div className="mt-4 h-2 bg-arcade-black border border-arcade-cyan overflow-hidden">
+        <div
+          className="h-full transition-all duration-300"
+          style={{
+            width: `${(room.currentPlayers / room.maxPlayers) * 100}%`,
+            backgroundColor: room.currentPlayers >= room.maxPlayers ? '#ff2a6d' : '#00ff41',
+            boxShadow: `0 0 10px ${room.currentPlayers >= room.maxPlayers ? '#ff2a6d' : '#00ff41'}`
+          }}
+        />
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-// 게임방 메인 컴포넌트
+// 게임방 메인 컴포넌트 - Retro Arcade Theme
 // 리팩토링: 739줄 → ~120줄
 
 import { useState, useEffect, useCallback } from 'react'
@@ -94,8 +94,21 @@ export default function GameRoom() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-arcade-black text-white">
+      {/* CRT Scanline Effect */}
+      <div className="fixed inset-0 pointer-events-none z-50 opacity-10"
+           style={{
+             background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)'
+           }} />
+
+      {/* Grid Background */}
+      <div className="fixed inset-0 pointer-events-none opacity-5"
+           style={{
+             backgroundImage: 'linear-gradient(#05d9e8 1px, transparent 1px), linear-gradient(90deg, #05d9e8 1px, transparent 1px)',
+             backgroundSize: '50px 50px'
+           }} />
+
+      <div className="max-w-3xl mx-auto px-4 py-8 relative z-10">
         {/* 방 정보 헤더 */}
         <RoomHeader
           room={room}
@@ -127,6 +140,11 @@ export default function GameRoom() {
         onTransferHost={handleTransferHost}
         onClose={closeContextMenu}
       />
+
+      {/* Bottom prompt */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 font-pixel text-[10px] text-arcade-yellow text-center animate-blink">
+        LIAR GAME<br />▼ ▼ ▼
+      </div>
     </div>
   )
 }

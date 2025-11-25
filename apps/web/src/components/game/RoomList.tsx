@@ -1,5 +1,4 @@
-// 게임방 목록 컴포넌트
-// 대기중인 방 목록 표시 및 방 참가 기능
+// 게임방 목록 컴포넌트 - Retro Arcade Theme
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -8,666 +7,270 @@ import JoinRoomByCode from './JoinRoomByCode'
 import CreateRoomModal, { CreateRoomRequest } from './CreateRoomModal'
 import { useAuth } from '../../hooks/useAuth'
 import { useRooms } from '../../hooks/useRooms'
-import { RoomResponse, GameDifficulty, RoomStatus } from '@/types/api'
-
-// 윈도우 크기를 추적하는 커스텀 훅
-function useWindowSize() {
-  const [windowSize, setWindowSize] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
-    height: typeof window !== 'undefined' ? window.innerHeight : 800,
-  })
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-
-    function handleResize() {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      })
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  return windowSize
-}
-
-interface RoomListProps {
-  isAuthenticated?: boolean
-  onRoomJoin?: (roomCode: string) => void
-  onRoomCreate?: () => void
-}
+import { RoomResponse, RoomStatus } from '@/types/api'
 
 export default function RoomList({
   onRoomJoin,
   onRoomCreate
-}: Omit<RoomListProps, 'isAuthenticated'>) {
+}: {
+  onRoomJoin?: (roomCode: string) => void
+  onRoomCreate?: () => void
+}) {
   const [creatingRoom, setCreatingRoom] = useState(false)
   const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showJoinByCodeModal, setShowJoinByCodeModal] = useState(false)
   const [showCreateRoomModal, setShowCreateRoomModal] = useState(false)
   const navigate = useNavigate()
-  const { width } = useWindowSize()
-  const { isAuthenticated, user } = useAuth() // 직접 인증 상태 구독
-
-  // useRooms 훅을 사용하여 방 목록 관리
+  const { isAuthenticated } = useAuth()
   const { rooms, loading, error, setError: setRoomsError, refresh, createRoom: createNewRoom } = useRooms(RoomStatus.WAITING)
 
-  // 페이지가 보일 때마다 방 목록 새로고침
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        refresh()
-      }
+      if (!document.hidden) refresh()
     }
-
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [refresh])
 
-  // 반응형 breakpoint
-  const isMobile = width < 768
-  const isTablet = width >= 768 && width < 1024
-  const isDesktop = width >= 1024
-
-  // 에러 상태 통합
-  const handleError = (message: string) => {
-    setRoomsError(message)
-  }
-
-  // 방 참가
   const handleJoinRoom = async (room: RoomResponse) => {
-    // 로그인 체크
     if (!isAuthenticated) {
-      // 로그인 페이지로 이동, 참가하려는 방 정보 저장
       sessionStorage.setItem('redirectAfterLogin', `/game/${room.code}`)
       navigate('/login')
       return
     }
-
     if (room.currentPlayers >= room.maxPlayers) {
-      handleError('이 방은 정원이 가득 찼습니다.')
+      setRoomsError('이 방은 정원이 가득 찼습니다.')
       return
     }
-
     try {
       setJoiningRoomId(room.id)
-
-      // TODO: 향후 방 참가 API 구현
-      // const response = await fetch(`/api/rooms/${room.id}/join`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' }
-      // })
-
-      // 임시 지연 시뮬레이션
       await new Promise(resolve => setTimeout(resolve, 500))
-
-      // 방 참가 성공
       onRoomJoin?.(room.code)
       navigate(`/game/${room.code}`)
-    } catch (err) {
-      console.error('방 참가 실패:', err)
-      handleError('방 참가에 실패했습니다.')
+    } catch {
+      setRoomsError('방 참가에 실패했습니다.')
     } finally {
       setJoiningRoomId(null)
     }
   }
 
-  // 새 방 생성 버튼 클릭
   const handleCreateRoomClick = () => {
-    // 로그인 체크
     if (!isAuthenticated) {
-      // 로그인 페이지로 이동, 방 생성 의도 저장
       sessionStorage.setItem('redirectAfterLogin', '/rooms?action=create')
       navigate('/login')
       return
     }
-
     setShowCreateRoomModal(true)
   }
 
-  // 방 생성 처리
   const handleCreateRoom = async (roomData: CreateRoomRequest) => {
     try {
       setCreatingRoom(true)
-
-      const newRoom = await createNewRoom(roomData);
-
-      // 방 생성 성공
+      const newRoom = await createNewRoom(roomData)
       onRoomCreate?.()
       navigate(`/game/${newRoom.code}`)
     } catch (err) {
-      console.error('방 생성 실패:', err)
       const errorMessage = err instanceof Error ? err.message : '방 생성에 실패했습니다.'
-      handleError(errorMessage)
-      throw err // 모달이 닫히지 않도록 에러를 다시 던짐
+      setRoomsError(errorMessage)
+      throw err
     } finally {
       setCreatingRoom(false)
     }
   }
 
-
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', padding: '16px' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        {/* 헤더 */}
-        <header style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: '32px',
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: isMobile ? '24px' : '0'
-        }}>
-          {/* 제목과 설명 */}
-          <div style={{ flex: 1 }}>
-            <h1 style={{
-              fontSize: isMobile ? '28px' : isTablet ? '32px' : '36px',
-              fontWeight: 'bold',
-              color: '#1f2937',
-              marginBottom: '8px',
-              lineHeight: '1.2'
-            }}>
-              라이어 게임
-            </h1>
-            <p style={{
-              fontSize: isMobile ? '16px' : '18px',
-              color: '#6b7280',
-              marginBottom: isMobile ? '24px' : '32px',
-              lineHeight: '1.5'
-            }}>
-              다른 플레이어들과 함께 재미있는 라이어 게임을 즐겨보세요!
-            </p>
-          </div>
+    <div className="min-h-screen bg-arcade-black text-white">
+      {/* CRT Scanline Effect */}
+      <div className="fixed inset-0 pointer-events-none z-50 opacity-10"
+           style={{
+             background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)'
+           }} />
 
-          {/* 로그인 상태와 버튼 */}
-          <div style={{
-            textAlign: 'right',
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            minHeight: isMobile ? 'auto' : '85px'
-          }}>
+      {/* Grid Background */}
+      <div className="fixed inset-0 pointer-events-none opacity-5"
+           style={{
+             backgroundImage: 'linear-gradient(#05d9e8 1px, transparent 1px), linear-gradient(90deg, #05d9e8 1px, transparent 1px)',
+             backgroundSize: '50px 50px'
+           }} />
+
+      <div className="max-w-5xl mx-auto px-6 py-10 relative z-10">
+        {/* Header */}
+        <header className="mb-10">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+              <h1 className="font-pixel text-2xl md:text-3xl text-arcade-yellow mb-3"
+                  style={{ textShadow: '3px 3px 0 #ff2a6d, 6px 6px 0 #05d9e8' }}>
+                LIAR GAME
+              </h1>
+              <p className="font-retro text-xl md:text-2xl text-arcade-cyan">
+                {'>> 다른 플레이어들과 함께 라이어 게임을 즐겨보세요! <<'}
+              </p>
+            </div>
+
             {isAuthenticated ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                <button
-                  onClick={() => setShowProfileModal(true)}
-                  style={{
-                    backgroundColor: '#3b82f6',
-                    color: 'white',
-                    padding: isMobile ? '8px 16px' : '10px 20px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    fontSize: isMobile ? '13px' : '14px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = '#2563eb'
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = '#3b82f6'
-                  }}
-                >
-                  <span style={{ fontSize: '16px' }}>👤</span>
-                  마이페이지
-                </button>
-              </div>
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="font-pixel text-xs px-4 py-3 bg-arcade-cyan text-arcade-black border-4 border-white hover:shadow-[0_0_20px_#05d9e8] transition-all"
+              >
+                👤 MY PAGE
+              </button>
             ) : (
               <button
                 onClick={() => navigate('/login')}
-                style={{
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  padding: isMobile ? '8px 16px' : '10px 20px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  fontSize: isMobile ? '13px' : '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = '#2563eb'
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = '#3b82f6'
-                }}
+                className="font-pixel text-xs px-4 py-3 bg-arcade-cyan text-arcade-black border-4 border-white hover:shadow-[0_0_20px_#05d9e8] transition-all"
               >
-                로그인
+                LOGIN
               </button>
             )}
           </div>
         </header>
 
-        {/* 새 방 생성 및 코드 참가 버튼 */}
-        <div style={{
-          textAlign: 'center',
-          marginBottom: '32px',
-          display: 'flex',
-          gap: '16px',
-          justifyContent: 'center',
-          flexDirection: isMobile ? 'column' : 'row'
-        }}>
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
           <button
             onClick={handleCreateRoomClick}
             disabled={creatingRoom}
-            style={{
-              backgroundColor: '#10b981',
-              color: 'white',
-              padding: isMobile ? '12px 24px' : '14px 28px',
-              borderRadius: '8px',
-              border: 'none',
-              fontSize: isMobile ? '15px' : '16px',
-              fontWeight: '600',
-              cursor: creatingRoom ? 'not-allowed' : 'pointer',
-              opacity: creatingRoom ? '0.7' : '1',
-              transition: 'all 0.2s',
-              width: isMobile ? '100%' : 'auto',
-              maxWidth: isMobile ? '280px' : 'none'
-            }}
-            onMouseOver={(e) => {
-              if (!creatingRoom) {
-                e.currentTarget.style.backgroundColor = '#059669'
-              }
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = '#10b981'
-            }}
+            className="font-pixel text-sm px-8 py-4 bg-arcade-green text-arcade-black border-4 border-white hover:translate-y-[-4px] hover:shadow-[0_8px_30px_#00ff41] transition-all disabled:opacity-50"
           >
-            새 방 생성
+            {creatingRoom ? 'CREATING...' : '+ NEW ROOM'}
           </button>
-
           <button
             onClick={() => setShowJoinByCodeModal(true)}
-            style={{
-              backgroundColor: '#8b5cf6',
-              color: 'white',
-              padding: isMobile ? '12px 24px' : '14px 28px',
-              borderRadius: '8px',
-              border: 'none',
-              fontSize: isMobile ? '15px' : '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              width: isMobile ? '100%' : 'auto',
-              maxWidth: isMobile ? '280px' : 'none'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = '#7c3aed'
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = '#8b5cf6'
-            }}
+            className="font-pixel text-sm px-8 py-4 bg-arcade-cyan text-white border-4 border-white hover:translate-y-[-4px] hover:shadow-[0_8px_30px_#05d9e8] transition-all"
           >
-            코드로 참가
+            🎫 JOIN BY CODE
           </button>
         </div>
 
-        {/* 에러 메시지 */}
+        {/* Error Message */}
         {error && (
-          <div style={{
-            backgroundColor: '#fee2e2',
-            color: '#dc2626',
-            padding: isMobile ? '12px 16px' : '16px',
-            borderRadius: '8px',
-            marginBottom: '24px',
-            border: '1px solid #fecaca',
-            fontSize: isMobile ? '14px' : '16px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <span style={{ flex: 1 }}>{error}</span>
-            <button
-              onClick={() => setRoomsError(null)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#dc2626',
-                fontSize: isMobile ? '20px' : '18px',
-                cursor: 'pointer',
-                padding: '0',
-                marginLeft: '16px',
-                lineHeight: '1',
-                flexShrink: 0
-              }}
-            >
-              ×
-            </button>
+          <div className="mb-6 p-4 bg-arcade-dark border-3 border-arcade-pink flex justify-between items-center">
+            <span className="font-retro text-xl text-arcade-pink">⚠️ {error}</span>
+            <button onClick={() => setRoomsError(null)} className="font-pixel text-arcade-pink hover:text-arcade-yellow">✕</button>
           </div>
         )}
 
-        {/* 방 목록 */}
+        {/* Room List */}
         <main>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '24px'
-          }}>
-            <h2 style={{
-              fontSize: isMobile ? '20px' : '24px',
-              fontWeight: '600',
-              color: '#1f2937',
-              margin: 0
-            }}>
-              대기중인 방 ({rooms.length})
+          <div className="flex items-center gap-4 pb-3 mb-6 border-b-3 border-dashed border-arcade-cyan">
+            <h2 className="font-pixel text-sm text-arcade-yellow" style={{ textShadow: '2px 2px 0 #ff6b35' }}>
+              ★ WAITING ROOMS ★
             </h2>
-
-            {/* 새로고침 아이콘 */}
+            <span className="font-retro text-xl text-arcade-green ml-auto">{rooms.length} ROOMS</span>
             <button
               onClick={refresh}
-              style={{
-                background: '#f3f4f6',
-                border: '1px solid #e5e7eb',
-                color: '#3b82f6',
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                fontSize: '16px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = '#e5e7eb'
-                e.currentTarget.style.transform = 'rotate(180deg)'
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = '#f3f4f6'
-                e.currentTarget.style.transform = 'rotate(0deg)'
-              }}
-              title="새로고침"
+              className="w-10 h-10 flex items-center justify-center bg-arcade-dark border-2 border-arcade-cyan text-arcade-cyan hover:bg-arcade-cyan hover:text-arcade-black transition-all"
             >
               🔄
             </button>
           </div>
 
           {loading ? (
-            <div style={{ textAlign: 'center', padding: isMobile ? '32px' : '48px' }}>
-              <div style={{
-                width: isMobile ? '32px' : '40px',
-                height: isMobile ? '32px' : '40px',
-                border: '4px solid #e5e7eb',
-                borderTop: '4px solid #3b82f6',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite',
-                margin: '0 auto 16px'
-              }} />
-              <p style={{
-                color: '#6b7280',
-                fontSize: isMobile ? '14px' : '16px'
-              }}>
-                방 목록을 불러오는 중...
-              </p>
+            <div className="text-center py-16">
+              <div className="w-12 h-12 border-4 border-arcade-dark border-t-arcade-cyan rounded-full animate-spin mx-auto mb-4" />
+              <p className="font-pixel text-xs text-arcade-cyan animate-blink">LOADING...</p>
             </div>
           ) : rooms.length === 0 ? (
-            <div style={{
-              backgroundColor: '#ffffff',
-              padding: isMobile ? '32px 24px' : '48px',
-              borderRadius: '8px',
-              textAlign: 'center',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-            }}>
-              <div style={{
-                fontSize: isMobile ? '40px' : '48px',
-                marginBottom: '16px'
-              }}>
-                🎮
-              </div>
-              <h3 style={{
-                fontSize: isMobile ? '18px' : '20px',
-                fontWeight: '600',
-                color: '#1f2937',
-                marginBottom: '8px'
-              }}>
-                대기중인 방이 없습니다
-              </h3>
-              <p style={{
-                color: '#6b7280',
-                fontSize: isMobile ? '14px' : '16px',
-                marginBottom: '24px',
-                lineHeight: '1.5'
-              }}>
-                새 방을 생성하거나 잠시 후 다시 확인해주세요.
-              </p>
+            <div className="bg-arcade-dark border-4 border-arcade-cyan p-12 text-center shadow-[0_0_20px_rgba(5,217,232,0.3)]">
+              <div className="text-6xl mb-4 animate-float">🎮</div>
+              <h3 className="font-pixel text-sm text-arcade-yellow mb-3">NO ROOMS FOUND</h3>
+              <p className="font-retro text-xl text-arcade-cyan mb-6">새 방을 생성하거나 잠시 후 다시 확인해주세요</p>
               <button
                 onClick={refresh}
-                style={{
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  width: isMobile ? '44px' : '48px',
-                  height: isMobile ? '44px' : '48px',
-                  borderRadius: '50%',
-                  border: 'none',
-                  fontSize: isMobile ? '18px' : '20px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = '#2563eb'
-                  e.currentTarget.style.transform = 'rotate(180deg)'
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = '#3b82f6'
-                  e.currentTarget.style.transform = 'rotate(0deg)'
-                }}
-                title="새로고침"
+                className="font-pixel text-xs px-6 py-3 bg-arcade-cyan text-arcade-black border-4 border-white hover:shadow-[0_0_20px_#05d9e8] transition-all"
               >
-                🔄
+                🔄 REFRESH
               </button>
             </div>
           ) : (
-            <div style={{
-              display: 'grid',
-              gap: isMobile ? '12px' : '16px',
-              gridTemplateColumns: width < 640 ? '1fr' :
-                                   isTablet ? 'repeat(2, 1fr)' :
-                                   'repeat(auto-fill, minmax(320px, 1fr))'
-            }}>
-              {rooms.map((room) => (
-                <div
-                  key={room.id}
-                  style={{
-                    backgroundColor: '#ffffff',
-                    borderRadius: '8px',
-                    padding: isMobile ? '16px' : '24px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                    border: '1px solid #e5e7eb',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseOver={(e) => {
-                    if (!isMobile) {
-                      e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                      e.currentTarget.style.transform = 'translateY(-2px)'
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    e.currentTarget.style.transform = 'translateY(0)'
-                  }}
-                >
-                  {/* 방 헤더 */}
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: isMobile ? '12px' : '16px'
-                  }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <h3 style={{
-                        fontSize: isMobile ? '16px' : '18px',
-                        fontWeight: '600',
-                        color: '#1f2937',
-                        marginBottom: '4px',
-                        wordBreak: 'break-word'
-                      }}>
-                        {room.title}
-                      </h3>
-                      <p style={{
-                        fontSize: isMobile ? '13px' : '14px',
-                        color: '#6b7280',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        방 코드: {room.code} | 방장: {room.host?.nickname || '알 수 없음'}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {rooms.map((room) => {
+                const isFull = room.currentPlayers >= room.maxPlayers
+                const isJoining = joiningRoomId === room.id
+
+                return (
+                  <div
+                    key={room.id}
+                    className="bg-arcade-dark border-3 border-arcade-blue p-5 cursor-pointer transition-all hover:border-arcade-cyan hover:translate-y-[-4px] hover:shadow-[0_0_25px_rgba(5,217,232,0.3)] relative group"
+                    onClick={() => !isFull && !isJoining && handleJoinRoom(room)}
+                  >
+                    {/* Left accent bar */}
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-arcade-cyan group-hover:bg-arcade-yellow transition-colors" />
+
+                    <div className="mb-4">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h3 className="font-pixel text-xs text-white truncate flex-1">{room.title}</h3>
+                        {isFull && (
+                          <span className="font-pixel text-[8px] px-2 py-1 bg-arcade-pink text-white">FULL</span>
+                        )}
+                      </div>
+                      <p className="font-retro text-base text-arcade-cyan truncate">
+                        CODE: {room.code} | HOST: {room.host?.nickname || '???'}
                       </p>
                     </div>
-                  </div>
 
-                  {/* 방 정보 */}
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: isMobile ? '16px' : '20px'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <div style={{
-                        width: isMobile ? '28px' : '32px',
-                        height: isMobile ? '28px' : '32px',
-                        borderRadius: '50%',
-                        backgroundColor: '#e5e7eb',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: isMobile ? '13px' : '14px',
-                        fontWeight: '600',
-                        color: '#4b5563'
-                      }}>
-                        {room.currentPlayers}
+                    {/* Player count */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="font-pixel text-sm text-arcade-yellow">{room.currentPlayers}</span>
+                      <span className="font-retro text-base text-arcade-cyan">/ {room.maxPlayers}</span>
+                      <div className="flex-1 h-3 bg-arcade-black border border-arcade-cyan overflow-hidden">
+                        <div
+                          className="h-full transition-all duration-300"
+                          style={{
+                            width: `${(room.currentPlayers / room.maxPlayers) * 100}%`,
+                            backgroundColor: isFull ? '#ff2a6d' : '#00ff41',
+                            boxShadow: isFull ? '0 0 10px #ff2a6d' : '0 0 10px #00ff41'
+                          }}
+                        />
                       </div>
-                      <span style={{
-                        fontSize: isMobile ? '13px' : '14px',
-                        color: '#6b7280'
-                      }}>
-                        / {room.maxPlayers}명
-                      </span>
                     </div>
 
-                    {/* 플레이어 상태 바 */}
-                    <div style={{
-                      width: isMobile ? '60px' : '80px',
-                      height: '8px',
-                      backgroundColor: '#e5e7eb',
-                      borderRadius: '4px',
-                      overflow: 'hidden'
-                    }}>
-                      <div
-                        style={{
-                          width: `${(room.currentPlayers / room.maxPlayers) * 100}%`,
-                          height: '100%',
-                          backgroundColor: room.currentPlayers >= room.maxPlayers ? '#ef4444' : '#10b981',
-                          transition: 'width 0.3s ease'
-                        }}
-                      />
-                    </div>
+                    {/* Join button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (!isFull && !isJoining) handleJoinRoom(room)
+                      }}
+                      disabled={isFull || isJoining}
+                      className={`w-full font-pixel text-xs py-3 border-4 border-white transition-all
+                        ${isFull
+                          ? 'bg-arcade-dark text-arcade-cyan cursor-not-allowed opacity-50'
+                          : 'bg-arcade-green text-arcade-black hover:shadow-[0_0_20px_#00ff41]'
+                        }`}
+                    >
+                      {isJoining ? 'JOINING...' : isFull ? 'ROOM FULL' : 'JOIN ▶'}
+                    </button>
+
+                    {/* Hover arrow */}
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-2xl text-arcade-cyan opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      ▶
+                    </span>
                   </div>
-
-                  {/* 참가 버튼 */}
-                  <button
-                    onClick={() => handleJoinRoom(room)}
-                    disabled={joiningRoomId === room.id || room.currentPlayers >= room.maxPlayers}
-                    style={{
-                      width: '100%',
-                      backgroundColor: room.currentPlayers >= room.maxPlayers ? '#9ca3af' : '#3b82f6',
-                      color: 'white',
-                      padding: isMobile ? '10px 14px' : '10px 16px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      fontSize: isMobile ? '14px' : '14px',
-                      fontWeight: '500',
-                      cursor: (joiningRoomId === room.id || room.currentPlayers >= room.maxPlayers) ? 'not-allowed' : 'pointer',
-                      opacity: (joiningRoomId === room.id || room.currentPlayers >= room.maxPlayers) ? '0.7' : '1',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseOver={(e) => {
-                      if (joiningRoomId !== room.id && room.currentPlayers < room.maxPlayers) {
-                        e.currentTarget.style.backgroundColor = '#2563eb'
-                      }
-                    }}
-                    onMouseOut={(e) => {
-                      if (room.currentPlayers >= room.maxPlayers) {
-                        e.currentTarget.style.backgroundColor = '#9ca3af'
-                      } else {
-                        e.currentTarget.style.backgroundColor = '#3b82f6'
-                      }
-                    }}
-                  >
-                    {joiningRoomId === room.id ? '참가 중...' :
-                     room.currentPlayers >= room.maxPlayers ? '정원 초과' :
-                     '참가하기'}
-                  </button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </main>
 
+        {/* Bottom prompt */}
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 font-pixel text-[10px] text-arcade-yellow text-center animate-blink">
+          PRESS START TO BEGIN<br />▼ ▼ ▼
         </div>
+      </div>
 
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+      {/* Modals */}
+      <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
 
-      {/* 마이페이지 모달 */}
-      <ProfileModal
-        isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-      />
-
-      {/* 코드로 참가 모달 */}
       {showJoinByCodeModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '16px'
-        }}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            setShowJoinByCodeModal(false);
-          }
-        }}
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={(e) => e.target === e.currentTarget && setShowJoinByCodeModal(false)}
         >
-          <JoinRoomByCode
-            onClose={() => setShowJoinByCodeModal(false)}
-          />
+          <JoinRoomByCode onClose={() => setShowJoinByCodeModal(false)} />
         </div>
       )}
 
-      {/* 방 생성 모달 */}
       <CreateRoomModal
         isOpen={showCreateRoomModal}
         onClose={() => setShowCreateRoomModal(false)}
