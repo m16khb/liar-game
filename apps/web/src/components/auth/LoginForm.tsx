@@ -1,4 +1,4 @@
-// 로그인 폼 컴포넌트
+// 로그인 폼 컴포넌트 - Retro Arcade Theme
 // 이메일 로그인 및 소셜 로그인 UI
 
 import { useState } from 'react'
@@ -24,7 +24,6 @@ export default function LoginForm({
   const navigate = useNavigate()
   const [socialError, setSocialError] = useState<string | null>(null)
   const [showEmailSignup, setShowEmailSignup] = useState(false)
-  const [showOtpInput, setShowOtpInput] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -35,7 +34,6 @@ export default function LoginForm({
   // 소셜 로그인 에러 핸들러
   const handleSocialError = (error: Error) => {
     setSocialError(error.message)
-    // 5초 후 에러 메시지 자동 제거
     setTimeout(() => setSocialError(null), 5000)
   }
 
@@ -61,14 +59,12 @@ export default function LoginForm({
       return
     }
 
-    // 이메일 유효성 검사
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
       setSocialError('유효한 이메일 주소를 입력해주세요.')
       return
     }
 
-    // OTP 발송 가능 여부 확인
     if (!canSendOTP(formData.email)) {
       setSocialError('이미 인증 메일을 발송했습니다. 이메일을 확인해주세요.')
       return
@@ -80,8 +76,6 @@ export default function LoginForm({
     try {
       await sendEmailVerification(formData.email)
       saveOTPToStorage(formData.email)
-
-      // OTP 인증 페이지로 이동
       navigate(`/otp-verification?email=${encodeURIComponent(formData.email)}`)
     } catch (error) {
       const message = error instanceof Error ? error.message : '인증 메일 발송에 실패했습니다.'
@@ -92,15 +86,12 @@ export default function LoginForm({
   }
 
   const handleEmailSignupSuccess = () => {
-    // 이메일 인증 성공 후 처리할 로직
     onSignupClick?.()
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-
-    // 에러 초기화
     clearAllErrors()
   }
 
@@ -109,7 +100,6 @@ export default function LoginForm({
 
     if (isSubmitting) return
 
-    // 기본 유효성 검증
     if (!formData.email || !formData.password) {
       return
     }
@@ -125,14 +115,13 @@ export default function LoginForm({
       })
       console.log('📥 [LoginForm] login() 호출 완료:', result)
 
-      // 세션이 완전히 저장될 때까지 대기 (Race Condition 방지)
       console.log('🔄 [LoginForm] 세션 저장 완료 대기 중...')
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
           subscription.unsubscribe()
           console.log('⚠️ 세션 저장 타임아웃, 계속 진행')
-          resolve() // 타임아웃 시에도 진행
-        }, 3000) // 3초 타임아웃
+          resolve()
+        }, 3000)
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
           if (event === 'SIGNED_IN') {
@@ -147,31 +136,25 @@ export default function LoginForm({
       onLoginSuccess?.()
     } catch (error) {
       console.error('로그인 실패:', error)
-      // 에러는 useAuth 훅에서 처리됨
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div style={{ width: '100%', maxWidth: '448px', margin: '0 auto' }}>
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '8px',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        padding: '32px'
-      }}>
-        <h2 style={{
-          fontSize: '24px',
-          fontWeight: 'bold',
-          textAlign: 'center',
-          color: '#1f2937',
-          marginBottom: '32px'
-        }}>
-          로그인
+    <div className="w-full max-w-md mx-auto">
+      <div className="bg-arcade-dark border-4 border-arcade-cyan p-8 relative shadow-[0_0_60px_rgba(5,217,232,0.4)]">
+        {/* 장식 */}
+        <span className="absolute -top-3 left-5 text-xl text-arcade-yellow">◆</span>
+        <span className="absolute -top-3 right-5 text-xl text-arcade-yellow">◆</span>
+
+        {/* 타이틀 */}
+        <h2 className="font-pixel text-pixel-xl text-arcade-yellow text-center mb-8"
+            style={{ textShadow: '3px 3px 0 #ff2a6d, 6px 6px 0 #05d9e8' }}>
+          LOGIN
         </h2>
 
-        {/* 소셜 로그인 버튼 */}
+        {/* 소셜 로그인 */}
         <div className="mb-6">
           <GoogleLoginButton
             onSuccess={onLoginSuccess}
@@ -182,31 +165,32 @@ export default function LoginForm({
         </div>
 
         {/* 구분선 */}
-        <div className="relative">
+        <div className="relative mb-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+            <div className="w-full border-t-2 border-dashed border-arcade-cyan" />
           </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-              또는
+          <div className="relative flex justify-center">
+            <span className="px-3 bg-arcade-dark font-pixel text-pixel-xs text-arcade-cyan">
+              OR
             </span>
           </div>
         </div>
 
         {/* 에러 메시지 */}
         {(error || socialError) && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-600 rounded-md">
-            <p className="text-sm text-red-800 dark:text-red-200">
-              {error || socialError}
+          <div className="mb-4 p-3 bg-arcade-dark border-3 border-arcade-pink">
+            <p className="font-retro text-retro-base text-arcade-pink">
+              ⚠️ {error || socialError}
             </p>
           </div>
         )}
 
-        {/* 이메일 로그인 폼 */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* 로그인 폼 */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* 이메일 */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              이메일
+            <label htmlFor="email" className="block font-pixel text-pixel-xs text-arcade-cyan uppercase mb-2">
+              EMAIL
             </label>
             <input
               id="email"
@@ -217,14 +201,15 @@ export default function LoginForm({
               value={formData.email}
               onChange={handleInputChange}
               disabled={loading}
-              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50"
-              placeholder="your@email.com"
+              className="w-full font-retro text-retro-base bg-arcade-black text-white border-3 border-arcade-cyan px-4 py-3 focus:border-arcade-yellow focus:shadow-neon-yellow transition-all placeholder:text-arcade-cyan/50 disabled:opacity-50"
+              placeholder="YOUR@EMAIL.COM"
             />
           </div>
 
+          {/* 비밀번호 */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              비밀번호
+            <label htmlFor="password" className="block font-pixel text-pixel-xs text-arcade-cyan uppercase mb-2">
+              PASSWORD
             </label>
             <input
               id="password"
@@ -235,38 +220,48 @@ export default function LoginForm({
               value={formData.password}
               onChange={handleInputChange}
               disabled={loading}
-              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50"
-              placeholder="•••••••••"
+              className="w-full font-retro text-retro-base bg-arcade-black text-white border-3 border-arcade-cyan px-4 py-3 focus:border-arcade-yellow focus:shadow-neon-yellow transition-all placeholder:text-arcade-cyan/50 disabled:opacity-50"
+              placeholder="••••••••"
             />
           </div>
 
+          {/* 로그인 버튼 */}
           <button
             type="submit"
             disabled={loading || isSubmitting}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-full font-pixel text-pixel-sm py-4 border-4 border-white transition-all ${
+              loading || isSubmitting
+                ? 'bg-arcade-dark text-arcade-cyan/50 cursor-not-allowed'
+                : 'bg-arcade-green text-arcade-black hover:translate-y-[-2px] hover:shadow-[0_6px_30px_rgba(0,255,65,0.5)] cursor-pointer'
+            }`}
           >
-            {loading || isSubmitting ? '로그인 중...' : '로그인'}
+            {loading || isSubmitting ? 'LOGGING IN...' : 'LOGIN ▶'}
           </button>
         </form>
 
         {/* 링크 */}
-        <div className="mt-6 text-center text-sm">
+        <div className="mt-6 text-center font-retro text-retro-base">
           <button
             type="button"
             onClick={onPasswordResetClick}
-            className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+            className="text-arcade-cyan hover:text-arcade-yellow transition-colors"
           >
-            비밀번호를 잊으셨나요?
+            FORGOT PASSWORD?
           </button>
-          <span className="mx-2 text-gray-500 dark:text-gray-400">|</span>
+          <span className="mx-3 text-arcade-cyan/50">|</span>
           <button
             type="button"
             onClick={handleEmailSignupClick}
-            className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+            className="text-arcade-cyan hover:text-arcade-yellow transition-colors"
           >
-            계정이 없으신가요?
+            CREATE ACCOUNT
           </button>
         </div>
+
+        {/* 하단 메시지 */}
+        <p className="font-pixel text-[8px] text-arcade-cyan/30 text-center mt-6">
+          INSERT COIN TO CONTINUE
+        </p>
       </div>
 
       {/* 이메일 인증 모달 */}

@@ -76,11 +76,25 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-12 flex items-center justify-center">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-arcade-black px-4 py-12 flex items-center justify-center relative">
+      {/* CRT Scanline Effect */}
+      <div className="fixed inset-0 pointer-events-none z-50 opacity-10"
+           style={{
+             background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)'
+           }} />
+
+      {/* Grid Background */}
+      <div className="fixed inset-0 pointer-events-none opacity-5"
+           style={{
+             backgroundImage: 'linear-gradient(#05d9e8 1px, transparent 1px), linear-gradient(90deg, #05d9e8 1px, transparent 1px)',
+             backgroundSize: '50px 50px'
+           }} />
+
+      <div className="w-full max-w-md relative z-10">
         <header className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            라이어 게임
+          <h1 className="font-pixel text-pixel-xl text-arcade-yellow mb-2"
+              style={{ textShadow: '3px 3px 0 #ff2a6d, 6px 6px 0 #05d9e8' }}>
+            LIAR GAME
           </h1>
         </header>
 
@@ -91,6 +105,11 @@ function LoginPage() {
             onPasswordResetClick={handlePasswordResetClick}
           />
         </main>
+      </div>
+
+      {/* Bottom prompt */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 font-pixel text-[10px] text-arcade-yellow text-center animate-blink">
+        INSERT COIN<br />▼ ▼ ▼
       </div>
     </div>
   )
@@ -121,14 +140,29 @@ function SetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-12 flex items-center justify-center">
-      <SetPasswordForm
-        email={email}
-        token={token}
-        fromOtp={fromOtp}
-        onSuccess={handleSuccess}
-        onCancel={handleCancel}
-      />
+    <div className="min-h-screen bg-arcade-black px-4 py-12 flex items-center justify-center relative">
+      {/* CRT Scanline Effect */}
+      <div className="fixed inset-0 pointer-events-none z-50 opacity-10"
+           style={{
+             background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)'
+           }} />
+
+      {/* Grid Background */}
+      <div className="fixed inset-0 pointer-events-none opacity-5"
+           style={{
+             backgroundImage: 'linear-gradient(#05d9e8 1px, transparent 1px), linear-gradient(90deg, #05d9e8 1px, transparent 1px)',
+             backgroundSize: '50px 50px'
+           }} />
+
+      <div className="relative z-10 w-full">
+        <SetPasswordForm
+          email={email}
+          token={token}
+          fromOtp={fromOtp}
+          onSuccess={handleSuccess}
+          onCancel={handleCancel}
+        />
+      </div>
     </div>
   )
 }

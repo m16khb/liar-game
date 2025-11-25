@@ -1,4 +1,4 @@
-// 마이페이지 모달 컴포넌트
+// 마이페이지 모달 컴포넌트 - Retro Arcade Theme
 // 사용자 정보 표시 및 로그아웃 기능
 
 import { useEffect, useState } from 'react'
@@ -44,304 +44,129 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: '16px'
-      }}
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <div
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          width: '100%',
-          maxWidth: '400px',
-          maxHeight: '90vh',
-          overflow: 'auto',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
-        }}
+        className="bg-arcade-dark border-4 border-arcade-cyan w-full max-w-md max-h-[90vh] overflow-auto relative animate-in shadow-[0_0_60px_rgba(5,217,232,0.4)]"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* 장식 */}
+        <span className="absolute -top-3 left-5 text-xl text-arcade-yellow">◆</span>
+        <span className="absolute -top-3 right-5 text-xl text-arcade-yellow">◆</span>
+
         {/* 헤더 */}
-        <div style={{
-          padding: '24px 24px 16px',
-          borderBottom: '1px solid #e5e7eb'
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <h2 style={{
-              fontSize: '20px',
-              fontWeight: '600',
-              color: '#1f2937',
-              margin: 0
-            }}>
-              마이페이지
-            </h2>
-            <button
-              onClick={onClose}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '24px',
-                color: '#6b7280',
-                cursor: 'pointer',
-                padding: '0',
-                width: '32px',
-                height: '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '6px',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = '#f3f4f6'
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-              }}
-            >
-              ×
-            </button>
-          </div>
+        <div className="p-6 pb-4 border-b-3 border-dashed border-arcade-cyan relative">
+          <h2 className="font-pixel text-pixel-lg text-arcade-yellow pr-8"
+              style={{ textShadow: '2px 2px 0 #ff2a6d' }}>
+            MY PAGE
+          </h2>
+          <button
+            onClick={onClose}
+            className="absolute top-6 right-6 font-pixel text-pixel-sm text-arcade-cyan hover:text-arcade-yellow transition-colors"
+          >
+            ✕
+          </button>
         </div>
 
         {/* 프로필 정보 */}
-        <div style={{ padding: '24px' }}>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            marginBottom: '24px'
-          }}>
+        <div className="p-6">
+          <div className="flex flex-col items-center mb-6">
             {/* 아바타 */}
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              backgroundColor: '#3b82f6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '16px'
-            }}>
-              <span style={{
-                fontSize: '32px',
-                color: 'white',
-                fontWeight: '600'
-              }}>
+            <div className="w-20 h-20 border-4 border-arcade-cyan bg-arcade-purple flex items-center justify-center mb-4 relative">
+              <span className="font-pixel text-pixel-xl text-arcade-cyan">
                 {user?.email?.charAt(0).toUpperCase() || 'U'}
+              </span>
+              {/* 활동 상태 */}
+              <span className="absolute -bottom-2 -right-2 w-6 h-6 bg-arcade-green border-2 border-arcade-dark rounded-full flex items-center justify-center">
+                <span className="w-2 h-2 bg-arcade-black rounded-full animate-pulse" />
               </span>
             </div>
 
             {/* 이메일 */}
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <p style={{
-                fontSize: '12px',
-                color: '#6b7280',
-                marginBottom: '4px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                이메일
+            <div className="text-center mb-4 w-full">
+              <p className="font-pixel text-pixel-xs text-arcade-cyan/70 mb-1 tracking-wider">
+                EMAIL
               </p>
-              <p style={{
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#1f2937',
-                wordBreak: 'break-word',
-                maxWidth: '280px'
-              }}>
-                {user?.email || '이메일 정보 없음'}
+              <p className="font-retro text-retro-base text-white break-all px-4">
+                {user?.email || 'NO EMAIL'}
               </p>
             </div>
 
             {/* 닉네임 */}
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <p style={{
-                fontSize: '12px',
-                color: '#6b7280',
-                marginBottom: '4px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                닉네임
+            <div className="text-center mb-4">
+              <p className="font-pixel text-pixel-xs text-arcade-cyan/70 mb-1 tracking-wider">
+                NICKNAME
               </p>
-              <p style={{
-                fontSize: '14px',
-                color: '#1f2937'
-              }}>
-                {user?.user_metadata?.nickname || user?.email?.split('@')[0] || '플레이어'}
+              <p className="font-retro text-retro-lg text-arcade-yellow">
+                {user?.user_metadata?.nickname || user?.email?.split('@')[0] || 'PLAYER'}
               </p>
             </div>
 
             {/* 가입일 */}
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <p style={{
-                fontSize: '12px',
-                color: '#6b7280',
-                marginBottom: '4px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                가입일
+            <div className="text-center mb-4">
+              <p className="font-pixel text-pixel-xs text-arcade-cyan/70 mb-1 tracking-wider">
+                JOINED
               </p>
-              <p style={{
-                fontSize: '14px',
-                color: '#1f2937'
-              }}>
+              <p className="font-retro text-retro-base text-arcade-cyan">
                 {user?.created_at
                   ? new Date(user.created_at).toLocaleDateString('ko-KR', {
                       year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })
+                      month: '2-digit',
+                      day: '2-digit'
+                    }).replace(/\. /g, '/').replace('.', '')
                   : new Date().toLocaleDateString('ko-KR', {
                       year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })
+                      month: '2-digit',
+                      day: '2-digit'
+                    }).replace(/\. /g, '/').replace('.', '')
                 }
               </p>
             </div>
 
-            {/* 상태 */}
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              padding: '4px 12px',
-              backgroundColor: '#dcfce7',
-              color: '#166534',
-              borderRadius: '9999px',
-              fontSize: '12px',
-              fontWeight: '500'
-            }}>
-              <div style={{
-                width: '8px',
-                height: '8px',
-                backgroundColor: '#22c55e',
-                borderRadius: '50%',
-                marginRight: '6px'
-              }} />
-              활동 중
+            {/* 상태 배지 */}
+            <div className="flex items-center gap-2 px-3 py-1 bg-arcade-green/20 border border-arcade-green">
+              <span className="w-2 h-2 bg-arcade-green rounded-full animate-pulse" />
+              <span className="font-pixel text-pixel-xs text-arcade-green">ONLINE</span>
             </div>
           </div>
 
           {/* 통계 정보 */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '16px',
-            marginBottom: '24px',
-            padding: '20px',
-            backgroundColor: '#f9fafb',
-            borderRadius: '8px'
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <p style={{
-                fontSize: '24px',
-                fontWeight: '700',
-                color: '#3b82f6',
-                marginBottom: '4px'
-              }}>
+          <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-arcade-black border-2 border-arcade-blue">
+            <div className="text-center border-r border-arcade-blue">
+              <p className="font-pixel text-pixel-lg text-arcade-cyan mb-1"
+                 style={{ textShadow: '0 0 10px #05d9e8' }}>
                 0
               </p>
-              <p style={{
-                fontSize: '12px',
-                color: '#6b7280'
-              }}>
-                참가한 게임
+              <p className="font-retro text-retro-sm text-arcade-cyan/70">
+                PLAYED
               </p>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <p style={{
-                fontSize: '24px',
-                fontWeight: '700',
-                color: '#10b981',
-                marginBottom: '4px'
-              }}>
+            <div className="text-center">
+              <p className="font-pixel text-pixel-lg text-arcade-green mb-1"
+                 style={{ textShadow: '0 0 10px #00ff41' }}>
                 0
               </p>
-              <p style={{
-                fontSize: '12px',
-                color: '#6b7280'
-              }}>
-                승리 횟수
+              <p className="font-retro text-retro-sm text-arcade-cyan/70">
+                WINS
               </p>
             </div>
           </div>
 
-          {/* 설정 메뉴 */}
-          <div style={{
-            marginBottom: '24px',
-            padding: '16px',
-            backgroundColor: '#f9fafb',
-            borderRadius: '8px'
-          }}>
-            <button
-              style={{
-                width: '100%',
-                padding: '12px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                textAlign: 'left',
-                fontSize: '14px',
-                color: '#4b5563',
-                cursor: 'pointer',
-                borderRadius: '6px',
-                transition: 'all 0.2s',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = '#e5e7eb'
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-              }}
-            >
-              <span>⚙️ 설정</span>
-              <span style={{ color: '#9ca3af' }}>›</span>
+          {/* 메뉴 */}
+          <div className="mb-6 bg-arcade-black border-2 border-arcade-blue p-2">
+            <button className="w-full p-3 bg-arcade-dark hover:bg-arcade-purple border-2 border-transparent hover:border-arcade-cyan transition-all text-left flex justify-between items-center group">
+              <span className="font-pixel text-pixel-xs text-arcade-cyan group-hover:text-arcade-yellow">
+                ⚙️ SETTINGS
+              </span>
+              <span className="font-retro text-retro-lg text-arcade-cyan/50 group-hover:text-arcade-yellow">›</span>
             </button>
-            <div style={{ height: '1px', backgroundColor: '#e5e7eb', margin: '8px 0' }} />
-            <button
-              style={{
-                width: '100%',
-                padding: '12px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                textAlign: 'left',
-                fontSize: '14px',
-                color: '#4b5563',
-                cursor: 'pointer',
-                borderRadius: '6px',
-                transition: 'all 0.2s',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = '#e5e7eb'
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-              }}
-            >
-              <span>📝 게임 기록</span>
-              <span style={{ color: '#9ca3af' }}>›</span>
+            <div className="h-px bg-arcade-blue my-2" />
+            <button className="w-full p-3 bg-arcade-dark hover:bg-arcade-purple border-2 border-transparent hover:border-arcade-cyan transition-all text-left flex justify-between items-center group">
+              <span className="font-pixel text-pixel-xs text-arcade-cyan group-hover:text-arcade-yellow">
+                📝 HISTORY
+              </span>
+              <span className="font-retro text-retro-lg text-arcade-cyan/50 group-hover:text-arcade-yellow">›</span>
             </button>
           </div>
 
@@ -349,39 +174,18 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: '#ef4444',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: isLoggingOut ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s',
-              opacity: isLoggingOut ? '0.7' : '1'
-            }}
-            onMouseOver={(e) => {
-              if (!isLoggingOut) {
-                e.currentTarget.style.backgroundColor = '#dc2626'
-              }
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = '#ef4444'
-            }}
+            className={`w-full font-pixel text-pixel-xs py-4 border-4 border-white transition-all ${
+              isLoggingOut
+                ? 'bg-arcade-dark text-arcade-pink/50 cursor-not-allowed'
+                : 'bg-arcade-pink text-white hover:translate-y-[-2px] hover:shadow-[0_6px_30px_rgba(255,42,109,0.5)] cursor-pointer'
+            }`}
           >
-            {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
+            {isLoggingOut ? 'LOGGING OUT...' : 'LOGOUT'}
           </button>
 
           {/* 버전 정보 */}
-          <p style={{
-            fontSize: '11px',
-            color: '#9ca3af',
-            textAlign: 'center',
-            marginTop: '16px'
-          }}>
-            라이어 게임 v1.0.0
+          <p className="font-pixel text-[8px] text-arcade-cyan/30 text-center mt-4">
+            LIAR GAME v1.0.0
           </p>
         </div>
       </div>
