@@ -1,4 +1,4 @@
-// OTP 인증 컴포넌트
+// OTP 인증 컴포넌트 - Retro Arcade Theme
 // 이메일로 전송된 OTP 코드 입력
 
 import React, { useState, useEffect } from 'react'
@@ -33,31 +33,27 @@ export default function OtpVerification({
   useEffect(() => {
     const otpData = getOTPFromStorage()
     if (otpData) {
-      // 동일한 이메일에 대한 OTP가 있고 유효한 경우
       if (otpData.email === email) {
         const remainingTime = getOTPRemainingTime()
         if (remainingTime) {
           setTimeLeft(remainingTime)
           setAttemptsLeft(Math.max(0, 5 - otpData.attempts))
         } else {
-          // 유효시간이 지났으면 새로 저장
           saveOTPToStorage(email)
           setAttemptsLeft(5)
         }
       } else {
-        // 다른 이메일이면 기존 데이터 삭제하고 새로 저장
         clearOTPFromStorage()
         saveOTPToStorage(email)
         setAttemptsLeft(5)
       }
     } else {
-      // OTP 정보가 없으면 새로 저장
       saveOTPToStorage(email)
       setAttemptsLeft(5)
     }
   }, [email])
 
-  // 타이머�
+  // 타이머
   React.useEffect(() => {
     if (timeLeft <= 0) return
 
@@ -77,30 +73,24 @@ export default function OtpVerification({
 
   // OTP 입력 처리
   const handleOtpChange = (index: number, value: string) => {
-    if (value.length > 1) return // 한 글자만 허용
+    if (value.length > 1) return
 
-    // 숫자만 허용
     if (value && !/^\d$/.test(value)) return
 
     const newOtp = [...otp]
     newOtp[index] = value
     setOtp(newOtp)
 
-    // 에러 상태 초기화 (입력 중이면)
     if (error) setError(null)
 
-    // 자동 다음 필드로 이동
     if (value && index < 7) {
       const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement
       nextInput?.focus()
     }
 
-    // 6자리 모두 입력되면 유효성 검사
     if (newOtp.every(digit => digit.length === 1)) {
       const otpString = newOtp.join('')
-      if (/^\d{6}$/.test(otpString)) {
-        console.log('6자리 OTP 입력 완료:', otpString)
-      } else {
+      if (!/^\d{6}$/.test(otpString)) {
         setError('유효하지 않은 인증 코드입니다.')
       }
     }
@@ -114,7 +104,7 @@ export default function OtpVerification({
     }
   }
 
-  // 붙여넣기 처리 - 6자리
+  // 붙여넣기 처리
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault()
     const pastedData = e.clipboardData.getData('text').trim()
@@ -130,7 +120,6 @@ export default function OtpVerification({
 
     const otpString = otp.join('')
 
-    // 클라이언트 측 유효성 검사
     if (otpString.length !== 6) {
       setError('6자리 인증 코드를 모두 입력해주세요.')
       return
@@ -141,7 +130,6 @@ export default function OtpVerification({
       return
     }
 
-    // 시도 횟수 확인
     if (attemptsLeft <= 0) {
       setError('인증 시도 횟수를 초과했습니다. 이메일 재전송 후 다시 시도해주세요.')
       return
@@ -152,23 +140,16 @@ export default function OtpVerification({
 
     try {
       const result = await verifyOtp(email, otpString)
-
-      // 인증 성공 시 localStorage에서 OTP 정보 삭제
       clearOTPFromStorage()
 
-      // URL에 OTP 토큰 추가하여 비밀번호 설정 페이지로 전달
       const url = new URL(`${window.location.origin}/set-password`)
       url.searchParams.set('email', email)
-      url.searchParams.set('otp', otpString) // OTP 토큰 전달
+      url.searchParams.set('otp', otpString)
       window.location.href = url.toString()
-
-      // onOtpVerified()는 호출하지 않고 바로 페이지 이동
     } catch (error) {
-      // 실패했을 때만 시도 횟수 감소
       const remaining = incrementOTPAttempts()
       setAttemptsLeft(remaining)
 
-      // 더 구체적인 에러 메시지
       const errorMessage = error instanceof Error ? error.message : '인증 코드가 올바르지 않습니다. 다시 확인해주세요.'
 
       if (remaining <= 0) {
@@ -187,17 +168,10 @@ export default function OtpVerification({
     setError(null)
 
     try {
-      // 새 OTP 발송
       await sendEmailVerification(email)
-
-      // localStorage에 새 OTP 정보 저장
       saveOTPToStorage(email)
-
-      // 타이머와 시도 횟수 리셋
       setTimeLeft(600)
       setAttemptsLeft(5)
-
-      // OTP 입력 필드 초기화
       setOtp(['', '', '', '', '', ''])
     } catch (error) {
       console.error('이메일 재전송 실패:', error)
@@ -210,80 +184,56 @@ export default function OtpVerification({
   const otpString = otp.join('')
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f9fafb',
-      padding: '48px 16px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '448px'
-      }}>
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-          padding: '32px'
-        }}>
+    <div className="min-h-screen bg-arcade-black px-4 py-12 flex items-center justify-center relative">
+      {/* CRT Scanline Effect */}
+      <div className="fixed inset-0 pointer-events-none z-50 opacity-10"
+           style={{
+             background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)'
+           }} />
+
+      {/* Grid Background */}
+      <div className="fixed inset-0 pointer-events-none opacity-5"
+           style={{
+             backgroundImage: 'linear-gradient(#05d9e8 1px, transparent 1px), linear-gradient(90deg, #05d9e8 1px, transparent 1px)',
+             backgroundSize: '50px 50px'
+           }} />
+
+      <div className="w-full max-w-md relative z-10">
+        <div className="bg-arcade-dark border-4 border-arcade-cyan p-8 relative shadow-[0_0_60px_rgba(5,217,232,0.4)]">
+          {/* 장식 */}
+          <span className="absolute -top-3 left-5 text-xl text-arcade-yellow">◆</span>
+          <span className="absolute -top-3 right-5 text-xl text-arcade-yellow">◆</span>
+
           {/* 헤더 */}
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              backgroundColor: '#ff6b6b',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px'
-            }}>
-              <span style={{ fontSize: '24px' }}>📧</span>
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-arcade-pink border-4 border-arcade-yellow mx-auto mb-4 flex items-center justify-center relative">
+              <span className="text-3xl">📧</span>
+              <span className="absolute -bottom-1 -right-1 w-6 h-6 bg-arcade-green text-arcade-black text-xs flex items-center justify-center font-pixel">
+                !
+              </span>
             </div>
-            <h2 style={{
-              fontSize: '24px',
-              fontWeight: 'bold',
-              color: '#1f2937',
-              marginBottom: '8px'
-            }}>
-              이메일 인증
+            <h2 className="font-pixel text-pixel-lg text-arcade-yellow mb-2"
+                style={{ textShadow: '2px 2px 0 #ff2a6d' }}>
+              VERIFY CODE
             </h2>
-            <p style={{
-              fontSize: '14px',
-              color: '#6b7280',
-              lineHeight: '1.5'
-            }}>
-              <strong>{email}</strong>로 전송된<br />
-              6자리 인증 코드를 입력해주세요
+            <p className="font-retro text-retro-base text-arcade-cyan">
+              <span className="text-arcade-yellow">{email}</span><br />
+              ENTER 6-DIGIT CODE
             </p>
           </div>
 
           {/* 에러 메시지 */}
           {error && (
-            <div style={{
-              marginBottom: '20px',
-              padding: '12px',
-              backgroundColor: '#fef2f2',
-              border: '1px solid #fecaca',
-              borderRadius: '8px',
-              color: '#dc2626',
-              fontSize: '14px'
-            }}>
-              {error}
+            <div className="mb-6 p-3 bg-arcade-dark border-3 border-arcade-pink">
+              <p className="font-retro text-retro-base text-arcade-pink text-center">
+                ⚠️ {error}
+              </p>
             </div>
           )}
 
           {/* OTP 입력 폼 */}
           <form onSubmit={handleSubmit}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              marginBottom: '24px',
-              gap: '6px',
-              flexWrap: 'wrap'
-            }}>
+            <div className="flex justify-center mb-6 gap-2">
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -298,138 +248,91 @@ export default function OtpVerification({
                   onPaste={index === 0 ? handlePaste : undefined}
                   disabled={isSubmitting}
                   autoComplete="one-time-code"
-                  style={{
-                    width: window.innerWidth < 480 ? '38px' : '42px',
-                    height: '50px',
-                    fontSize: window.innerWidth < 480 ? '16px' : '18px',
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                    border: error ? '2px solid #ef4444' : '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    backgroundColor: '#ffffff',
-                    color: '#1f2937',
-                    transition: 'all 0.2s',
-                    fontFamily: 'monospace',
-                    opacity: isSubmitting ? 0.6 : 1
-                  }}
-                  className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0"
+                  className={`w-10 h-12 font-pixel text-pixel-lg text-center bg-arcade-black text-arcade-yellow border-3 transition-all disabled:opacity-50 focus:shadow-neon-cyan ${
+                    error ? 'border-arcade-pink' : 'border-arcade-cyan focus:border-arcade-yellow'
+                  }`}
+                  placeholder="-"
                 />
               ))}
             </div>
 
-            {/* 남은 시간 및 시도 횟수 */}
-            <div style={{
-              textAlign: 'center',
-              marginBottom: '24px'
-            }}>
+            {/* 타이머 및 시도 횟수 */}
+            <div className="text-center mb-6 space-y-2">
               {timeLeft > 0 ? (
-                <div>
-                  <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '4px' }}>
-                    유효시간: <span style={{ fontWeight: 'bold', color: '#ff6b6b' }}>
-                      {formatTime(timeLeft)}
-                    </span>
+                <>
+                  <p className="font-pixel text-pixel-xs text-arcade-pink">
+                    TIME: <span className="text-arcade-yellow animate-blink">{formatTime(timeLeft)}</span>
                   </p>
-                  <p style={{ fontSize: '13px', color: '#9ca3af' }}>
-                    남은 시도 횟수: <span style={{
-                      fontWeight: 'bold',
-                      color: attemptsLeft <= 2 ? '#ef4444' : '#6b7280'
-                    }}>
+                  <p className="font-retro text-retro-sm text-arcade-cyan">
+                    ATTEMPTS: <span className={attemptsLeft <= 2 ? 'text-arcade-pink' : 'text-arcade-green'}>
                       {attemptsLeft}/5
                     </span>
                   </p>
-                </div>
+                </>
               ) : (
-                <div>
-                  <p style={{ fontSize: '14px', color: '#dc2626', marginBottom: '4px' }}>
-                    인증 코드가 만료되었습니다.
+                <div className="p-3 bg-arcade-dark border-2 border-arcade-pink">
+                  <p className="font-pixel text-pixel-xs text-arcade-pink mb-1">
+                    CODE EXPIRED!
                   </p>
-                  <p style={{ fontSize: '13px', color: '#9ca3af' }}>
-                    인증 코드 재발송 후 다시 시도해주세요.
+                  <p className="font-retro text-retro-sm text-arcade-cyan">
+                    RESEND CODE TO CONTINUE
                   </p>
                 </div>
               )}
             </div>
 
             {/* 버튼 */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="space-y-4">
               <button
                 type="submit"
                 disabled={isSubmitting || otpString.length !== 6 || timeLeft <= 0}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  backgroundColor: isSubmitting || otpString.length !== 6 || timeLeft <= 0
-                    ? '#d1d5db'
-                    : '#ff6b6b',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  cursor: isSubmitting || otpString.length !== 6 || timeLeft <= 0
-                    ? 'not-allowed'
-                    : 'pointer',
-                  transition: 'all 0.2s'
-                }}
+                className={`w-full font-pixel text-pixel-sm py-4 border-4 border-white transition-all ${
+                  isSubmitting || otpString.length !== 6 || timeLeft <= 0
+                    ? 'bg-arcade-dark text-arcade-cyan/50 cursor-not-allowed'
+                    : 'bg-arcade-green text-arcade-black hover:translate-y-[-2px] hover:shadow-[0_6px_30px_rgba(0,255,65,0.5)] cursor-pointer'
+                }`}
               >
-                {isSubmitting ? '인증 중...' : '인증하기'}
+                {isSubmitting ? 'VERIFYING...' : 'VERIFY ▶'}
               </button>
 
-              <div style={{ textAlign: 'center' }}>
+              <div className="text-center font-retro text-retro-base space-x-2">
                 {timeLeft > 0 ? (
                   <button
                     type="button"
                     onClick={handleResend}
                     disabled={isResending}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: isResending ? '#9ca3af' : '#3b82f6',
-                      fontSize: '14px',
-                      cursor: isResending ? 'not-allowed' : 'pointer',
-                      textDecoration: 'underline'
-                    }}
+                    className="text-arcade-cyan hover:text-arcade-yellow transition-colors disabled:text-arcade-cyan/50"
                   >
-                    {isResending ? '재전송 중...' : '이메일 재전송'}
+                    {isResending ? 'SENDING...' : 'RESEND EMAIL'}
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={handleResend}
                     disabled={isResending}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: isResending ? '#9ca3af' : '#ff6b6b',
-                      fontSize: '14px',
-                      cursor: isResending ? 'not-allowed' : 'pointer',
-                      textDecoration: 'underline'
-                    }}
+                    className="text-arcade-pink hover:text-arcade-yellow transition-colors disabled:text-arcade-pink/50"
                   >
-                    {isResending ? '재전송 중...' : '인증 코드 재발송'}
+                    {isResending ? 'SENDING...' : 'GET NEW CODE'}
                   </button>
                 )}
-                <span style={{ margin: '0 8px', color: '#d1d5db' }}>•</span>
+                <span className="text-arcade-cyan/50">•</span>
                 <button
                   type="button"
                   onClick={onCancel}
                   disabled={isSubmitting}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#6b7280',
-                    fontSize: '14px',
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    textDecoration: 'underline'
-                  }}
+                  className="text-arcade-cyan hover:text-arcade-yellow transition-colors disabled:text-arcade-cyan/50"
                 >
-                  취소
+                  CANCEL
                 </button>
               </div>
             </div>
           </form>
         </div>
+      </div>
+
+      {/* Bottom prompt */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 font-pixel text-[10px] text-arcade-yellow text-center animate-blink">
+        CHECK YOUR EMAIL<br />▼ ▼ ▼
       </div>
     </div>
   )
