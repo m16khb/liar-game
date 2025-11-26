@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liar Game - Retro Arcade Theme</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Retro Palette */
+      --arcade-black: #0f0f23;
+      --arcade-dark: #1a1a2e;
+      --arcade-purple: #16213e;
+      --arcade-blue: #0f3460;
+
+      /* Neon Vivid */
+      --neon-pink: #ff2a6d;
+      --neon-blue: #05d9e8;
+      --neon-yellow: #f9f002;
+      --neon-green: #00ff41;
+      --neon-orange: #ff6b35;
+
+      /* CRT Effects */
+      --scanline-color: rgba(0, 0, 0, 0.1);
+      --glow-intensity: 0.8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'VT323', monospace;
+      background: var(--arcade-black);
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+      image-rendering: pixelated;
+    }
+
+    /* CRT Screen Effect */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        var(--scanline-color) 2px,
+        var(--scanline-color) 4px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* Flicker Animation */
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      92% { opacity: 1; }
+      93% { opacity: 0.8; }
+      94% { opacity: 1; }
+      97% { opacity: 0.9; }
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%);
+      pointer-events: none;
+      z-index: 999;
+      animation: flicker 5s infinite;
+    }
+
+    /* Grid Background */
+    .grid-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        linear-gradient(var(--neon-blue) 1px, transparent 1px),
+        linear-gradient(90deg, var(--neon-blue) 1px, transparent 1px);
+      background-size: 50px 50px;
+      opacity: 0.05;
+      perspective: 500px;
+      transform: rotateX(60deg);
+      transform-origin: center top;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Theme Badge */
+    .theme-badge {
+      display: inline-block;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 8px;
+      padding: 8px 16px;
+      background: var(--neon-pink);
+      color: #fff;
+      margin-bottom: 32px;
+      animation: rainbow 3s linear infinite;
+      text-transform: uppercase;
+    }
+
+    @keyframes rainbow {
+      0% { background: var(--neon-pink); }
+      25% { background: var(--neon-blue); }
+      50% { background: var(--neon-green); }
+      75% { background: var(--neon-orange); }
+      100% { background: var(--neon-pink); }
+    }
+
+    /* Room Header - Arcade Cabinet Style */
+    .room-header {
+      background: var(--arcade-dark);
+      border: 4px solid var(--neon-blue);
+      padding: 24px;
+      margin-bottom: 24px;
+      position: relative;
+      box-shadow:
+        0 0 20px var(--neon-blue),
+        inset 0 0 60px rgba(5, 217, 232, 0.1);
+    }
+
+    .room-header::before,
+    .room-header::after {
+      content: '◆';
+      position: absolute;
+      top: -12px;
+      font-size: 20px;
+      color: var(--neon-yellow);
+      text-shadow: 0 0 10px var(--neon-yellow);
+    }
+
+    .room-header::before { left: 20px; }
+    .room-header::after { right: 20px; }
+
+    .room-status {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .status-indicator {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 10px;
+      color: var(--neon-green);
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .room-code {
+      font-family: 'VT323', monospace;
+      font-size: 16px;
+      color: var(--neon-blue);
+    }
+
+    .room-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 24px;
+      color: var(--neon-yellow);
+      text-shadow:
+        3px 3px 0 var(--neon-pink),
+        6px 6px 0 var(--neon-blue);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .room-subtitle {
+      font-family: 'VT323', monospace;
+      font-size: 20px;
+      color: var(--neon-blue);
+    }
+
+    .header-actions {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+    }
+
+    .btn-exit {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 8px;
+      padding: 12px 16px;
+      background: var(--neon-pink);
+      border: 3px solid #fff;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.1s;
+      text-transform: uppercase;
+    }
+
+    .btn-exit:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px var(--neon-pink);
+    }
+
+    .btn-exit:active {
+      transform: scale(0.95);
+    }
+
+    /* High Score Style Player Section */
+    .player-section {
+      margin-bottom: 32px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 3px dashed var(--neon-blue);
+    }
+
+    .section-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 14px;
+      color: var(--neon-yellow);
+      text-shadow: 2px 2px 0 var(--neon-orange);
+    }
+
+    .player-count {
+      font-family: 'VT323', monospace;
+      font-size: 24px;
+      color: var(--neon-green);
+      margin-left: auto;
+    }
+
+    .player-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .player-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: var(--arcade-dark);
+      border: 3px solid var(--arcade-blue);
+      transition: all 0.1s;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .player-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      background: var(--neon-blue);
+    }
+
+    .player-card:hover {
+      transform: translateX(8px);
+      border-color: var(--neon-blue);
+      box-shadow: 0 0 15px rgba(5, 217, 232, 0.3);
+    }
+
+    .player-card.is-me {
+      border-color: var(--neon-pink);
+    }
+
+    .player-card.is-me::before {
+      background: var(--neon-pink);
+    }
+
+    .player-card.is-host::before {
+      background: var(--neon-yellow);
+    }
+
+    .player-rank {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 12px;
+      color: var(--neon-yellow);
+      width: 32px;
+    }
+
+    .player-avatar {
+      width: 48px;
+      height: 48px;
+      background: var(--arcade-purple);
+      border: 2px solid var(--neon-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      position: relative;
+    }
+
+    /* Pixel art style ready indicator */
+    .player-card.is-ready .player-avatar::after {
+      content: '✓';
+      position: absolute;
+      bottom: -8px;
+      right: -8px;
+      width: 20px;
+      height: 20px;
+      background: var(--neon-green);
+      color: var(--arcade-black);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    .player-info {
+      flex: 1;
+    }
+
+    .player-name {
+      font-family: 'VT323', monospace;
+      font-size: 24px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 6px;
+      padding: 4px 8px;
+      animation: pulse-badge 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse-badge {
+      from { transform: scale(1); }
+      to { transform: scale(1.1); }
+    }
+
+    .badge-host {
+      background: var(--neon-yellow);
+      color: var(--arcade-black);
+    }
+
+    .badge-me {
+      background: var(--neon-pink);
+      color: #fff;
+    }
+
+    .player-status {
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      color: #666;
+    }
+
+    .player-status.ready {
+      color: var(--neon-green);
+      animation: blink 1s step-end infinite;
+    }
+
+    .player-score {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 10px;
+      color: var(--neon-orange);
+      text-align: right;
+    }
+
+    /* Action Panel - Arcade Buttons */
+    .action-panel {
+      background: var(--arcade-dark);
+      border: 4px solid var(--neon-pink);
+      padding: 32px;
+      box-shadow:
+        0 0 30px var(--neon-pink),
+        inset 0 0 60px rgba(255, 42, 109, 0.1);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-arcade {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 12px;
+      padding: 20px 32px;
+      border: 4px solid #fff;
+      cursor: pointer;
+      transition: all 0.1s;
+      text-transform: uppercase;
+      position: relative;
+    }
+
+    .btn-arcade::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 4px;
+      right: 4px;
+      height: 8px;
+      background: rgba(0,0,0,0.5);
+      z-index: -1;
+    }
+
+    .btn-primary {
+      background: var(--neon-green);
+      color: var(--arcade-black);
+      box-shadow: 0 0 30px var(--neon-green);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 40px var(--neon-green);
+    }
+
+    .btn-primary:active {
+      transform: translateY(2px);
+    }
+
+    .btn-secondary {
+      background: var(--neon-blue);
+      color: #fff;
+      box-shadow: 0 0 30px var(--neon-blue);
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 40px var(--neon-blue);
+    }
+
+    /* Coin Insert Animation */
+    .coin-prompt {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 10px;
+      color: var(--neon-yellow);
+      animation: blink 1s step-end infinite;
+      text-align: center;
+    }
+
+    /* Glitch Effect on Title */
+    @keyframes glitch {
+      0%, 100% {
+        text-shadow:
+          3px 3px 0 var(--neon-pink),
+          6px 6px 0 var(--neon-blue);
+      }
+      20% {
+        text-shadow:
+          -3px 3px 0 var(--neon-green),
+          3px -3px 0 var(--neon-pink);
+      }
+      40% {
+        text-shadow:
+          3px -3px 0 var(--neon-blue),
+          -3px 3px 0 var(--neon-orange);
+      }
+      60% {
+        text-shadow:
+          -3px -3px 0 var(--neon-pink),
+          3px 3px 0 var(--neon-green);
+      }
+    }
+
+    .room-title:hover {
+      animation: glitch 0.3s ease-in-out infinite;
+    }
+
+    /* Stars background */
+    .stars {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: #fff;
+      animation: twinkle 2s ease-in-out infinite;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+  <div class="stars">
+    <div class="star" style="top: 10%; left: 20%; animation-delay: 0s;"></div>
+    <div class="star" style="top: 30%; left: 80%; animation-delay: 0.5s;"></div>
+    <div class="star" style="top: 60%; left: 10%; animation-delay: 1s;"></div>
+    <div class="star" style="top: 80%; left: 70%; animation-delay: 1.5s;"></div>
+    <div class="star" style="top: 20%; left: 50%; animation-delay: 0.3s;"></div>
+    <div class="star" style="top: 50%; left: 30%; animation-delay: 0.8s;"></div>
+    <div class="star" style="top: 70%; left: 90%; animation-delay: 1.2s;"></div>
+  </div>
+
+  <div class="container">
+    <div class="theme-badge">★ Retro Arcade ★</div>
+
+    <div class="room-header">
+      <div class="room-status">
+        <span class="status-indicator">● WAITING</span>
+        <span class="room-code">ROOM: A7X2</span>
+      </div>
+      <h1 class="room-title">LIAR GAME<br>CHAMPIONSHIP</h1>
+      <p class="room-subtitle">>> INSERT COIN TO CONTINUE <<</p>
+      <div class="header-actions">
+        <button class="btn-exit">QUIT</button>
+      </div>
+    </div>
+
+    <div class="player-section">
+      <div class="section-header">
+        <h2 class="section-title">★ PLAYERS ★</h2>
+        <span class="player-count">4 / 6</span>
+      </div>
+
+      <div class="player-grid">
+        <div class="player-card is-host is-ready">
+          <span class="player-rank">1ST</span>
+          <div class="player-avatar">👾</div>
+          <div class="player-info">
+            <div class="player-name">
+              PLAYER_ONE
+              <span class="badge badge-host">HOST</span>
+            </div>
+            <div class="player-status ready">READY!</div>
+          </div>
+          <div class="player-score">9999 PTS</div>
+        </div>
+
+        <div class="player-card is-me is-ready">
+          <span class="player-rank">2ND</span>
+          <div class="player-avatar">🎮</div>
+          <div class="player-info">
+            <div class="player-name">
+              GAMER_X
+              <span class="badge badge-me">YOU</span>
+            </div>
+            <div class="player-status ready">READY!</div>
+          </div>
+          <div class="player-score">8500 PTS</div>
+        </div>
+
+        <div class="player-card is-ready">
+          <span class="player-rank">3RD</span>
+          <div class="player-avatar">🕹️</div>
+          <div class="player-info">
+            <div class="player-name">ARCADE_KING</div>
+            <div class="player-status ready">READY!</div>
+          </div>
+          <div class="player-score">7200 PTS</div>
+        </div>
+
+        <div class="player-card">
+          <span class="player-rank">4TH</span>
+          <div class="player-avatar">🎲</div>
+          <div class="player-info">
+            <div class="player-name">NEW_CHALLENGER</div>
+            <div class="player-status">LOADING...</div>
+          </div>
+          <div class="player-score">0 PTS</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-panel">
+      <div class="action-buttons">
+        <button class="btn-arcade btn-primary">START!</button>
+        <button class="btn-arcade btn-secondary">READY</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="coin-prompt">
+    PRESS START TO BEGIN<br>
+    ▼ ▼ ▼
+  </div>
+</body>
+</html>

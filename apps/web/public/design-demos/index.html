@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liar Game - Design Theme Comparison</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      min-height: 100vh;
+      padding: 60px 24px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    h1 {
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #fff, #888);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: 18px;
+      color: #888;
+      font-weight: 300;
+    }
+
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 32px;
+    }
+
+    .theme-card {
+      background: #151515;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.4s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .theme-card:hover {
+      transform: translateY(-8px);
+      border-color: #444;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .theme-preview {
+      height: 220px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Noir Mystery Preview */
+    .preview-noir {
+      background: linear-gradient(135deg, #0a0a0f, #15151f);
+    }
+
+    .preview-noir::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(0,255,245,0.3), transparent);
+      filter: blur(40px);
+    }
+
+    .preview-noir::after {
+      content: '';
+      position: absolute;
+      bottom: -50px;
+      left: -50px;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(255,0,170,0.3), transparent);
+      filter: blur(40px);
+    }
+
+    .preview-noir .preview-text {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 36px;
+      letter-spacing: 4px;
+      color: #f0f0f5;
+      text-shadow: 0 0 20px rgba(0,255,245,0.5);
+    }
+
+    /* Retro Arcade Preview */
+    .preview-retro {
+      background: linear-gradient(135deg, #0f0f23, #16213e);
+      background-image:
+        linear-gradient(rgba(5,217,232,0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(5,217,232,0.1) 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+
+    .preview-retro::before {
+      content: '★';
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      font-size: 24px;
+      color: #f9f002;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .preview-retro .preview-text {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 20px;
+      color: #f9f002;
+      text-shadow:
+        3px 3px 0 #ff2a6d,
+        6px 6px 0 #05d9e8;
+    }
+
+    /* Elegant Deception Preview */
+    .preview-elegant {
+      background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+    }
+
+    .preview-elegant::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #d4af37, transparent);
+    }
+
+    .preview-elegant::after {
+      content: '♠ ♦ ♣ ♥';
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      color: #d4af37;
+      opacity: 0.3;
+      letter-spacing: 12px;
+    }
+
+    .preview-elegant .preview-text {
+      font-family: 'Cinzel', serif;
+      font-size: 28px;
+      letter-spacing: 6px;
+      color: #f5f5f0;
+      text-transform: uppercase;
+    }
+
+    .preview-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 1;
+    }
+
+    .theme-info {
+      padding: 28px;
+    }
+
+    .theme-name {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .theme-description {
+      font-size: 14px;
+      color: #888;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .theme-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .feature-tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 6px 12px;
+      background: #252525;
+      border-radius: 20px;
+      color: #aaa;
+    }
+
+    .view-btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      background: #252525;
+      border: none;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .theme-card:hover .view-btn {
+      background: #333;
+    }
+
+    /* Color indicators */
+    .color-palette {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .color-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #333;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 60px;
+      padding-top: 40px;
+      border-top: 1px solid #222;
+    }
+
+    footer p {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .comparison-note {
+      background: #151515;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .comparison-note h3 {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .comparison-note p {
+      font-size: 14px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Liar Game</h1>
+      <p class="subtitle">Design Theme Comparison</p>
+    </header>
+
+    <div class="comparison-note">
+      <h3>각 테마를 클릭하여 전체 데모를 확인하세요</h3>
+      <p>GameRoom UI를 기준으로 각 테마의 분위기와 스타일을 비교할 수 있습니다</p>
+    </div>
+
+    <div class="theme-grid">
+      <!-- Noir Mystery -->
+      <a href="noir-mystery.html" class="theme-card">
+        <div class="theme-preview preview-noir">
+          <div class="preview-content">
+            <div class="preview-text">NOIR</div>
+          </div>
+        </div>
+        <div class="theme-info">
+          <div class="color-palette">
+            <div class="color-dot" style="background: #0a0a0f;"></div>
+            <div class="color-dot" style="background: #00fff5;"></div>
+            <div class="color-dot" style="background: #ff00aa;"></div>
+            <div class="color-dot" style="background: #ffd500;"></div>
+          </div>
+          <h2 class="theme-name">Noir Mystery</h2>
+          <p class="theme-description">
+            영화적 서스펜스와 네온 조명이 어우러진 다크 테마.
+            필름 그레인, 스캔라인 효과로 긴장감 있는 분위기 연출.
+          </p>
+          <div class="theme-features">
+            <span class="feature-tag">Dark Theme</span>
+            <span class="feature-tag">Neon Glow</span>
+            <span class="feature-tag">Cinematic</span>
+            <span class="feature-tag">Suspense</span>
+          </div>
+        </div>
+        <div class="view-btn">View Demo →</div>
+      </a>
+
+      <!-- Retro Arcade -->
+      <a href="retro-arcade.html" class="theme-card">
+        <div class="theme-preview preview-retro">
+          <div class="preview-content">
+            <div class="preview-text">ARCADE</div>
+          </div>
+        </div>
+        <div class="theme-info">
+          <div class="color-palette">
+            <div class="color-dot" style="background: #0f0f23;"></div>
+            <div class="color-dot" style="background: #ff2a6d;"></div>
+            <div class="color-dot" style="background: #05d9e8;"></div>
+            <div class="color-dot" style="background: #f9f002;"></div>
+          </div>
+          <h2 class="theme-name">Retro Arcade</h2>
+          <p class="theme-description">
+            80년대 아케이드 게임 감성. 픽셀 폰트, CRT 스캔라인,
+            글리치 효과로 레트로 게임의 향수를 자극.
+          </p>
+          <div class="theme-features">
+            <span class="feature-tag">Pixel Art</span>
+            <span class="feature-tag">CRT Effect</span>
+            <span class="feature-tag">Vivid Colors</span>
+            <span class="feature-tag">Playful</span>
+          </div>
+        </div>
+        <div class="view-btn">View Demo →</div>
+      </a>
+
+      <!-- Elegant Deception -->
+      <a href="elegant-deception.html" class="theme-card">
+        <div class="theme-preview preview-elegant">
+          <div class="preview-content">
+            <div class="preview-text">Elegant</div>
+          </div>
+        </div>
+        <div class="theme-info">
+          <div class="color-palette">
+            <div class="color-dot" style="background: #0a0a0a;"></div>
+            <div class="color-dot" style="background: #d4af37;"></div>
+            <div class="color-dot" style="background: #9b1b30;"></div>
+            <div class="color-dot" style="background: #f5f5f0;"></div>
+          </div>
+          <h2 class="theme-name">Elegant Deception</h2>
+          <p class="theme-description">
+            럭셔리 카지노와 포커 룸의 세련된 분위기.
+            블랙 & 골드 팔레트로 고급스럽고 위험한 느낌 연출.
+          </p>
+          <div class="theme-features">
+            <span class="feature-tag">Luxury</span>
+            <span class="feature-tag">Black & Gold</span>
+            <span class="feature-tag">Refined</span>
+            <span class="feature-tag">Casino</span>
+          </div>
+        </div>
+        <div class="view-btn">View Demo →</div>
+      </a>
+    </div>
+
+    <footer>
+      <p>frontend-design skill applied • Liar Game Design System</p>
+    </footer>
+  </div>
+</body>
+</html>
