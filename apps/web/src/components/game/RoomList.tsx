@@ -103,7 +103,7 @@ export default function RoomList({
                   style={{ textShadow: '3px 3px 0 #ff2a6d, 6px 6px 0 #05d9e8' }}>
                 LIAR GAME
               </h1>
-              <p className="font-retro text-xl md:text-2xl text-arcade-cyan">
+              <p className="text-xl md:text-2xl text-arcade-cyan" style={{ fontFamily: 'VT323, Galmuri11, monospace' }}>
                 {'>> 다른 플레이어들과 함께 라이어 게임을 즐겨보세요! <<'}
               </p>
             </div>
@@ -146,7 +146,7 @@ export default function RoomList({
         {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-arcade-dark border-3 border-arcade-pink flex justify-between items-center">
-            <span className="font-retro text-xl text-arcade-pink">⚠️ {error}</span>
+            <span className="text-xl text-arcade-pink" style={{ fontFamily: 'VT323, Galmuri11, monospace' }}>⚠️ {error}</span>
             <button onClick={() => setRoomsError(null)} className="font-pixel text-arcade-pink hover:text-arcade-yellow">✕</button>
           </div>
         )}
@@ -157,12 +157,12 @@ export default function RoomList({
             <h2 className="font-pixel text-sm text-arcade-yellow" style={{ textShadow: '2px 2px 0 #ff6b35' }}>
               ★ WAITING ROOMS ★
             </h2>
-            <span className="font-retro text-xl text-arcade-green ml-auto">{rooms.length} ROOMS</span>
+            <span className="text-xl text-arcade-green ml-auto" style={{ fontFamily: 'VT323, Galmuri11, monospace' }}>{rooms.length} ROOMS</span>
             <button
               onClick={refresh}
-              className="w-10 h-10 flex items-center justify-center bg-arcade-dark border-2 border-arcade-cyan text-arcade-cyan hover:bg-arcade-cyan hover:text-arcade-black transition-all"
+              className="font-pixel text-xs px-3 py-2 bg-arcade-dark border-2 border-arcade-cyan text-arcade-cyan hover:bg-arcade-cyan hover:text-arcade-black hover:shadow-[0_0_15px_#05d9e8] transition-all"
             >
-              🔄
+              ↻
             </button>
           </div>
 
@@ -175,13 +175,7 @@ export default function RoomList({
             <div className="bg-arcade-dark border-4 border-arcade-cyan p-12 text-center shadow-[0_0_20px_rgba(5,217,232,0.3)]">
               <div className="text-6xl mb-4 animate-float">🎮</div>
               <h3 className="font-pixel text-sm text-arcade-yellow mb-3">NO ROOMS FOUND</h3>
-              <p className="font-retro text-xl text-arcade-cyan mb-6">새 방을 생성하거나 잠시 후 다시 확인해주세요</p>
-              <button
-                onClick={refresh}
-                className="font-pixel text-xs px-6 py-3 bg-arcade-cyan text-arcade-black border-4 border-white hover:shadow-[0_0_20px_#05d9e8] transition-all"
-              >
-                🔄 REFRESH
-              </button>
+              <p className="text-xl text-arcade-cyan" style={{ fontFamily: 'VT323, Galmuri11, monospace' }}>새 방을 생성하거나 잠시 후 다시 확인해주세요</p>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
