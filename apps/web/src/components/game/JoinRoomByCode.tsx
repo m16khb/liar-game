@@ -1,4 +1,4 @@
-// 방 ID로 참가하는 컴포넌트 - Retro Arcade Theme
+// 방 코드로 참가하는 컴포넌트 - Retro Arcade Theme
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -10,23 +10,23 @@ interface JoinRoomByCodeProps {
 }
 
 export default function JoinRoomByCode({ onClose }: JoinRoomByCodeProps) {
-  const [roomId, setRoomId] = useState('')
+  const [roomCode, setRoomCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
-  const { getRoomById } = useRooms()
+  const { getRoomByCode } = useRooms()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!roomId.trim()) {
-      setError('방 ID를 입력해주세요.')
+    if (!roomCode.trim()) {
+      setError('방 코드를 입력해주세요.')
       return
     }
 
     if (!isAuthenticated) {
-      sessionStorage.setItem('redirectAfterLogin', `/join?id=${roomId}`)
+      sessionStorage.setItem('redirectAfterLogin', `/join?code=${roomCode}`)
       navigate('/login')
       return
     }
@@ -35,7 +35,7 @@ export default function JoinRoomByCode({ onClose }: JoinRoomByCodeProps) {
       setLoading(true)
       setError(null)
 
-      const room = await getRoomById(roomId.trim())
+      const room = await getRoomByCode(roomCode.trim())
 
       if (!room) {
         setError('존재하지 않는 방입니다.')
@@ -58,7 +58,7 @@ export default function JoinRoomByCode({ onClose }: JoinRoomByCodeProps) {
         return
       }
 
-      navigate(`/game/${room.id}`)
+      navigate(`/game/${room.code}`)
       onClose?.()
     } catch (err) {
       console.error('방 참가 실패:', err)
@@ -88,20 +88,20 @@ export default function JoinRoomByCode({ onClose }: JoinRoomByCodeProps) {
       {/* 제목 */}
       <h2 className="font-pixel text-pixel-lg text-arcade-cyan text-center mb-6"
           style={{ textShadow: '2px 2px 0 #0f3460' }}>
-        🎫 JOIN BY ROOM ID
+        🎫 JOIN BY CODE
       </h2>
 
       <form onSubmit={handleSubmit}>
-        {/* ID 입력 */}
+        {/* 코드 입력 */}
         <div className="mb-5">
           <input
             type="text"
-            value={roomId}
+            value={roomCode}
             onChange={(e) => {
-              setRoomId(e.target.value.toLowerCase())
+              setRoomCode(e.target.value.toLowerCase())
               setError(null)
             }}
-            placeholder="ENTER ROOM ID"
+            placeholder="ENTER ROOM CODE"
             className="w-full font-mono text-sm text-center bg-arcade-black text-arcade-yellow border-4 border-arcade-blue px-4 py-4 focus:border-arcade-cyan focus:shadow-neon-cyan transition-all placeholder:text-arcade-blue placeholder:text-xs"
           />
           <p className="text-xs text-arcade-cyan opacity-50 text-center mt-2" style={{ fontFamily: 'VT323, Galmuri11, monospace' }}>
@@ -132,11 +132,11 @@ export default function JoinRoomByCode({ onClose }: JoinRoomByCodeProps) {
 
           <button
             type="submit"
-            disabled={loading || !roomId.trim()}
+            disabled={loading || !roomCode.trim()}
             className={`font-pixel text-pixel-xs py-4 border-4 border-white transition-all ${
               onClose ? 'flex-[2]' : 'w-full'
             } ${
-              loading || !roomId.trim()
+              loading || !roomCode.trim()
                 ? 'bg-arcade-dark text-arcade-cyan/50 cursor-not-allowed'
                 : 'bg-arcade-green text-arcade-black hover:translate-y-[-2px] hover:shadow-[0_6px_30px_rgba(0,255,65,0.5)]'
             }`}

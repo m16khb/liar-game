@@ -1,7 +1,7 @@
 // 방 관련 상태 관리 훅
 
 import { useState, useEffect, useCallback } from 'react';
-import { fetchRooms, fetchRoomById, createRoom } from '@/api/rooms';
+import { fetchRooms, fetchRoomByCode, createRoom } from '@/api/rooms';
 import { RoomResponse, CreateRoomRequest, RoomStatus } from '@/types/api';
 import { useAuth } from './useAuth';
 
@@ -63,9 +63,9 @@ export function useRooms(initialStatus?: RoomStatus) {
   }, [isAuthenticated, getAuthToken, loadRooms, initialStatus]);
 
   // 특정 방 조회
-  const getRoomById = useCallback(async (id: string) => {
+  const getRoomByCode = useCallback(async (code: string) => {
     try {
-      const response = await fetchRoomById(id);
+      const response = await fetchRoomByCode(code);
 
       if (response.error) {
         throw new Error(response.error.message);
@@ -89,7 +89,7 @@ export function useRooms(initialStatus?: RoomStatus) {
     error,
     refresh,
     createRoom: createNewRoom,
-    getRoomById,
+    getRoomByCode,
     setError,
   };
 }

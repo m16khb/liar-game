@@ -110,9 +110,10 @@ export class RoomController {
    */
   @Get(':code')
   @ApiOperation({ summary: '방 코드로 조회', description: '방 코드로 상세 정보 조회 (인증 불필요)' })
+  @ApiParam({ name: 'code', description: '방 코드 (32자 UUID)', example: 'df786457578e456e85fe577a8a9984a3' })
   @ApiResponse({ status: 200, description: '조회 성공', type: RoomResponseDto })
   @ApiResponse({ status: 404, description: '존재하지 않는 방' })
-  async findByCode(code: string): Promise<RoomResponseDto> {
+  async findByCode(@Param('code') code: string): Promise<RoomResponseDto> {
     const room = await this.roomService.findByCode(code);
     return this.roomService.mapToRoomResponseDto(room);
   }
