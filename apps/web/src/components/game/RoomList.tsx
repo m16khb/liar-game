@@ -237,7 +237,7 @@ export default function RoomList({
                     </button>
 
                     {/* Hover arrow */}
-                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-2xl text-arcade-cyan opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <span className="absolute right-4 top-4 text-2xl text-arcade-cyan opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                       ▶
                     </span>
                   </div>

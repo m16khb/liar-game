@@ -14,9 +14,9 @@ export function searchRooms(keyword: string) {
   return get<RoomResponse[]>(`/rooms/search?q=${encodeURIComponent(keyword)}`);
 }
 
-// 방 코드로 조회 (인증 불필요)
-export function fetchRoomByCode(code: string) {
-  return get<RoomResponse>(`/rooms/${code}`);
+// 방 ID로 조회 (인증 불필요)
+export function fetchRoomById(id: string) {
+  return get<RoomResponse>(`/rooms/${id}`);
 }
 
 // 방 생성 (인증 필요)

@@ -9,9 +9,9 @@ interface ErrorPageProps {
 }
 
 export default function ErrorPage({
-  title = '잘못된 접근입니다',
+  title = 'ACCESS DENIED',
   message,
-  buttonText = '로그인 페이지로 가기',
+  buttonText = 'BACK TO LOGIN',
   onButtonClick = () => window.location.href = '/',
 }: ErrorPageProps) {
   return (
@@ -52,16 +52,16 @@ export default function ErrorPage({
           </h3>
 
           {/* Message */}
-          <p className="font-retro text-retro-base text-arcade-cyan mb-8 leading-relaxed">
+          <p className="text-lg text-arcade-cyan mb-8 leading-relaxed" style={{ fontFamily: 'VT323, Galmuri11, monospace' }}>
             {message}
           </p>
 
           {/* Button */}
           <button
             onClick={onButtonClick}
-            className="font-pixel text-pixel-xs px-8 py-4 bg-arcade-cyan text-arcade-black border-4 border-white hover:translate-y-[-2px] hover:shadow-[0_6px_30px_rgba(5,217,232,0.5)] transition-all cursor-pointer w-full"
+            className="font-pixel text-xs px-8 py-4 bg-arcade-cyan text-arcade-black border-4 border-white hover:translate-y-[-2px] hover:shadow-[0_6px_30px_rgba(5,217,232,0.5)] transition-all cursor-pointer w-full"
           >
-            {buttonText.toUpperCase()}
+            <span style={{ fontFamily: 'VT323, Galmuri11, monospace' }}>{buttonText}</span>
           </button>
         </div>
 
