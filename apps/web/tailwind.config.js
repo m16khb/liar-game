@@ -21,7 +21,7 @@ export default {
       },
       fontFamily: {
         pixel: ['"Press Start 2P"', 'cursive'],
-        retro: ['VT323', 'monospace'],
+        retro: ['VT323', 'Galmuri11', 'monospace'],
       },
       fontSize: {
         // Pixel font sizes (작은 크기 권장)
