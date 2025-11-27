@@ -3,36 +3,30 @@
     "name": "liar-game",
     "mode": "personal",
     "locale": "ko",
-    "language": "typescript",
+    "language": "generic",
     "language_detection": {
-      "detected_language": "typescript",
-      "detection_method": "user_selection",
-      "confidence": 1.0,
-      "markers": ["TypeScript/JavaScript"],
-      "confirmed_by": "user"
+      "detected_language": "generic",
+      "detection_method": "cli_default",
+      "confidence": null,
+      "markers": [],
+      "confirmed_by": null
     },
-    "description": "라이어 게임 웹 애플리케이션",
-    "owner": "하빈",
-    "created_at": "2025-11-23 18:22:17",
+    "description": "{{PROJECT_DESCRIPTION}}",
+    "owner": "@user",
+    "created_at": "{{CREATED_AT}}",
     "initialized": true,
-    "optimized": true,
-    "optimized_at": "2025-11-23",
+    "optimized": false,
+    "optimized_at": null,
     "_notes": "optimized=false: Template updated, config merge required. optimized=true: Configuration fully merged and verified."
   },
   "language": {
     "conversation_language": "ko",
     "conversation_language_name": "Korean",
-    "agent_prompt_language": "en",
+    "agent_prompt_language": "ko",
     "notes": "Language for sub-agent internal prompts (english=global standard, localized=user's conversation language)"
   },
   "constitution": {
     "enforce_tdd": true,
-    "tdd_test_scope": {
-      "type": "unit_only",
-      "allowed_tests": ["unit"],
-      "excluded_tests": ["integration", "e2e", "acceptance"],
-      "notes": "TDD 사이클에서는 유닛 테스트만 작성. 통합/E2E 테스트는 별도 단계에서 진행."
-    },
     "principles": {
       "simplicity": {
         "max_projects": 5,
@@ -78,14 +72,12 @@
     "notes": "suppress_setup_messages: false enables SessionStart output. Set to true to suppress messages (show again after 7 days)"
   },
   "moai": {
-    "version": "0.25.10",
+    "version": "0.28.0",
     "update_check_frequency": "daily",
     "version_check": {
       "enabled": true,
       "cache_ttl_hours": 24
     }
   },
-  "user": {
-    "name": "하빈"
-  }
+  "user": {}
 }

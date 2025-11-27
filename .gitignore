@@ -109,3 +109,108 @@ docs/out/
 .claude/.env.local*
 .claude/settings.local.json
 .claude/settings.local.*.json
+# .moai local development scripts (not distributed)
+# User-generated content: logs/, cache/, reports/, etc.
+.gitlab-ci.yml.bak
+*.jks
+# ============================================
+# Linux
+# uv.lock
+*.sublime-workspace
+!.moai/config/
+.uv-cache/
+!.moai/config/**
+.AppleDouble
+# Tracked in git: config/, memory/, scripts/, specs/
+!.env.example
+.claude/skills/*/secrets/
+.moai/docs/
+.cursor/
+*.dbm
+*.pfx
+.directory
+.#*
+*.njsproj
+*.sqlite3
+# IDE & Editors
+.aws/credentials
+.DocumentRevisions-V100
+.mypy_cache/
+.moai/reports/
+*.sqlite
+.Spotlight-V100
+# Windows
+# Test Coverage
+.moai/scripts/phase*.py
+.Trashes
+*key*
+ehthumbs.db
+# .moai local-only directories (user projects only)
+.moai/learning/
+.claude/skills/*/*/*secret*
+# Claude Code Local Configuration
+# MoAI Directory Management
+.uv_cache/
+# Virtual Environments
+# Build Artifacts
+# Logs & Temporary Files
+!.moai/memory/**
+.claude/skills/*/.env*
+*_token=*
+*_secret=*
+.moai/backups/
+*.rdb
+.moai/scripts/phase*.sh
+!.moai/memory/
+.moai/*
+*.sw?
+.claude/local/
+.moai/work/
+# MoAI-ADK Package Distribution .gitignore
+.TemporaryItems
+.moai/scripts/sync-*.sh
+.moai/archive/
+.env.*
+*.sublime-project
+htmlcov/
+# Purpose: Essential patterns for user projects
+*.db
+.moai/indexes/
+# Environment Variables & Secrets
+!.moai/scripts/**
+# Claude Code Skills Secrets
+# Add to .gitignore if needed per project
+.aws/config
+.github/workflows/*.yml.bak
+.moai/scripts/__pycache__/
+.moai/scripts/sync-*.py
+.moai/analytics/
+# ---------------------------------------------
+.claude/skills/*/*/*token*
+.moai/archived-skills/
+# uv.lock is intentionally included for reproducible builds
+.moai/cache/
+# Python Cache & Database
+!.moai/specs/**
+*.p12
+# Version: 0.28.0
+*secret*
+*.suo
+.moai/error_logs/
+!.moai/specs/
+# OS Files
+.moai/scripts/*sync*.sh
+*.key
+.fseventsd
+# Mac
+# Package Distribution
+!.moai/scripts/
+.claude/skills/*/*/*key*
+[Dd]esktop.ini
+*.sln
+# Node.js (for docs/Nextra)
+.VolumeIcon.icns
+.ruff_cache/
+*.pyd
+.LSOverride
+# CI/CD
