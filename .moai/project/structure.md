@@ -57,6 +57,7 @@ liar-game/
   - `auth.controller`: REST API 엔드포인트
   - `supabase-jwt.strategy`: JWT 검증 전략
   - `guards`: 인증/권한 확인 가드
+- **코드 위치**: `apps/api/src/auth/`
 - **팀 책임**: 전체 시스템 보안 관리
 
 ### 2. 방 관리 모듈 (room)
@@ -65,6 +66,7 @@ liar-game/
   - `room.gateway`: 실시간 통신 처리
   - `room.service`: 방 관리 비즈니스 로직
   - `room.entity`: 방 데이터 모델
+- **코드 위치**: `apps/api/src/room/`
 - **팀 책임**: 실시간 통신 안정성 책임
 
 ### 3. 플레이어 모듈 (player)
@@ -72,6 +74,7 @@ liar-game/
 - **주요 컴포넌트**:
   - `player.service`: 플레이어 로직 처리
   - `player.entity`: 플레이어 데이터 모델
+- **코드 위치**: `apps/api/src/player/`
 - **팀 책임**: 플레이어 상태 일관성 유지
 
 ### 4. 게임 로직 모듈 (game)
@@ -79,20 +82,29 @@ liar-game/
 - **주요 컴포넌트**:
   - `game.service`: 게임 진행 로직
   - `game-engine`: 핵심 게임 엔진
+- **코드 위치**: `apps/api/src/game/`
 - **팀 책임**: 게임 규칙 정확성 보장
 
 ## 외부 시스템 통합
 
-### 1. Supabase (인증 및 데이터베이스)
-- **프로토콜**: REST API, WebSocket
-- **인증**: JWT 기반 OAuth 2.0
+### 1. Supabase (인증)
+- **프로토콜**: REST API, JWT
+- **인증**: OAuth 2.0
 - **용도**:
   - 사용자 인증 및 관리
-  - PostgreSQL 데이터베이스 연동
-  - 실시간 데이터 동기화
+  - JWT 토큰 발급 및 검증
 - **실패 전략**: 로컬 캐시 및 재시도 메커니즘
 
-### 2. Redis (캐시 및 세션)
+### 2. MySQL (데이터베이스)
+- **프로토콜**: TCP
+- **ORM**: TypeORM 0.3.20
+- **용도**:
+  - 게임 데이터 영구 저장
+  - 사용자 정보 관리
+  - 게임 히스토리 기록
+- **실패 전략**: 트랜잭션 롤백 및 연결 풀 관리
+
+### 3. Redis (캐시 및 세션)
 - **프로토콜**: TCP
 - **용도**:
   - 게임 상태 캐싱
@@ -109,12 +121,12 @@ Client → Supabase → JWT Token → API Gateway → Auth Guard → Service
 
 ### 2. 게임 방 생성 흐름
 ```
-Client → REST API → Room Service → Database → WebSocket Broadcast
+Client → REST API → Room Service → MySQL → Redis Cache → WebSocket Broadcast
 ```
 
 ### 3. 실시간 게임 진행 흐름
 ```
-Client → WebSocket → Room Gateway → Game Engine → State Update → Broadcast
+Client → WebSocket → Room Gateway → Game Engine → State Update → Redis → Broadcast
 ```
 
 ### API 설계 원칙
@@ -127,18 +139,18 @@ Client → WebSocket → Room Gateway → Game Engine → State Update → Broad
 
 ### 1. 성능
 - **응답시간**: REST API P95 < 200ms
-- **지연시간**: WebSocket 메시지 P95 < 100ms
+- **지연시간**: WebSocket 메시지 P95 < 100ms (최우선 목표)
 - **처리량**: 1000+ concurrent WebSocket connections
-- **측정**: New Relic 또는 커스텀 메트릭 수집
+- **측정**: Prometheus + Grafana를 통한 실시간 메트릭 수집
 
 ### 2. 가용성
 - **목표**: 99.9% 업타임
-- **전략**: 다중 인스턴스 배포, 헬스 체크, 자동 재시작
-- **장애 처리**: 서킷 브레이커 패턴, 그레이스풀 디그레이이션
+- **전략**: 다중 인스턴스 배포 (Kubernetes), 헬스 체크, 자동 재시작
+- **장애 처리**: 서킷 브레이커 패턴, 그레이스풀 디그레이데이션
 
 ### 3. 확장성
-- **수평 확장**: 컨테이너 기반의 자동 스케일링
-- **부하 분산**: Nginx 또는 클라우드 로드 밸런서
+- **수평 확장**: 컨테이너 기반의 자동 스케일링 (k3s HPA - Kubernetes 호환)
+- **부하 분산**: Traefik (k3s 기본 내장) 또는 Nginx Ingress Controller
 - **데이터 분할**: 게임 방별 샤딩 고려
 
 ### 4. 보안
@@ -146,6 +158,7 @@ Client → WebSocket → Room Gateway → Game Engine → State Update → Broad
 - **권한**: 역할 기반 접근 제어 (RBAC)
 - **암호화**: HTTPS/WSS 프로토콜 강제
 - **보안 헤더**: CORS, CSP, HSTS 적용
+- **치팅 방지**: 서버 측 게임 로직 검증 (중기 목표)
 
 ### 5. 관찰 가능성
 - **로깅**: 구조화된 로그 (JSON 형식)
@@ -159,15 +172,16 @@ Client → WebSocket → Room Gateway → Game Engine → State Update → Broad
 - **저장소**: React Context + useReducer
 - **영속성**: 로컬 스토리지 (선택적 데이터)
 - **동기화**: 서버 상태와의 지속적인 동기화
+- **최적화**: React Compiler 활용 (React 19)
 
 ### 서버 상태
-- **영구 상태**: PostgreSQL (Supabase)
-- **일시 상태**: Redis (게임 진행 중)
-- **분산**: 여러 인스턴스 간 상태 동기화
+- **영구 상태**: MySQL (사용자, 게임 히스토리)
+- **일시 상태**: Redis (게임 진행 중 상태)
+- **분산**: 여러 인스턴스 간 Redis를 통한 상태 동기화
 
 ## 기술적 의사결정 배경
 
-### 1. 모듈형 모놀리스 선택 이유
+### 1. 모듈형 모노리스 선택 이유
 - **개발 효율성**: 1인 프로젝트에서의 관리 용이성
 - **디버깅 용이성**: 단일 애플리케이션으로 추적의 용이
 - **향후 유연성**: 필요시 마이크로서비스로 분리 가능
@@ -182,19 +196,58 @@ Client → WebSocket → Room Gateway → Game Engine → State Update → Broad
 - **모듈성**: 명확한 모듈 구조 지원
 - **생태계**: 풍부한 미들웨어와 가드 시스템
 
+### 4. MySQL 선택 이유 (변경)
+- **안정성**: 검증된 관계형 데이터베이스
+- **TypeORM 호환성**: NestJS 생태계와의 통합
+- **트랜잭션 지원**: 게임 상태 일관성 보장
+
+### 5. k3s 선택 이유
+- **경량화**: Kubernetes 대비 40MB 단일 바이너리, 빠른 설치 및 구동
+- **리소스 효율성**: 최소 512MB 메모리로 실행 가능 (50% 리소스 절감)
+- **완전한 Kubernetes 호환성**: kubectl, helm, 모든 Kubernetes API 지원
+- **자동 스케일링**: Kubernetes HPA 완벽 지원
+- **고가용성**: 자동 재시작 및 헬스 체크 (Kubernetes와 동일)
+- **간소화된 운영**: Traefik Ingress, TLS 인증서 관리 내장
+- **Edge/개발 환경 최적화**: ARM 지원, 로컬 개발 환경에도 적합
+
 ## 향후 개선 계획
 
-### 단기 (1-3개월)
-- 게임 상태 동기화 최적화
+### 단기 (1-3개월) - 2025 Q1
+- **실시간 동기화 최적화** (최우선)
+  - WebSocket 메시지 지연 P95 < 100ms 달성
+  - 낙관적 업데이트 및 충돌 해결 메커니즘
+  - 재연결 로직 강화
+- **모바일 최적화** (최우선)
+  - 반응형 UI/UX 개선
+  - 터치 인터페이스 최적화
 - 에러 처리 및 재시도 로직 강화
-- 기본 모니터링 구축
+- 기본 모니터링 구축 (Prometheus + Grafana)
 
-### 중기 (3-6개월)
-- 마이크로서비스 분리 준비
+### 중기 (3-6개월) - 2025 H1
+- 치팅 방지 메커니즘 구현
+  - 서버 측 검증 강화
+  - 이상 행동 탐지 시스템
 - 이벤트 기반 아키텍처 도입
 - 성능 최적화 및 캐싱 전략 고도화
 
-### 장기 (6개월+)
+### 장기 (6개월+) - 2025 H2
+- 마이크로서비스 분리 준비
+  - 도메인별 경계 명확화
+  - API Gateway 도입
 - 글로벌 배포를 위한 멀티 리전 지원
 - AI 플레이어 시스템 통합
 - 실시간 스트리밍 기능 확장
+
+## 변경 이력
+
+### 2025-11-27 (재초기화)
+- 데이터베이스 변경: Supabase PostgreSQL → MySQL + TypeORM
+- 배포 환경 확정: Kubernetes 기반 컨테이너 오케스트레이션
+- 성능 목표 재설정: WebSocket P95 < 100ms (최우선)
+- 모바일 최적화 로드맵 추가
+
+### 2025-11-27 (배포 환경 변경)
+- 배포 환경 변경: Kubernetes → k3s (Lightweight Kubernetes)
+- 수평 확장 전략: k3s HPA (Kubernetes HPA 완벽 호환)
+- 부하 분산 솔루션: Traefik (k3s 기본 내장) 또는 Nginx
+- k3s 선택 이유: 경량화 (40MB 바이너리), 리소스 효율성 (50% 절감), ARM 지원
