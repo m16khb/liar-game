@@ -19,21 +19,33 @@ export default function GamePlayPage() {
     // 지금은 임시로 roomCode를 roomId로 사용
     console.log('[GamePlayPage] roomCode:', roomCode)
     console.log('[GamePlayPage] user:', user)
+    console.log('[GamePlayPage] user.backendUserId:', user?.backendUserId)
+    console.log('[GamePlayPage] user.nickname:', user?.nickname)
 
     if (!roomCode) {
+      console.error('[GamePlayPage] roomCode 없음')
       setError('방 코드가 없습니다.')
       setIsLoading(false)
       return
     }
 
-    if (!user?.backendUserId) {
+    if (!user) {
+      console.error('[GamePlayPage] user 없음, 로그인 필요')
       setError('로그인이 필요합니다.')
+      setIsLoading(false)
+      return
+    }
+
+    if (!user.backendUserId) {
+      console.error('[GamePlayPage] backendUserId 없음:', user)
+      setError('사용자 정보를 불러올 수 없습니다. 다시 로그인해주세요.')
       setIsLoading(false)
       return
     }
 
     // 임시: roomId를 1로 설정 (실제로는 API 호출 필요)
     // TODO: API 호출하여 roomCode로 room 정보 가져오기
+    console.log('[GamePlayPage] roomId 설정: 1 (임시)')
     setRoomId(1)
     setIsLoading(false)
   }, [roomCode, user])
@@ -57,7 +69,7 @@ export default function GamePlayPage() {
     )
   }
 
-  if (!roomId || !user?.backendUserId || !user?.nickname) {
+  if (!roomId || !user?.backendUserId) {
     return (
       <ErrorPage
         message="게임 정보를 불러올 수 없습니다."
@@ -67,11 +79,15 @@ export default function GamePlayPage() {
     )
   }
 
+  // nickname이 없으면 email 사용
+  const displayName = user?.nickname || user?.email || 'Guest'
+  console.log('[GamePlayPage] displayName:', displayName)
+
   return (
     <GamePlay
       roomId={roomId}
       userId={user.backendUserId}
-      userNickname={user.nickname}
+      userNickname={displayName}
       onGameEnd={handleGameEnd}
     />
   )
