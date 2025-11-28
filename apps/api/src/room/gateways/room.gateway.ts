@@ -21,6 +21,13 @@ import { RoomStatus } from '../entities/room.entity';
 import { SupabaseJwtStrategy, SupabaseJwtPayload } from '../../auth/strategies/supabase-jwt.strategy';
 import { RoleAssignmentService } from '../../game/services/role-assignment.service';
 import { KeywordSelectionService } from '../../game/services/keyword-selection.service';
+import { TurnManagerService } from '../../game/services/turn-manager.service';
+import { VotingService } from '../../game/services/voting.service';
+import { ResultCalculatorService } from '../../game/services/result-calculator.service';
+import { ScoreUpdateService } from '../../game/services/score-update.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Speech } from '../../game/entities/speech.entity';
 
 interface AuthenticatedSocket extends Socket {
   userId?: number;
@@ -54,6 +61,12 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private readonly configService: ConfigService,
     private readonly roleAssignmentService: RoleAssignmentService,
     private readonly keywordSelectionService: KeywordSelectionService,
+    private readonly turnManagerService: TurnManagerService,
+    private readonly votingService: VotingService,
+    private readonly resultCalculatorService: ResultCalculatorService,
+    private readonly scoreUpdateService: ScoreUpdateService,
+    @InjectRepository(Speech)
+    private readonly speechRepository: Repository<Speech>,
   ) {
     this.supabaseJwtStrategy = new SupabaseJwtStrategy(this.configService);
   }
@@ -704,16 +717,34 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       this.logger.log(`Roles assigned for room ${player.room.code}: ${playerIds.length} players`);
 
       // 2. 키워드 선택
-      const keyword = await this.keywordSelectionService.selectRandomKeyword(room.difficulty);
+      const difficultyMap: Record<string, 'EASY' | 'NORMAL' | 'HARD'> = {
+        'easy': 'EASY',
+        'normal': 'NORMAL',
+        'hard': 'HARD',
+      };
+      const keyword = await this.keywordSelectionService.selectRandomKeyword(
+        difficultyMap[room.difficulty] || 'NORMAL'
+      );
       this.logger.log(`Keyword selected for room ${player.room.code}: ${keyword.category}`);
 
-      // 3. 방에 있는 모든 사람에게 게임 시작 알림
+      // 3. 턴 매니저 생성 (토론 단계용)
+      const turnManager = this.turnManagerService.createTurnManager(
+        player.roomId,
+        playerIds,
+        30, // 각 턴당 30초
+      );
+      this.logger.log(`Turn manager created for room ${player.room.code}: ${turnManager.turnOrder.length} players`);
+
+      // 4. 방에 있는 모든 사람에게 게임 시작 알림
       this.server.to(player.room.code).emit('game-started', {
         room,
         players: updatedPlayers,
+        turnOrder: turnManager.turnOrder,
+        currentPlayer: turnManager.getCurrentPlayer(),
+        turnDuration: turnManager.turnDuration,
       });
 
-      // 4. 각 플레이어에게 역할 및 키워드 정보 전송
+      // 5. 각 플레이어에게 역할 및 키워드 정보 전송
       for (const p of updatedPlayers) {
         const role = roles.get(p.userId);
         if (!role) continue;
@@ -736,6 +767,225 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     } catch (error) {
       this.logger.error(`Failed to start game: ${error instanceof Error ? error.message : error}`);
       client.emit('error', { message: '게임 시작에 실패했습니다.' });
+    }
+  }
+
+  @SubscribeMessage('submit-speech')
+  async handleSubmitSpeech(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { content: string },
+  ) {
+    this.logger.log(`User ${client.userId} is attempting to submit speech`);
+    try {
+      const userId = client.userId;
+
+      if (!userId) {
+        client.emit('error', { message: '인증이 필요합니다.' });
+        return;
+      }
+
+      const player = await this.playerService.findActivePlayer(userId);
+
+      if (!player) {
+        client.emit('error', { message: '방에 참여하지 않았습니다.' });
+        return;
+      }
+
+      if (player.room.status !== RoomStatus.PLAYING) {
+        client.emit('error', { message: '게임이 진행 중이 아닙니다.' });
+        return;
+      }
+
+      // 턴 매니저 조회
+      const turnManager = this.turnManagerService.getTurnManager(player.roomId);
+      if (!turnManager) {
+        client.emit('error', { message: '턴 정보를 찾을 수 없습니다.' });
+        return;
+      }
+
+      // 현재 턴인지 확인
+      const currentPlayer = turnManager.getCurrentPlayer();
+      if (currentPlayer !== userId) {
+        client.emit('error', { message: '현재 턴이 아닙니다.' });
+        return;
+      }
+
+      // 발언 저장
+      const speech = this.speechRepository.create({
+        roomId: player.roomId,
+        userId,
+        content: data.content,
+        turnNumber: turnManager.currentTurnIndex,
+      });
+      await this.speechRepository.save(speech);
+
+      this.logger.log(`Speech saved: user ${userId}, turn ${turnManager.currentTurnIndex}`);
+
+      // 방에 있는 모든 사람에게 발언 알림
+      this.server.to(player.room.code).emit('speech-submitted', {
+        userId,
+        content: data.content,
+        turnNumber: turnManager.currentTurnIndex,
+      });
+
+      // 다음 턴으로 전환
+      turnManager.nextTurn();
+      const nextPlayer = turnManager.getCurrentPlayer();
+
+      // 턴 변경 알림
+      this.server.to(player.room.code).emit('turn-changed', {
+        currentPlayer: nextPlayer,
+        turnNumber: turnManager.currentTurnIndex,
+        remainingTime: turnManager.getRemainingTime(),
+      });
+
+      this.logger.log(`Turn changed to user ${nextPlayer} in room ${player.room.code}`);
+    } catch (error) {
+      this.logger.error(`Failed to submit speech: ${error instanceof Error ? error.message : error}`);
+      client.emit('error', { message: '발언 제출에 실패했습니다.' });
+    }
+  }
+
+  @SubscribeMessage('submit-vote')
+  async handleSubmitVote(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { targetUserId: number },
+  ) {
+    this.logger.log(`User ${client.userId} is attempting to vote for user ${data.targetUserId}`);
+    try {
+      const userId = client.userId;
+
+      if (!userId) {
+        client.emit('error', { message: '인증이 필요합니다.' });
+        return;
+      }
+
+      const player = await this.playerService.findActivePlayer(userId);
+
+      if (!player) {
+        client.emit('error', { message: '방에 참여하지 않았습니다.' });
+        return;
+      }
+
+      if (player.room.status !== RoomStatus.PLAYING) {
+        client.emit('error', { message: '게임이 진행 중이 아닙니다.' });
+        return;
+      }
+
+      // 투표 제출
+      await this.votingService.submitVote(player.roomId, userId, data.targetUserId);
+
+      this.logger.log(`Vote submitted: voter ${userId}, target ${data.targetUserId}`);
+
+      // 투표 제출 알림 (투표 대상은 숨김)
+      this.server.to(player.room.code).emit('vote-submitted', {
+        voterId: userId,
+      });
+
+      // 모든 플레이어가 투표했는지 확인
+      const players = await this.playerService.getPlayers(player.roomId);
+      const votedCount = await this.votingService.getVotedCount(player.roomId);
+
+      this.logger.log(`Vote progress: ${votedCount}/${players.length}`);
+
+      if (votedCount >= players.length) {
+        // 모든 플레이어가 투표 완료
+        this.logger.log(`All players voted in room ${player.room.code}. Calculating results...`);
+
+        // 결과 계산
+        await this.handleGameEnd(player.roomId);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to submit vote: ${error instanceof Error ? error.message : error}`);
+      client.emit('error', { message: '투표 제출에 실패했습니다.' });
+    }
+  }
+
+  /**
+   * 게임 종료 처리
+   */
+  private async handleGameEnd(roomId: number) {
+    try {
+      const room = await this.roomService.findById(roomId);
+      if (!room) {
+        this.logger.warn(`Room not found: ${roomId}`);
+        return;
+      }
+
+      const players = await this.playerService.getPlayers(roomId);
+
+      // 라이어 찾기 (실제 게임에서는 역할이 캐시에 저장되어 있어야 함)
+      // 임시로 역할 정보를 가져오는 로직 필요
+      // 여기서는 투표 결과만 계산
+      const liarId = 0; // TODO: 실제 라이어 ID 가져오기 (GameCacheService 사용)
+
+      // 플레이어 닉네임 맵 생성
+      const nicknameMap = new Map<number, string>();
+      players.forEach(p => {
+        nicknameMap.set(p.userId, p.user?.email || `Player ${p.userId}`);
+      });
+
+      // 결과 계산
+      const result = await this.resultCalculatorService.calculateResult(
+        roomId,
+        liarId,
+        nicknameMap,
+      );
+
+      this.logger.log(`Game result: winner=${result.winner}, liar=${result.liarId}`);
+
+      // 점수 업데이트 (간단한 버전)
+      const scoreUpdates = players.map(p => ({
+        userId: p.userId,
+        nickname: nicknameMap.get(p.userId) || `Player ${p.userId}`,
+        previousScore: 0, // TODO: 실제 점수 가져오기
+        scoreChange: p.userId === result.liarId
+          ? (result.winner === 'LIAR' ? 10 : -5)
+          : (result.winner === 'CIVILIAN' ? 5 : 0),
+        newScore: 0, // TODO: 계산된 점수
+        reason: result.winner === 'CIVILIAN' ? 'CIVILIAN_WIN' : 'LIAR_WIN',
+      }));
+
+      // await this.scoreUpdateService.bulkUpdateScores(scoreUpdates);
+
+      // 게임 종료 이벤트 방송
+      this.server.to(room.code).emit('game-ended', {
+        result,
+        scoreUpdates,
+      });
+
+      // 10초 후 방 대기실로 복귀
+      setTimeout(async () => {
+        try {
+          // 방 상태를 WAITING으로 변경
+          await this.roomService.updateStatus(roomId, RoomStatus.WAITING);
+
+          // 모든 플레이어 상태를 NOT_READY로 변경
+          await this.playerService.updateAllPlayersStatus(roomId, PlayerStatus.NOT_READY);
+
+          // 투표 데이터 삭제
+          await this.votingService.deleteVotes(roomId);
+
+          // 턴 매니저 삭제
+          this.turnManagerService.deleteTurnManager(roomId);
+
+          // 업데이트된 플레이어 정보 조회
+          const updatedPlayers = await this.playerService.getPlayers(roomId);
+          const updatedRoom = await this.roomService.findById(roomId);
+
+          // 방 업데이트 알림
+          this.server.to(room.code).emit('room-updated', {
+            room: updatedRoom,
+            players: updatedPlayers,
+          });
+
+          this.logger.log(`Room ${room.code} returned to waiting state`);
+        } catch (error) {
+          this.logger.error(`Failed to return to waiting state: ${error instanceof Error ? error.message : error}`);
+        }
+      }, 10000); // 10초
+    } catch (error) {
+      this.logger.error(`Failed to handle game end: ${error instanceof Error ? error.message : error}`);
     }
   }
 }

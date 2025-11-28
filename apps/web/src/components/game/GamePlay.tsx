@@ -142,11 +142,98 @@ export function GamePlay({
    * 발언 이벤트 처리
    */
   useEffect(() => {
-    // TODO: WebSocket 이벤트 리스너 설정
-    // socket.on('speech-submitted', (event: SpeechSubmittedEvent) => {
-    //   addSpeech(event.userId, event.nickname, event.content);
-    // });
-  }, [addSpeech]);
+    if (!socket) return;
+
+    // speech-submitted: 발언이 제출되었을 때
+    const handleSpeechSubmitted = (data: { userId: number; nickname: string; content: string }) => {
+      console.log('[GamePlay] speech-submitted 이벤트 수신:', data);
+      addSpeech(data.userId, data.nickname, data.content);
+    };
+
+    socket.on('speech-submitted', handleSpeechSubmitted);
+
+    return () => {
+      socket.off('speech-submitted', handleSpeechSubmitted);
+    };
+  }, [socket, addSpeech]);
+
+  /**
+   * 턴 변경 이벤트 처리
+   */
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleTurnChanged = (data: { currentPlayer: number; turnOrder: number[] }) => {
+      console.log('[GamePlay] turn-changed 이벤트 수신:', data);
+      updateGameState({
+        currentTurn: data.currentPlayer,
+        turnOrder: data.turnOrder,
+      });
+    };
+
+    socket.on('turn-changed', handleTurnChanged);
+
+    return () => {
+      socket.off('turn-changed', handleTurnChanged);
+    };
+  }, [socket, updateGameState]);
+
+  /**
+   * 투표 제출 이벤트 처리
+   */
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleVoteSubmitted = (data: { voterId: number; totalVotes: number; requiredVotes: number }) => {
+      console.log('[GamePlay] vote-submitted 이벤트 수신:', data);
+      // 투표 진행률 업데이트
+      updateGameState({
+        votes: Array.from({ length: data.totalVotes }, (_, i) => ({
+          voterId: i + 1,
+          voteStatus: 'VOTED' as const,
+        })),
+      });
+    };
+
+    socket.on('vote-submitted', handleVoteSubmitted);
+
+    return () => {
+      socket.off('vote-submitted', handleVoteSubmitted);
+    };
+  }, [socket, updateGameState]);
+
+  /**
+   * 게임 종료 이벤트 처리
+   */
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleGameEnded = (data: {
+      winner: 'LIAR' | 'CIVILIAN';
+      mostVotedPlayerId: number;
+      roles: { userId: number; nickname: string; role: string }[];
+      voteResults: { userId: number; nickname: string; votes: number }[];
+    }) => {
+      console.log('[GamePlay] game-ended 이벤트 수신:', data);
+
+      updateGameState({
+        phase: 'RESULT',
+      });
+
+      // 10초 후 대기실로 복귀
+      setTimeout(() => {
+        if (onGameEnd) {
+          onGameEnd();
+        }
+      }, 10000);
+    };
+
+    socket.on('game-ended', handleGameEnded);
+
+    return () => {
+      socket.off('game-ended', handleGameEnded);
+    };
+  }, [socket, updateGameState, onGameEnd]);
 
   if (isLoading) {
     console.log('[GamePlay] 로딩 중 화면 표시')
@@ -159,6 +246,28 @@ export function GamePlay({
   }
 
   console.log('[GamePlay] 메인 렌더링 시작')
+
+  // 발언 제출 핸들러
+  const handleSubmitSpeech = (content: string) => {
+    if (!socket) {
+      console.error('[GamePlay] socket이 없습니다');
+      return;
+    }
+
+    console.log('[GamePlay] 발언 제출:', content);
+    socket.emit('submit-speech', { content });
+  };
+
+  // 투표 제출 핸들러
+  const handleSubmitVote = (targetUserId: number) => {
+    if (!socket) {
+      console.error('[GamePlay] socket이 없습니다');
+      return;
+    }
+
+    console.log('[GamePlay] 투표 제출:', targetUserId);
+    socket.emit('submit-vote', { targetUserId });
+  };
 
   return (
     <div className="w-full h-screen bg-gray-900 text-white flex flex-col">
@@ -208,7 +317,7 @@ export function GamePlay({
             progress={progress}
             formatTime={formatTime}
             isCurrentTurn={isCurrentTurn(userId)}
-            onSpeech={(content) => addSpeech(userId, userNickname, content)}
+            onSpeech={handleSubmitSpeech}
           />
         )}
 
@@ -219,6 +328,7 @@ export function GamePlay({
             remainingTime={remainingTime}
             progress={progress}
             formatTime={formatTime}
+            onVote={handleSubmitVote}
           />
         )}
 

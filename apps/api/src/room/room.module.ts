@@ -9,10 +9,11 @@ import { AuthModule } from '../auth/auth.module';
 import { UserModule } from '@/user/user.module';
 import { PlayerModule } from '../player/player.module';
 import { GameModule } from '../game/game.module';
+import { Speech } from '../game/entities/speech.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RoomEntity]),
+    TypeOrmModule.forFeature([RoomEntity, Speech]),
     ConfigModule,
     AuthModule,
     UserModule,
