@@ -21,19 +21,22 @@ export default function ActionButtons({
   onStartGame
 }: ActionButtonsProps) {
   // 게임 시작 가능 여부 계산
+  const nonHostPlayers = players.filter(p => !p.isHost)
+  const allNonHostReady = nonHostPlayers.length > 0 ? nonHostPlayers.every(p => p.status === 'ready') : true
   const hostCount = players.filter(p => p.isHost).length
   const readyNonHostCount = players.filter(p => p.status === 'ready' && !p.isHost).length
   const totalReady = hostCount + readyNonHostCount
 
-  const canStartGame = room.currentPlayers >= room.minPlayers && totalReady >= room.minPlayers
+  // 백엔드 조건과 일치: 최소 인원 충족 + 모든 비방장 플레이어 준비 완료
+  const canStartGame = room.currentPlayers >= room.minPlayers && allNonHostReady
 
   // 시작 버튼 텍스트
   const getStartButtonText = () => {
     if (room.currentPlayers < room.minPlayers) {
       return `NEED ${room.minPlayers} PLAYERS`
     }
-    if (!canStartGame) {
-      return 'WAITING FOR READY...'
+    if (!allNonHostReady) {
+      return 'ALL MUST BE READY'
     }
     return 'START GAME!'
   }
