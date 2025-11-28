@@ -41,37 +41,35 @@ export function GamePlay({
    */
   useEffect(() => {
     console.log('[GamePlay] useEffect 실행 - roomId:', roomId)
-    // TODO: WebSocket 이벤트 리스너 설정
-    // socket.on('game-started', (event: GameStartedEvent) => {
-    //   updateGameState({
-    //     phase: 'DISCUSSION',
-    //     currentTurn: event.currentTurn,
-    //     turnOrder: event.turnOrder,
-    //     players: event.players.map(p => ({
-    //       id: p.id,
-    //       nickname: p.nickname,
-    //       status: 'ACTIVE' as const
-    //     }))
-    //   });
-    // });
 
-    console.log('[GamePlay] 로딩 완료로 설정 (WebSocket TODO)')
+    // TODO: WebSocket 이벤트 리스너 설정
+    // 임시: 테스트용 초기 gameState 설정
+    console.log('[GamePlay] 임시 gameState 초기화')
+    updateGameState({
+      phase: 'DISCUSSION',
+      currentTurn: userId,
+      turnOrder: [userId],
+      players: [{
+        id: userId,
+        nickname: userNickname,
+        status: 'ACTIVE' as const
+      }],
+      speeches: []
+    });
+
+    console.log('[GamePlay] 로딩 완료로 설정')
     setIsLoading(false);
-  }, [roomId]);
+  }, [roomId, userId, userNickname, updateGameState]);
 
   /**
    * 역할 할당 이벤트 처리
    */
   useEffect(() => {
     // TODO: WebSocket 이벤트 리스너 설정
-    // socket.on('role-assigned', (event: RoleAssignedEvent) => {
-    //   setUserRole(event.role);
-    //   if (event.role === 'CIVILIAN') {
-    //     setKeyword({ word: event.keyword!, category: event.category! });
-    //   } else {
-    //     setKeyword({ word: '???', category: event.category! });
-    //   }
-    // });
+    // 임시: 테스트용 역할 설정
+    console.log('[GamePlay] 임시 역할 설정: CIVILIAN')
+    setUserRole('CIVILIAN');
+    setKeyword({ word: '사과', category: '과일' });
   }, [userId]);
 
   /**

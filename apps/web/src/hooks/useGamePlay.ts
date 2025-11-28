@@ -41,7 +41,17 @@ export function useGamePlay() {
    */
   const updateGameState = useCallback((newState: Partial<GamePlayState>) => {
     setGameState((prev) => {
-      if (!prev) return prev;
+      // prev가 null이면 newState를 GamePlayState로 변환하여 설정
+      if (!prev) {
+        return {
+          phase: newState.phase || 'DISCUSSION',
+          currentTurn: newState.currentTurn || null,
+          turnOrder: newState.turnOrder || [],
+          players: newState.players || [],
+          speeches: newState.speeches || [],
+          ...newState
+        } as GamePlayState;
+      }
       return { ...prev, ...newState };
     });
   }, []);
