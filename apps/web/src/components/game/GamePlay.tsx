@@ -237,12 +237,33 @@ export function GamePlay({
 
   if (isLoading) {
     console.log('[GamePlay] 로딩 중 화면 표시')
-    return <div className="flex justify-center items-center h-screen bg-gray-900 text-white">게임 로딩 중...</div>;
+    return (
+      <div className="flex flex-col justify-center items-center h-screen bg-arcade-black text-white">
+        <div className="text-center">
+          <div className="font-pixel text-pixel-base md:text-pixel-lg text-arcade-cyan animate-blink mb-6">
+            ▼ LOADING GAME ▼
+          </div>
+          <div className="w-32 h-32 mx-auto border-4 border-arcade-cyan relative overflow-hidden">
+            <div className="absolute inset-0 bg-arcade-cyan/20 animate-float" />
+          </div>
+          <p className="font-retro text-retro-lg text-arcade-yellow mt-6">게임 로딩 중...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!gameState) {
     console.log('[GamePlay] gameState 없음 - 에러 화면 표시')
-    return <div className="flex justify-center items-center h-screen bg-gray-900 text-white">게임 상태 로드 실패</div>;
+    return (
+      <div className="flex flex-col justify-center items-center h-screen bg-arcade-black text-white">
+        <div className="text-center">
+          <div className="font-pixel text-pixel-base md:text-pixel-lg text-arcade-pink animate-blink mb-4">
+            ✗ ERROR ✗
+          </div>
+          <p className="font-retro text-retro-lg text-arcade-yellow">게임 상태 로드 실패</p>
+        </div>
+      </div>
+    );
   }
 
   console.log('[GamePlay] 메인 렌더링 시작')
@@ -270,33 +291,52 @@ export function GamePlay({
   };
 
   return (
-    <div className="w-full h-screen bg-gray-900 text-white flex flex-col">
+    <div className="w-full h-screen bg-arcade-black text-white flex flex-col">
+      {/* CRT Scanline Effect */}
+      <div
+        className="fixed inset-0 pointer-events-none z-50 opacity-10"
+        style={{
+          background:
+            'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)',
+        }}
+      />
+
+      {/* Grid Background */}
+      <div
+        className="fixed inset-0 pointer-events-none opacity-5"
+        style={{
+          backgroundImage:
+            'linear-gradient(#05d9e8 1px, transparent 1px), linear-gradient(90deg, #05d9e8 1px, transparent 1px)',
+          backgroundSize: '50px 50px',
+        }}
+      />
+
       {/* 헤더: 게임 정보 */}
-      <div className="bg-gray-800 p-4 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+      <div className="bg-arcade-dark border-b-4 border-arcade-cyan p-4 md:p-6 relative z-10 shadow-[0_0_30px_rgba(5,217,232,0.3)]">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold">게임 진행 중</h1>
-              <p className="text-sm text-gray-400">방 #{roomId}</p>
+              <h1 className="font-pixel text-pixel-base md:text-pixel-lg text-arcade-cyan">GAME IN PROGRESS</h1>
+              <p className="font-retro text-retro-sm text-arcade-yellow mt-1">방 코드: {roomCode}</p>
             </div>
           </div>
 
           {/* 역할 및 키워드 표시 */}
           {userRole && keyword && (
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
               <div>
-                <p className="text-xs text-gray-400">당신의 역할</p>
-                <p className={`text-lg font-bold ${userRole === 'LIAR' ? 'text-red-500' : 'text-blue-500'}`}>
+                <p className="font-pixel text-pixel-xs text-arcade-cyan mb-1">YOUR ROLE</p>
+                <p className={`font-retro text-retro-lg ${userRole === 'LIAR' ? 'text-arcade-pink' : 'text-arcade-green'}`}>
                   {userRole === 'LIAR' ? '라이어' : '시민'}
                 </p>
               </div>
-              <div className="border-l border-gray-600 pl-6">
-                <p className="text-xs text-gray-400">카테고리</p>
-                <p className="text-lg font-bold">{keyword.category}</p>
+              <div className="border-l-0 sm:border-l-2 border-arcade-purple pl-0 sm:pl-6">
+                <p className="font-pixel text-pixel-xs text-arcade-cyan mb-1">CATEGORY</p>
+                <p className="font-retro text-retro-lg text-white">{keyword.category}</p>
                 {userRole === 'CIVILIAN' && (
                   <>
-                    <p className="text-xs text-gray-400 mt-2">키워드</p>
-                    <p className="text-lg font-bold text-green-500">{keyword.word}</p>
+                    <p className="font-pixel text-pixel-xs text-arcade-yellow mt-2 mb-1">KEYWORD</p>
+                    <p className="font-retro text-retro-lg text-arcade-green">{keyword.word}</p>
                   </>
                 )}
               </div>
@@ -306,7 +346,7 @@ export function GamePlay({
       </div>
 
       {/* 메인 콘텐츠 */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto relative z-10">
         {gameState.phase === 'DISCUSSION' && (
           <DiscussionPhase
             gameState={gameState}

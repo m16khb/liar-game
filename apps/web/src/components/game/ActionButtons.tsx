@@ -46,13 +46,13 @@ export default function ActionButtons({
   }
 
   return (
-    <div className="bg-arcade-dark border-4 border-arcade-pink p-8 shadow-[0_0_30px_rgba(255,42,109,0.3)]">
-      <div className="flex gap-6 justify-center flex-wrap">
+    <div className="bg-arcade-dark border-4 border-arcade-pink p-4 md:p-8 shadow-[0_0_30px_rgba(255,42,109,0.3)]">
+      <div className="flex gap-4 md:gap-6 justify-center flex-wrap">
         {/* 일반 플레이어: 준비 버튼 */}
         {!isHost && (
           <button
             onClick={onToggleReady}
-            className={`font-pixel text-pixel-sm px-8 py-4 border-4 border-white transition-all cursor-pointer
+            className={`font-pixel text-pixel-xs md:text-pixel-sm px-6 py-3 md:px-8 md:py-4 border-4 border-white transition-all cursor-pointer w-full sm:w-auto
               ${isReady
                 ? 'bg-arcade-orange text-white hover:translate-y-[-4px] hover:shadow-[0_8px_30px_rgba(255,107,53,0.5)]'
                 : 'bg-arcade-cyan text-arcade-black hover:translate-y-[-4px] hover:shadow-[0_8px_30px_rgba(5,217,232,0.5)]'
@@ -67,7 +67,7 @@ export default function ActionButtons({
           <button
             onClick={onStartGame}
             disabled={!canStartGame}
-            className={`font-pixel text-pixel-sm px-10 py-5 border-4 border-white transition-all
+            className={`font-pixel text-pixel-xs md:text-pixel-sm px-8 py-4 md:px-10 md:py-5 border-4 border-white transition-all w-full sm:w-auto
               ${canStartGame
                 ? 'bg-arcade-green text-arcade-black cursor-pointer hover:translate-y-[-4px] hover:shadow-[0_8px_40px_rgba(0,255,65,0.6)]'
                 : 'bg-arcade-dark text-arcade-cyan/50 cursor-not-allowed border-arcade-cyan/30'
@@ -79,8 +79,8 @@ export default function ActionButtons({
       </div>
 
       {/* 상태 안내 */}
-      <div className="mt-6 text-center">
-        <p className="font-retro text-retro-base text-arcade-cyan">
+      <div className="mt-4 md:mt-6 text-center">
+        <p className="font-retro text-retro-sm md:text-retro-base text-arcade-cyan">
           {isHost
             ? `준비 완료: ${totalReady} / ${room.minPlayers} (최소)`
             : isReady

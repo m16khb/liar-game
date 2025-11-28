@@ -19,25 +19,25 @@ export default function RoomHeader({ room, isLeaving, onLeave }: RoomHeaderProps
   const difficulty = difficultyConfig[room.difficulty] || difficultyConfig.normal
 
   return (
-    <div className="bg-arcade-dark border-4 border-arcade-cyan p-6 mb-6 relative shadow-arcade-card">
+    <div className="bg-arcade-dark border-4 border-arcade-cyan p-4 md:p-6 mb-6 relative shadow-arcade-card">
       {/* 장식 */}
       <span className="absolute -top-3 left-5 text-xl text-arcade-yellow">◆</span>
       <span className="absolute -top-3 right-5 text-xl text-arcade-yellow">◆</span>
 
       {/* 상단: 상태 + 나가기 버튼 */}
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-4">
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <div className="flex items-center gap-2 md:gap-4 flex-wrap">
           <span className="font-pixel text-pixel-xs text-arcade-green animate-blink">
             ● {room.status === 'waiting' ? 'WAITING' : 'PLAYING'}
           </span>
-          <span className="font-retro text-retro-base text-arcade-cyan">
+          <span className="font-retro text-retro-sm md:text-retro-base text-arcade-cyan">
             ROOM: {room.code}
           </span>
         </div>
         <button
           onClick={onLeave}
           disabled={isLeaving}
-          className={`font-pixel text-pixel-xs px-4 py-2 border-3 border-arcade-pink text-arcade-pink transition-all
+          className={`font-pixel text-pixel-xs px-3 py-2 md:px-4 border-3 border-arcade-pink text-arcade-pink transition-all
             ${isLeaving
               ? 'opacity-50 cursor-not-allowed'
               : 'hover:bg-arcade-pink hover:text-arcade-black hover:shadow-neon-pink cursor-pointer'
@@ -48,13 +48,13 @@ export default function RoomHeader({ room, isLeaving, onLeave }: RoomHeaderProps
       </div>
 
       {/* 방 제목 */}
-      <h1 className="font-pixel text-pixel-xl text-arcade-yellow mb-4 glitch-hover"
-          style={{ textShadow: '3px 3px 0 #ff2a6d, 6px 6px 0 #05d9e8' }}>
+      <h1 className="font-pixel text-pixel-base md:text-pixel-xl text-arcade-yellow mb-4 glitch-hover break-words"
+          style={{ textShadow: '2px 2px 0 #ff2a6d, 4px 4px 0 #05d9e8' }}>
         {room.title.toUpperCase()}
       </h1>
 
       {/* 방 정보 */}
-      <div className="flex gap-6 flex-wrap font-retro text-retro-base">
+      <div className="flex gap-3 md:gap-6 flex-wrap font-retro text-retro-sm md:text-retro-base">
         <div>
           <span className="text-arcade-cyan/70">DIFFICULTY: </span>
           <span className={`font-pixel text-pixel-xs ${difficulty.color}`}>

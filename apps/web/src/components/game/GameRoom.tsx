@@ -108,7 +108,7 @@ export default function GameRoom() {
              backgroundSize: '50px 50px'
            }} />
 
-      <div className="max-w-3xl mx-auto px-4 py-8 relative z-10">
+      <div className="max-w-3xl mx-auto px-4 py-6 md:py-8 relative z-10">
         {/* 방 정보 헤더 */}
         <RoomHeader
           room={room}
@@ -142,7 +142,7 @@ export default function GameRoom() {
       />
 
       {/* Bottom prompt */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 font-pixel text-[10px] text-arcade-yellow text-center animate-blink">
+      <div className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 font-pixel text-[8px] md:text-[10px] text-arcade-yellow text-center animate-blink z-50">
         LIAR GAME<br />▼ ▼ ▼
       </div>
     </div>

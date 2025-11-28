@@ -28,7 +28,7 @@ export default function PlayerList({ players, currentUserId, onContextMenu }: Pl
       </div>
 
       {/* 플레이어 그리드 */}
-      <div className="grid gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
         {sortedPlayers.map((player, index) => {
           const isMe = player.userId === currentUserId
           const emoji = playerEmojis[index % playerEmojis.length]
@@ -36,30 +36,30 @@ export default function PlayerList({ players, currentUserId, onContextMenu }: Pl
           return (
             <div
               key={player.userId}
-              className={`flex items-center gap-4 p-4 transition-all cursor-pointer relative
+              className={`flex items-center gap-2 sm:gap-4 p-3 sm:p-4 transition-all cursor-pointer relative
                 ${isMe
                   ? 'bg-arcade-dark border-3 border-arcade-pink'
-                  : 'bg-arcade-dark border-3 border-arcade-blue hover:border-arcade-cyan hover:translate-x-2'
+                  : 'bg-arcade-dark border-3 border-arcade-blue hover:border-arcade-cyan hover:translate-x-1 sm:hover:translate-x-2'
                 }`}
               onContextMenu={(e) => onContextMenu(e, player)}
             >
               {/* 좌측 악센트 바 */}
-              <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${
+              <div className={`absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 ${
                 player.isHost ? 'bg-arcade-yellow' : isMe ? 'bg-arcade-pink' : 'bg-arcade-cyan'
               }`} />
 
               {/* 순위 */}
-              <span className="font-pixel text-pixel-sm text-arcade-yellow w-8">
+              <span className="font-pixel text-pixel-xs sm:text-pixel-sm text-arcade-yellow w-6 sm:w-8 ml-1">
                 {index + 1}P
               </span>
 
               {/* 아바타 */}
-              <div className={`w-12 h-12 flex items-center justify-center text-2xl border-2 relative
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xl sm:text-2xl border-2 relative flex-shrink-0
                 ${isMe ? 'border-arcade-pink bg-arcade-purple' : 'border-arcade-cyan bg-arcade-purple'}`}>
                 {emoji}
                 {/* 준비 완료 체크 */}
                 {player.status === 'ready' && (
-                  <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-arcade-green text-arcade-black text-xs flex items-center justify-center font-bold">
+                  <span className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 bg-arcade-green text-arcade-black text-xs flex items-center justify-center font-bold">
                     ✓
                   </span>
                 )}
@@ -67,22 +67,22 @@ export default function PlayerList({ players, currentUserId, onContextMenu }: Pl
 
               {/* 플레이어 정보 */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-retro text-retro-lg text-white truncate">
+                <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                  <span className="font-retro text-retro-base sm:text-retro-lg text-white truncate">
                     {player.nickname || `PLAYER_${player.userId}`}
                   </span>
                   {player.isHost && (
-                    <span className="font-pixel text-[6px] px-2 py-1 bg-arcade-yellow text-arcade-black animate-pulse-badge">
+                    <span className="font-pixel text-[6px] px-1.5 py-0.5 sm:px-2 sm:py-1 bg-arcade-yellow text-arcade-black animate-pulse-badge">
                       HOST
                     </span>
                   )}
                   {isMe && (
-                    <span className="font-pixel text-[6px] px-2 py-1 bg-arcade-pink text-white">
+                    <span className="font-pixel text-[6px] px-1.5 py-0.5 sm:px-2 sm:py-1 bg-arcade-pink text-white">
                       YOU
                     </span>
                   )}
                 </div>
-                <div className={`font-retro text-retro-sm ${
+                <div className={`font-retro text-retro-xs sm:text-retro-sm ${
                   player.status === 'ready' ? 'text-arcade-green animate-blink' : 'text-arcade-cyan/50'
                 }`}>
                   {player.status === 'ready' ? 'READY!' : 'WAITING...'}
@@ -90,7 +90,7 @@ export default function PlayerList({ players, currentUserId, onContextMenu }: Pl
               </div>
 
               {/* 점수 (데코레이션) */}
-              <div className="font-pixel text-pixel-xs text-arcade-orange text-right">
+              <div className="font-pixel text-[8px] sm:text-pixel-xs text-arcade-orange text-right hidden xs:block">
                 0 PTS
               </div>
             </div>
