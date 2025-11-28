@@ -19,6 +19,8 @@ import { JoinRoomDto } from '../dto/join-room.dto';
 import { PlayerStatus } from '../../player/entities/player.entity';
 import { RoomStatus } from '../entities/room.entity';
 import { SupabaseJwtStrategy, SupabaseJwtPayload } from '../../auth/strategies/supabase-jwt.strategy';
+import { RoleAssignmentService } from '../../game/services/role-assignment.service';
+import { KeywordSelectionService } from '../../game/services/keyword-selection.service';
 
 interface AuthenticatedSocket extends Socket {
   userId?: number;
@@ -50,6 +52,8 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private readonly roomService: RoomService,
     private readonly playerService: PlayerService,
     private readonly configService: ConfigService,
+    private readonly roleAssignmentService: RoleAssignmentService,
+    private readonly keywordSelectionService: KeywordSelectionService,
   ) {
     this.supabaseJwtStrategy = new SupabaseJwtStrategy(this.configService);
   }
@@ -691,11 +695,42 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       // 모든 플레이어 상태를 PLAYING으로 변경
       await this.playerService.updateAllPlayersStatus(player.roomId, PlayerStatus.PLAYING);
 
-      // 방에 있는 모든 사람에게 게임 시작 알림
+      // 플레이어 목록 조회
+      const updatedPlayers = await this.playerService.getPlayers(player.room.id);
+
+      // 1. 역할 배정
+      const playerIds = updatedPlayers.map(p => p.userId);
+      const roles = this.roleAssignmentService.assignRoles(playerIds, 1); // 라이어 1명
+      this.logger.log(`Roles assigned for room ${player.room.code}: ${playerIds.length} players`);
+
+      // 2. 키워드 선택
+      const keyword = await this.keywordSelectionService.selectRandomKeyword(room.difficulty);
+      this.logger.log(`Keyword selected for room ${player.room.code}: ${keyword.category}`);
+
+      // 3. 방에 있는 모든 사람에게 게임 시작 알림
       this.server.to(player.room.code).emit('game-started', {
         room,
-        players: await this.playerService.getPlayers(player.room.id),
+        players: updatedPlayers,
       });
+
+      // 4. 각 플레이어에게 역할 및 키워드 정보 전송
+      for (const p of updatedPlayers) {
+        const role = roles.get(p.userId);
+        if (!role) continue;
+
+        const playerSocket = Array.from(this.connectedClients.values()).find(
+          s => s.userId === p.userId
+        );
+
+        if (playerSocket) {
+          playerSocket.emit('role-assigned', {
+            role: role.type,
+            keyword: role.type === 'CIVILIAN' ? keyword.word : undefined,
+            category: keyword.category,
+          });
+          this.logger.log(`Role ${role.type} assigned to user ${p.userId}`);
+        }
+      }
 
       this.logger.log(`Game started in room: ${player.room.code}`);
     } catch (error) {

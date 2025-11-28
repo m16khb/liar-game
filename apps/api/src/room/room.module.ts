@@ -8,6 +8,7 @@ import { RoomEntity } from './entities/room.entity';
 import { AuthModule } from '../auth/auth.module';
 import { UserModule } from '@/user/user.module';
 import { PlayerModule } from '../player/player.module';
+import { GameModule } from '../game/game.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { PlayerModule } from '../player/player.module';
     ConfigModule,
     AuthModule,
     UserModule,
-    PlayerModule
+    PlayerModule,
+    GameModule,
   ],
   controllers: [RoomController],
   providers: [RoomService, RoomGateway],
