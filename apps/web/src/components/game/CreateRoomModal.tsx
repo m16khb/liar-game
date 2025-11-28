@@ -29,7 +29,7 @@ export default function CreateRoomModal({
 }: CreateRoomModalProps) {
   const [formData, setFormData] = useState<CreateRoomRequest>({
     title: '',
-    minPlayers: 4,
+    minPlayers: 2,
     maxPlayers: 8,
     difficulty: GameDifficulty.NORMAL,
     isPrivate: false,
@@ -137,7 +137,7 @@ export default function CreateRoomModal({
                   }}
                   className="w-full font-retro text-retro-base bg-arcade-dark text-white border-3 border-arcade-blue px-4 py-3 arcade-select focus:border-arcade-cyan"
                 >
-                  {[4, 5, 6, 7, 8].map(num => (
+                  {[2, 3, 4, 5, 6, 7, 8].map(num => (
                     <option key={num} value={num}>{num}</option>
                   ))}
                 </select>
