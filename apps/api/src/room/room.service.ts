@@ -6,6 +6,7 @@ import { RoomEntity, RoomStatus } from './entities/room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { RoomResponseDto } from './dto/room-response.dto';
 import { SanitizeUtil } from '@/common/utils/sanitize.util';
+import { PlayerService } from '../player/player.service';
 
 @Injectable()
 export class RoomService {
@@ -14,6 +15,7 @@ export class RoomService {
   constructor(
     @InjectRepository(RoomEntity)
     private readonly roomRepository: Repository<RoomEntity>,
+    private readonly playerService: PlayerService,
   ) {}
 
   /**
@@ -208,18 +210,24 @@ export class RoomService {
     // 방 조회
     const room = await this.findByCode(roomCode);
 
-    // 방 상태 확인
-    if (room.status !== RoomStatus.WAITING) {
+    // 이미 참가 중인 플레이어인지 확인
+    const existingPlayer = await this.playerService.findPlayer(room.id, userId);
+    const isRejoining = existingPlayer !== null;
+
+    this.logger.log(`[joinRoom] 참가 시도 - roomId: ${room.id}, userId: ${userId}, 재참가: ${isRejoining}`);
+
+    // 방 상태 확인 (재참가가 아닌 경우에만)
+    if (!isRejoining && room.status !== RoomStatus.WAITING) {
       throw new BadRequestException('이미 시작된 방에는 참가할 수 없습니다.');
     }
 
-    // 최대 인원 확인
-    if (room.currentPlayers >= room.maxPlayers) {
+    // 최대 인원 확인 (재참가가 아닌 경우에만)
+    if (!isRejoining && room.currentPlayers >= room.maxPlayers) {
       throw new BadRequestException('방이 가득 찼습니다.');
     }
 
-    // 비공개 방 비밀번호 확인
-    if (room.isPrivate) {
+    // 비공개 방 비밀번호 확인 (재참가가 아닌 경우에만)
+    if (!isRejoining && room.isPrivate) {
       if (!password) {
         throw new BadRequestException('비공개 방은 비밀번호가 필요합니다.');
       }
@@ -230,7 +238,13 @@ export class RoomService {
       }
     }
 
-    // 인원 수 증가
+    // 재참가인 경우 인원 수 증가 없이 방 정보만 반환
+    if (isRejoining) {
+      this.logger.log(`[joinRoom] 재참가 성공 - roomId: ${room.id}, userId: ${userId}`);
+      return room;
+    }
+
+    // 신규 참가인 경우 인원 수 증가
     const updatedRoom = await this.incrementPlayers(room.id);
 
     this.logger.log(`[joinRoom] 방 참가 성공 - roomId: ${room.id}, userId: ${userId}, 현재 인원: ${updatedRoom.currentPlayers}`);
