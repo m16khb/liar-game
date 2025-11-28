@@ -1,6 +1,9 @@
 import { UserEntity } from '@/user/entities';
 import { RoomEntity } from '@/room/entities/room.entity';
 import { PlayerEntity } from '@/player/entities/player.entity';
+import { Keyword } from '@/game/entities/keyword.entity';
+import { Speech } from '@/game/entities/speech.entity';
+import { Vote } from '@/game/entities/vote.entity';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
@@ -8,6 +11,9 @@ export const entities = [
   UserEntity,
   RoomEntity,
   PlayerEntity,
+  Keyword,
+  Speech,
+  Vote,
 ];
 
 export const databaseConfig = (configService: ConfigService): TypeOrmModuleOptions => ({

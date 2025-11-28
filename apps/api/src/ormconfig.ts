@@ -6,21 +6,8 @@ import * as path from 'path';
 const envPath = path.resolve(__dirname, '../../..', '.env');
 dotenv.config({ path: envPath });
 
-function getDBName(env: string | undefined): string {
-  console.log('🔍 [ormconfig] NODE_ENV:', env);
-  console.log('🔍 [ormconfig] process.env.NODE_ENV:', process.env.NODE_ENV);
-  console.log('🔍 [ormconfig] process.env.DB_NAME:', process.env.DB_NAME);
-
-  if (!env || env === 'local') {
-    console.log('✅ [ormconfig] Using candle_local');
-    return 'candle_local';
-  } else {
-    console.log(`⚠️ [ormconfig] Using candle_${env}`);
-    return `candle_${env}`;
-  }
-}
-
-const dbName = process.env.DB_NAME || getDBName(process.env.NODE_ENV);
+// DB_NAME 환경 변수 직접 사용 (기본값: liar_game_db)
+const dbName = process.env.DB_NAME || 'liar_game_db';
 console.log('🎯 [ormconfig] Final database name:', dbName);
 console.log('🎯 [ormconfig] Connection details:', {
   host: process.env.DB_HOST || 'localhost',
@@ -40,7 +27,7 @@ const AppDataSource = new DataSource({
   migrations: ['dist/migrations/*.js'],
   subscribers: ['dist/subscribers/*.js'],
   migrationsTableName: 'migrations',
-  synchronize: false,
+  synchronize: true,
   logging: process.env.NODE_ENV !== 'prod',
 });
 
