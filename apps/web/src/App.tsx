@@ -8,6 +8,7 @@ import OtpVerification from './components/auth/OtpVerification'
 import SetPasswordForm from './components/auth/SetPasswordForm'
 import RoomList from './components/game/RoomList'
 import GameRoom from './components/game/GameRoom'
+import GamePlayPage from './components/game/GamePlayPage'
 import ErrorPage from './components/common/ErrorPage'
 import LoadingSpinner from './components/common/LoadingSpinner'
 import { supabase, getCurrentSession } from './lib/supabase'
@@ -335,6 +336,8 @@ function App() {
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
             {/* 게임 방 대기 페이지 */}
             <Route path="/game/:roomCode" element={<GameRoom />} />
+            {/* 게임 플레이 페이지 */}
+            <Route path="/game/:roomCode/play" element={<GamePlayPage />} />
           </Routes>
         </Router>
       </SocketProvider>
