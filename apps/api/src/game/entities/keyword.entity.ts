@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Index,
+  CreateDateColumn,
+  UpdateDateColumn
+} from 'typeorm';
 
 /**
  * 게임 키워드 엔티티
@@ -18,12 +25,16 @@ export class Keyword {
   @Column({ type: 'varchar', length: 100 })
   category: string;
 
-  @Column({ type: 'enum', enum: ['EASY', 'NORMAL', 'HARD'] })
+  @Column({
+    type: 'enum',
+    enum: ['EASY', 'NORMAL', 'HARD'],
+    default: 'EASY'
+  })
   difficulty: 'EASY' | 'NORMAL' | 'HARD';
 
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+  @UpdateDateColumn()
   updatedAt: Date;
 }
