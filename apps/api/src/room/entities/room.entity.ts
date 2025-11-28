@@ -58,7 +58,7 @@ export class RoomEntity {
   @Column({ default: 8, comment: '최대 인원 수' })
   maxPlayers: number;
 
-  @Column({ default: 4, comment: '최소 인원 수' })
+  @Column({ default: 2, comment: '최소 인원 수' })
   minPlayers: number;
 
   @Column({ default: 0, comment: '현재 인원 수' })

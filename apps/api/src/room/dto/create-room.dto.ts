@@ -16,7 +16,7 @@ export class CreateRoomDto {
   @Min(2, { message: '최소 인원은 2명 이상이어야 합니다.' })
   @Max(10, { message: '최소 인원은 10명 이하여야 합니다.' })
   @IsOptional()
-  minPlayers?: number = 4;
+  minPlayers?: number = 2;
 
   @IsInt()
   @Min(2, { message: '최대 인원은 2명 이상이어야 합니다.' })
