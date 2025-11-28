@@ -102,13 +102,6 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node",
-    "moduleNameMapping": {
-      "^@/(.*)$": "<rootDir>/src/$1",
-      "^@common/(.*)$": "<rootDir>/src/common/$1"
-    },
-    "setupFilesAfterEnv": [
-      "./src/test/setup.ts"
-    ]
+    "testEnvironment": "node"
   }
 }

@@ -211,4 +211,113 @@ describe('VotingService (RED Phase)', () => {
       expect(voteRepository.delete).toHaveBeenCalledWith({ roomId: 1 });
     });
   });
+
+  describe('aggregateVotes', () => {
+    /**
+     * AC-3.5: 투표 결과 집계
+     * When: 투표를 집계하면
+     * Then: 각 플레이어별 투표 수가 반환되어야 한다
+     */
+    it('should aggregate votes by target (AC-3.5)', async () => {
+      const votes = [
+        { id: 1, roomId: 1, voterId: 1, targetId: 2, createdAt: new Date() },
+        { id: 2, roomId: 1, voterId: 2, targetId: 3, createdAt: new Date() },
+        { id: 3, roomId: 1, voterId: 3, targetId: 2, createdAt: new Date() },
+        { id: 4, roomId: 1, voterId: 4, targetId: 2, createdAt: new Date() },
+      ];
+      jest.spyOn(voteRepository, 'find').mockResolvedValue(votes as Vote[]);
+
+      const result = await service.aggregateVotes(1);
+
+      expect(result.get(2)).toBe(3);
+      expect(result.get(3)).toBe(1);
+      expect(result.size).toBe(2);
+    });
+
+    /**
+     * 빈 투표 결과 집계
+     */
+    it('should return empty map when no votes exist', async () => {
+      jest.spyOn(voteRepository, 'find').mockResolvedValue([]);
+
+      const result = await service.aggregateVotes(1);
+
+      expect(result.size).toBe(0);
+    });
+  });
+
+  describe('getMostVotedPlayer', () => {
+    /**
+     * AC-4.1: 최다 득표자 찾기 (동점 시 먼저 투표된 플레이어)
+     * When: 최다 득표자를 조회하면
+     * Then: 가장 많은 표를 받은 플레이어를 반환해야 한다
+     */
+    it('should find most voted player correctly (AC-4.1)', async () => {
+      const votes = [
+        { id: 1, roomId: 1, voterId: 1, targetId: 2, createdAt: new Date() },
+        { id: 2, roomId: 1, voterId: 2, targetId: 3, createdAt: new Date() },
+        { id: 3, roomId: 1, voterId: 3, targetId: 2, createdAt: new Date() },
+        { id: 4, roomId: 1, voterId: 4, targetId: 2, createdAt: new Date() },
+      ];
+      jest.spyOn(voteRepository, 'find').mockResolvedValue(votes as Vote[]);
+
+      const result = await service.getMostVotedPlayer(1);
+
+      expect(result).toBe(2);
+    });
+
+    /**
+     * 동점 시 먼저 투표된 플레이어 선택
+     */
+    it('should select first voted player in case of tie (AC-4.1)', async () => {
+      const votes = [
+        { id: 1, roomId: 1, voterId: 1, targetId: 4, createdAt: new Date() }, // 4번이 먼저
+        { id: 2, roomId: 1, voterId: 2, targetId: 2, createdAt: new Date() }, // 2번
+        { id: 3, roomId: 1, voterId: 3, targetId: 4, createdAt: new Date() }, // 4번 추가 (동점)
+        { id: 4, roomId: 1, voterId: 4, targetId: 2, createdAt: new Date() }, // 2번 추가 (동점)
+      ];
+      jest.spyOn(voteRepository, 'find').mockResolvedValue(votes as Vote[]);
+
+      const result = await service.getMostVotedPlayer(1);
+
+      expect(result).toBe(4);
+    });
+
+    /**
+     * 투표가 없을 때
+     */
+    it('should return null when no votes exist', async () => {
+      jest.spyOn(voteRepository, 'find').mockResolvedValue([]);
+
+      const result = await service.getMostVotedPlayer(1);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getVotingProgress', () => {
+    /**
+     * 투표 진행률 업데이트 테스트
+     * When: 투표 진행률을 계산하면
+     * Then: 0-100% 범위의 진행률이 반환되어야 한다
+     */
+    it('should calculate correct voting progress with decimals', async () => {
+      jest.spyOn(voteRepository, 'count').mockResolvedValue(1);
+
+      const progress = await service.getVotingProgress(1, 3);
+
+      expect(progress).toBeCloseTo(33.33, 1);
+    });
+
+    /**
+     * 0명이 투표한 경우 0%
+     */
+    it('should return 0 when totalPlayers is 0', async () => {
+      jest.spyOn(voteRepository, 'count').mockResolvedValue(0);
+
+      const progress = await service.getVotingProgress(1, 0);
+
+      expect(progress).toBe(0);
+    });
+  });
 });

@@ -58,6 +58,9 @@ export class UserEntity {
   @Column({ type: 'timestamp', nullable: true })
   lastLoginAt: Date | null;
 
+  @Column({ type: 'int', default: 0 })
+  score: number;
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 

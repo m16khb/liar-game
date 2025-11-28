@@ -406,4 +406,90 @@ describe('GameCacheService', () => {
       });
     });
   });
+
+  describe('Redis 연결 오류 처리', () => {
+    /**
+     * Redis 연결 실패 시 에러 처리 테스트
+     * When: Redis 연결이 실패하면
+     * Then: 적절한 에러를 던져야 한다
+     */
+    it('should handle Redis connection failure', async () => {
+      const roomId = 1;
+      const error = new Error('Redis connection failed');
+
+      redisMock.get.mockRejectedValue(error);
+
+      await expect(service.getGameState(roomId)).rejects.toThrow('Redis connection failed');
+    });
+
+    /**
+     * Redis 쓰기 실패 시 에러 처리 테스트
+     */
+    it('should handle Redis write failure', async () => {
+      const roomId = 1;
+      const gameState = {
+        roomId,
+        phase: 'DISCUSSION',
+        turnOrder: [1, 2, 3],
+        currentTurn: 1,
+      };
+      const error = new Error('Redis write failed');
+
+      redisMock.set.mockRejectedValue(error);
+
+      await expect(service.setGameState(roomId, gameState)).rejects.toThrow('Redis write failed');
+    });
+  });
+
+  describe('캐시 업데이트 폴백', () => {
+    /**
+     * 캐시 업데이트 실패 시 폴백 테스트
+     * When: 캐시 업데이트가 실패하면
+     * Then: 이전 캐시 상태를 유지해야 한다
+     */
+    it('should maintain previous cache state on update failure', async () => {
+      const roomId = 1;
+      const previousState = {
+        roomId,
+        phase: 'DISCUSSION',
+        turnOrder: [1, 2, 3],
+        currentTurn: 1,
+      };
+      const newState = {
+        roomId,
+        phase: 'VOTING',
+        turnOrder: [1, 2, 3],
+        currentTurn: 2,
+      };
+
+      // 이전 상태 저장
+      redisMock.get.mockResolvedValue(JSON.stringify(previousState));
+      // 업데이트 시도 실패
+      redisMock.set.mockRejectedValue(new Error('Update failed'));
+
+      // 조회 시 이전 상태가 유지되어야 함
+      const result = await service.getGameState(roomId);
+
+      expect(result).toEqual(previousState);
+    });
+
+    /**
+     * 부분적 업데이트 실패 처리
+     */
+    it('should handle partial update failure', async () => {
+      const roomId = 1;
+      const gameState = { roomId, phase: 'DISCUSSION' };
+
+      // 첫 번째 set 호출: 실패
+      redisMock.set.mockRejectedValueOnce(new Error('Partial failure'));
+
+      // 첫 시도 실패
+      try {
+        await service.setGameState(roomId, gameState);
+        fail('Expected error to be thrown');
+      } catch (error: any) {
+        expect(error.message).toBe('Partial failure');
+      }
+    });
+  });
 });
