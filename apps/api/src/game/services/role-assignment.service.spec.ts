@@ -119,7 +119,7 @@ describe('RoleAssignmentService (RED Phase)', () => {
       const role = service.getPlayerRole(roles, 1);
 
       expect(role).toBeDefined();
-      expect(['LIAR', 'CIVILIAN']).toContain(role.type);
+      expect(['LIAR', 'CIVILIAN']).toContain(role!.type);
     });
 
     /**
