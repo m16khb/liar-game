@@ -22,10 +22,15 @@ export function GamePlay({
   userNickname,
   onGameEnd,
 }: GamePlayProps) {
+  console.log('[GamePlay] 컴포넌트 렌더링', { roomId, userId, userNickname })
+
   const { gameState, updateGameState, addSpeech, isCurrentTurn } = useGamePlay();
   const [userRole, setUserRole] = useState<'LIAR' | 'CIVILIAN' | null>(null);
   const [keyword, setKeyword] = useState<{ word: string; category: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  console.log('[GamePlay] gameState:', gameState)
+  console.log('[GamePlay] isLoading:', isLoading)
 
   const { remainingTime, progress, handleTimerUpdate, formatTime } = useGameTimer(
     gameState?.phase || '',
@@ -35,6 +40,7 @@ export function GamePlay({
    * 게임 시작 이벤트 처리
    */
   useEffect(() => {
+    console.log('[GamePlay] useEffect 실행 - roomId:', roomId)
     // TODO: WebSocket 이벤트 리스너 설정
     // socket.on('game-started', (event: GameStartedEvent) => {
     //   updateGameState({
@@ -49,6 +55,7 @@ export function GamePlay({
     //   });
     // });
 
+    console.log('[GamePlay] 로딩 완료로 설정 (WebSocket TODO)')
     setIsLoading(false);
   }, [roomId]);
 
@@ -78,12 +85,16 @@ export function GamePlay({
   }, [addSpeech]);
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-screen">게임 로딩 중...</div>;
+    console.log('[GamePlay] 로딩 중 화면 표시')
+    return <div className="flex justify-center items-center h-screen bg-gray-900 text-white">게임 로딩 중...</div>;
   }
 
   if (!gameState) {
-    return <div className="flex justify-center items-center h-screen">게임 상태 로드 실패</div>;
+    console.log('[GamePlay] gameState 없음 - 에러 화면 표시')
+    return <div className="flex justify-center items-center h-screen bg-gray-900 text-white">게임 상태 로드 실패</div>;
   }
+
+  console.log('[GamePlay] 메인 렌더링 시작')
 
   return (
     <div className="w-full h-screen bg-gray-900 text-white flex flex-col">
