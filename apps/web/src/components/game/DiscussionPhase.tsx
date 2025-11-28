@@ -64,10 +64,14 @@ export function DiscussionPhase({
   /**
    * 다음 턴 플레이어 찾기
    */
-  const currentTurnIndex = gameState.turnOrder.indexOf(gameState.currentTurn || -1);
-  const nextTurnIndex = (currentTurnIndex + 1) % gameState.turnOrder.length;
-  const nextTurnPlayerId = gameState.turnOrder[nextTurnIndex];
-  const nextTurnPlayer = gameState.players.find((p) => p.id === nextTurnPlayerId);
+  const currentTurnIndex = gameState.turnOrder?.indexOf(gameState.currentTurn || -1) ?? -1;
+  const nextTurnIndex = gameState.turnOrder && currentTurnIndex >= 0
+    ? (currentTurnIndex + 1) % gameState.turnOrder.length
+    : -1;
+  const nextTurnPlayerId = gameState.turnOrder?.[nextTurnIndex];
+  const nextTurnPlayer = nextTurnPlayerId
+    ? gameState.players.find((p) => p.id === nextTurnPlayerId)
+    : undefined;
 
   /**
    * 발언 목록 자동 스크롤
@@ -121,7 +125,7 @@ export function DiscussionPhase({
                 </span>
                 {userRole && (
                   <span
-                    className={`font-pixel text-pixel-xs px-3 py-1 border-2 ${
+                    className={`font-retro text-retro-base px-3 py-1 border-2 ${
                       userRole === 'LIAR'
                         ? 'border-arcade-pink text-arcade-pink shadow-[0_0_15px_rgba(255,42,109,0.5)]'
                         : 'border-arcade-green text-arcade-green shadow-[0_0_15px_rgba(0,255,65,0.5)]'
@@ -242,7 +246,7 @@ export function DiscussionPhase({
           {isCurrentTurn ? (
             <div className="bg-arcade-dark border-4 border-arcade-green p-4 shadow-[0_0_30px_rgba(0,255,65,0.3)]">
               <div className="flex items-center gap-2 mb-3">
-                <span className="font-pixel text-pixel-sm text-arcade-green animate-pulse">
+                <span className="font-retro text-retro-lg text-arcade-green animate-pulse">
                   ▶ 당신의 차례입니다!
                 </span>
                 <span className="font-retro text-retro-sm text-arcade-yellow">
@@ -271,7 +275,7 @@ export function DiscussionPhase({
             </div>
           ) : (
             <div className="bg-arcade-dark border-4 border-arcade-cyan/30 p-4 text-center">
-              <p className="font-pixel text-pixel-sm text-arcade-cyan/50">
+              <p className="font-retro text-retro-lg text-arcade-cyan/50">
                 {currentTurnPlayer?.id === userId
                   ? '▶ 당신의 차례입니다 ◀'
                   : `${currentTurnPlayer?.nickname}님의 발언을 기다리는 중...`}
