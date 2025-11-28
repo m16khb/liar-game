@@ -86,6 +86,7 @@ export default function GamePlayPage() {
   return (
     <GamePlay
       roomId={roomId}
+      roomCode={roomCode}
       userId={user.backendUserId}
       userNickname={displayName}
       onGameEnd={handleGameEnd}
