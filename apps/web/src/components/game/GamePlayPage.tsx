@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useSocket } from '@/hooks/useSocket'
+import { fetchRoomByCode } from '@/api/rooms'
 import { GamePlay } from './GamePlay'
 import LoadingSpinner from '../common/LoadingSpinner'
 import ErrorPage from '../common/ErrorPage'
@@ -44,6 +45,39 @@ export default function GamePlayPage() {
         return
       }
 
+      // 방 정보 조회
+      try {
+        console.log('[GamePlayPage] 방 정보 조회 시작:', roomCode)
+        const response = await fetchRoomByCode(roomCode)
+
+        if (response.error) {
+          console.error('[GamePlayPage] 방 조회 실패:', response.error)
+          setError(response.error.message || '방을 찾을 수 없습니다.')
+          setIsLoading(false)
+          return
+        }
+
+        if (!response.data) {
+          console.error('[GamePlayPage] 방 데이터 없음')
+          setError('방을 찾을 수 없습니다.')
+          setIsLoading(false)
+          return
+        }
+
+        console.log('[GamePlayPage] 방 정보 조회 완료:', response.data)
+
+        // roomId를 숫자로 변환 (string일 수 있음)
+        const id = typeof response.data.id === 'string'
+          ? parseInt(response.data.id, 10)
+          : response.data.id
+        setRoomId(id)
+      } catch (err) {
+        console.error('[GamePlayPage] 방 조회 에러:', err)
+        setError('방 정보를 불러오는데 실패했습니다.')
+        setIsLoading(false)
+        return
+      }
+
       // 소켓 연결
       try {
         console.log('[GamePlayPage] 소켓 연결 시작:', roomCode)
@@ -56,10 +90,6 @@ export default function GamePlayPage() {
         return
       }
 
-      // 임시: roomId를 1로 설정 (실제로는 API 호출 필요)
-      // TODO: API 호출하여 roomCode로 room 정보 가져오기
-      console.log('[GamePlayPage] roomId 설정: 1 (임시)')
-      setRoomId(1)
       setIsLoading(false)
     }
 
