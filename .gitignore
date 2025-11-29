@@ -214,3 +214,6 @@ htmlcov/
 *.pyd
 .LSOverride
 # CI/CD
+
+# E2E test artifacts
+e2e-screenshots/
