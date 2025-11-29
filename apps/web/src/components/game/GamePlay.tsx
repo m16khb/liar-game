@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useGamePlay, GamePlayState } from '@/hooks/useGamePlay';
 import { useGameTimer } from '@/hooks/useGameTimer';
 import { useSocket } from '@/hooks/useSocket';
@@ -33,6 +33,9 @@ export function GamePlay({
   const [userRole, setUserRole] = useState<'LIAR' | 'CIVILIAN' | null>(null);
   const [keyword, setKeyword] = useState<{ word: string; category: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // 게임 상태 초기화 완료 여부 추적 (클로저 문제 해결용)
+  const gameStateReceivedRef = useRef(false);
 
   console.log('[GamePlay] socket:', socket)
   console.log('[GamePlay] gameState:', gameState)
@@ -83,6 +86,7 @@ export function GamePlay({
         speeches: []
       });
 
+      gameStateReceivedRef.current = true;
       setIsLoading(false);
     };
 
@@ -141,6 +145,7 @@ export function GamePlay({
           votes: data.votes || []
         });
 
+        gameStateReceivedRef.current = true;
         setIsLoading(false);
       }
     };
@@ -154,9 +159,9 @@ export function GamePlay({
     console.log('[GamePlay] 게임 상태 요청 전송');
     socket.emit('request-game-state');
 
-    // 5초 후에도 gameState가 없으면 에러 표시
+    // 5초 후에도 게임 상태를 받지 못하면 로딩 해제 (ref 사용으로 클로저 문제 해결)
     const timeout = setTimeout(() => {
-      if (!gameState) {
+      if (!gameStateReceivedRef.current) {
         console.warn('[GamePlay] 5초 내에 게임 상태를 받지 못함');
         setIsLoading(false);
       }
@@ -169,7 +174,8 @@ export function GamePlay({
       socket.off('game-state', handleGameState);
       clearTimeout(timeout);
     };
-  }, [socket, userId, userNickname, gameState, updateGameState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket]);
 
   /**
    * 역할 할당 이벤트 처리
