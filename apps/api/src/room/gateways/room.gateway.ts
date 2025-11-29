@@ -1222,4 +1222,114 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       this.logger.error(`Failed to handle game end: ${error instanceof Error ? error.message : error}`);
     }
   }
+
+  /**
+   * 게임 상태 요청 처리 (재접속 시 사용)
+   */
+  @SubscribeMessage('request-game-state')
+  async handleRequestGameState(@ConnectedSocket() client: AuthenticatedSocket) {
+    this.logger.log(`User ${client.userId} is requesting game state`);
+    try {
+      const userId = client.userId;
+
+      if (!userId) {
+        client.emit('error', { message: '인증이 필요합니다.' });
+        return;
+      }
+
+      const player = await this.playerService.findActivePlayer(userId);
+
+      if (!player) {
+        client.emit('error', { message: '방에 참여하지 않았습니다.' });
+        return;
+      }
+
+      const room = player.room;
+
+      // 게임이 진행 중이 아니면 상태 없음
+      if (room.status !== RoomStatus.PLAYING) {
+        this.logger.log(`Room ${room.code} is not in PLAYING state. Status: ${room.status}`);
+        client.emit('game-state', { status: 'NOT_PLAYING', roomStatus: room.status });
+        return;
+      }
+
+      // 게임 데이터 조회
+      const gameData = await this.gameCacheService.getGameData(room.id);
+      if (!gameData) {
+        this.logger.warn(`Game data not found for room ${room.id}`);
+        client.emit('game-state', { status: 'NO_GAME_DATA' });
+        return;
+      }
+
+      // 턴 매니저 조회
+      const turnManager = this.turnManagerService.getTurnManager(room.id);
+
+      // 플레이어 목록 조회
+      const players = await this.playerService.getPlayers(room.id);
+
+      // 역할 정보 가져오기
+      const roles = await this.gameCacheService.getRoles(room.id);
+      const userRole = roles?.get(userId);
+
+      // 키워드 정보 가져오기
+      const keyword = await this.gameCacheService.getKeyword(room.id);
+
+      // 발언 기록 조회
+      const speeches = await this.speechRepository.find({
+        where: { roomId: room.id },
+        order: { createdAt: 'ASC' },
+      });
+
+      // 투표 상태 조회
+      const votes = await this.votingService.getAllVotes(room.id);
+      const votedCount = votes.length;
+
+      // 현재 단계 결정
+      let phase = 'DISCUSSION';
+      if (turnManager) {
+        if (turnManager.isAllTurnsCompleted()) {
+          phase = votedCount >= players.length ? 'LIAR_GUESS' : 'VOTING';
+        }
+      } else {
+        // 턴 매니저가 없으면 투표 단계 이후
+        phase = votedCount >= players.length ? 'LIAR_GUESS' : 'VOTING';
+      }
+
+      // 게임 상태 전송
+      client.emit('game-state', {
+        status: 'PLAYING',
+        phase,
+        room,
+        players: players.map(p => ({
+          userId: p.userId,
+          nickname: p.nickname || p.user?.email || `Player ${p.userId}`,
+          status: 'ACTIVE',
+        })),
+        currentTurn: turnManager?.getCurrentPlayer() || null,
+        turnOrder: turnManager?.turnOrder || players.map(p => p.userId),
+        totalRounds: gameData.totalRounds || 1,
+        currentRound: gameData.currentRound || 1,
+        totalTurns: turnManager?.getTotalTurns() || players.length,
+        currentTurnNumber: turnManager?.getCurrentTurnNumber() || 1,
+        speeches: speeches.map(s => ({
+          userId: s.userId,
+          content: s.content,
+          turnNumber: s.turnNumber,
+        })),
+        votes: votes.map(v => ({
+          voterId: v.voterId,
+          voteStatus: 'VOTED',
+        })),
+        userRole: userRole?.type || null,
+        keyword: userRole?.type === 'CIVILIAN' ? keyword : null,
+        category: keyword?.category || null,
+        liarId: gameData.liarId,
+      });
+
+      this.logger.log(`Game state sent to user ${userId} for room ${room.code}`);
+    } catch (error) {
+      this.logger.error(`Failed to get game state: ${error instanceof Error ? error.message : error}`);
+      client.emit('error', { message: '게임 상태 조회에 실패했습니다.' });
+    }
+  }
 }

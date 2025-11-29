@@ -86,15 +86,78 @@ export function GamePlay({
       setIsLoading(false);
     };
 
+    // game-state 이벤트 리스너 (재접속 시 게임 상태 복원)
+    const handleGameState = (data: any) => {
+      console.log('[GamePlay] game-state 이벤트 수신:', data);
+
+      if (data.status === 'NOT_PLAYING') {
+        console.log('[GamePlay] 게임이 진행 중이 아님');
+        setIsLoading(false);
+        return;
+      }
+
+      if (data.status === 'NO_GAME_DATA') {
+        console.log('[GamePlay] 게임 데이터 없음');
+        setIsLoading(false);
+        return;
+      }
+
+      if (data.status === 'PLAYING') {
+        console.log('[GamePlay] 게임 상태 복원:', data.phase);
+
+        // 역할 및 키워드 설정
+        if (data.userRole) {
+          setUserRole(data.userRole);
+        }
+        if (data.keyword || data.category) {
+          setKeyword({
+            word: data.keyword?.word || '???',
+            category: data.category || '알 수 없음'
+          });
+        }
+
+        // 게임 상태 업데이트
+        updateGameState({
+          phase: data.phase,
+          currentTurn: data.currentTurn,
+          turnOrder: data.turnOrder,
+          totalRounds: data.totalRounds,
+          totalTurns: data.totalTurns,
+          currentTurnNumber: data.currentTurnNumber,
+          currentRound: data.currentRound,
+          players: data.players.map((p: any) => ({
+            id: p.userId,
+            nickname: p.nickname,
+            status: p.status || 'ACTIVE'
+          })),
+          speeches: data.speeches?.map((s: any) => ({
+            id: s.id || Math.random(),
+            userId: s.userId,
+            nickname: '',
+            content: s.content,
+            timestamp: new Date(),
+            turnNumber: s.turnNumber
+          })) || [],
+          votes: data.votes || []
+        });
+
+        setIsLoading(false);
+      }
+    };
+
     socket.on('game-started', handleGameStarted);
+    socket.on('game-state', handleGameState);
 
     console.log('[GamePlay] 리스너 등록 완료')
 
-    // 백엔드에서 이벤트를 이미 보냈을 경우 대비: 5초 후에도 gameState가 없으면 로딩만 해제
+    // 게임 상태 요청 (재접속 시 기존 게임 상태 복원)
+    console.log('[GamePlay] 게임 상태 요청 전송');
+    socket.emit('request-game-state');
+
+    // 5초 후에도 gameState가 없으면 에러 표시
     const timeout = setTimeout(() => {
       if (!gameState) {
-        console.warn('[GamePlay] game-started 이벤트를 5초 내에 받지 못함 - 게임 시작 대기 중')
-        // 임시 상태 설정하지 않음 - 실제 이벤트를 기다림
+        console.warn('[GamePlay] 5초 내에 게임 상태를 받지 못함');
         setIsLoading(false);
       }
     }, 5000);
@@ -103,6 +166,7 @@ export function GamePlay({
     return () => {
       console.log('[GamePlay] 리스너 제거')
       socket.off('game-started', handleGameStarted);
+      socket.off('game-state', handleGameState);
       clearTimeout(timeout);
     };
   }, [socket, userId, userNickname, gameState, updateGameState]);
