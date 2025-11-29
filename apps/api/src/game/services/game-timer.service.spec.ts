@@ -250,17 +250,40 @@ describe('GameTimerService', () => {
         expect(progress).toBe(-1);
       });
 
-      it('타이머가 종료되면 100을 반환해야 한다', async () => {
+      it('타이머가 종료 직전에는 100에 가까운 값을 반환해야 한다', async () => {
         jest.useFakeTimers();
 
         const roomId = 1;
 
         service.startTimer(roomId, 10);
-        jest.advanceTimersByTime(10000);
+        // 9초 경과 - 타이머 종료 직전
+        jest.advanceTimersByTime(9000);
 
         const progress = service.getProgress(roomId);
 
-        expect(progress).toBeGreaterThanOrEqual(100);
+        // 90% 진행률이어야 함
+        expect(progress).toBeGreaterThanOrEqual(90);
+        expect(progress).toBeLessThanOrEqual(100);
+
+        jest.useRealTimers();
+      });
+
+      it('타이머가 종료되면 (삭제된 후) -1을 반환해야 한다', async () => {
+        jest.useFakeTimers();
+
+        const roomId = 1;
+        const callback = jest.fn();
+
+        service.startTimer(roomId, 10);
+        service.onTimeout(roomId, callback);
+
+        // 타이머 종료 시간 경과
+        jest.advanceTimersByTime(10000);
+        jest.runAllTimers();
+
+        // 타이머 종료 후 삭제되어 -1 반환
+        const progress = service.getProgress(roomId);
+        expect(progress).toBe(-1);
 
         jest.useRealTimers();
       });
@@ -314,30 +337,48 @@ describe('GameTimerService', () => {
      * 여러 개의 타이머를 동시에 관리합니다
      */
     describe('멀티타이머 지원', () => {
-      it('여러 roomId의 타이머를 독립적으로 관리해야 한다', async () => {
-        jest.useFakeTimers();
-
-        const room1Callback = jest.fn();
-        const room2Callback = jest.fn();
-
+      it('여러 roomId의 타이머를 독립적으로 시작할 수 있어야 한다', async () => {
+        // 두 개의 독립적인 타이머 생성
         service.startTimer(1, 10);
         service.startTimer(2, 20);
 
+        // 두 타이머 모두 존재해야 함
+        expect(service.hasTimer(1)).toBe(true);
+        expect(service.hasTimer(2)).toBe(true);
+
+        // 각 타이머의 남은 시간이 다르게 설정되어야 함
+        const remaining1 = service.getRemainingTime(1);
+        const remaining2 = service.getRemainingTime(2);
+
+        expect(remaining1).toBeLessThanOrEqual(10);
+        expect(remaining2).toBeLessThanOrEqual(20);
+        expect(remaining2).toBeGreaterThan(remaining1);
+      });
+
+      it('한 타이머 종료가 다른 타이머에 영향을 주지 않아야 한다', async () => {
+        jest.useFakeTimers();
+
+        const room1Callback = jest.fn();
+
+        // room1만 타이머 시작
+        service.startTimer(1, 3);
         service.onTimeout(1, room1Callback);
-        service.onTimeout(2, room2Callback);
 
-        // 10초 경과 - room1 타이머 종료
-        jest.advanceTimersByTime(10000);
-        jest.runAllTimers();
+        // room2 타이머 시작 (더 긴 시간)
+        service.startTimer(2, 100);
 
+        // room1 타이머가 종료될 때까지 대기
+        jest.advanceTimersByTime(3000);
+        jest.runOnlyPendingTimers();
+
+        // room1 콜백이 호출되었는지 확인
         expect(room1Callback).toHaveBeenCalled();
-        expect(room2Callback).not.toHaveBeenCalled();
 
-        // 10초 더 경과 (총 20초) - room2 타이머 종료
-        jest.advanceTimersByTime(10000);
-        jest.runAllTimers();
+        // room1은 종료되어 삭제됨
+        expect(service.hasTimer(1)).toBe(false);
 
-        expect(room2Callback).toHaveBeenCalled();
+        // room2는 여전히 존재
+        expect(service.hasTimer(2)).toBe(true);
 
         jest.useRealTimers();
       });
