@@ -25,20 +25,19 @@ export default function PlayerContextMenu({
 
   return (
     <div
-      className="fixed bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50"
+      className="fixed bg-arcade-dark border-3 border-arcade-cyan shadow-[0_0_30px_rgba(5,217,232,0.4)] py-2 z-50 min-w-[180px]"
       style={{
         left: contextMenu.x,
         top: contextMenu.y,
-        minWidth: '180px'
       }}
     >
       <button
         onClick={handleClick}
-        className="w-full px-4 py-2.5 text-left text-sm text-gray-800 flex items-center gap-2 hover:bg-gray-100 transition-colors cursor-pointer"
+        className="w-full px-4 py-2.5 text-left font-retro text-retro-base text-arcade-cyan flex items-center gap-2 hover:bg-arcade-purple/50 hover:text-arcade-yellow transition-colors cursor-pointer"
       >
         <span>👑</span>
         <span>방장 위임</span>
-        <span className="ml-auto text-xs text-gray-500">
+        <span className="ml-auto font-pixel text-pixel-xs text-arcade-yellow">
           {contextMenu.targetPlayer.nickname || `플레이어 ${contextMenu.targetPlayer.userId}`}
         </span>
       </button>

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { PlayerEntity, PlayerStatus } from './entities/player.entity';
+import { UserEntity } from '../user/entities/user.entity';
 import dayjs from 'dayjs';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class PlayerService {
   constructor(
     @InjectRepository(PlayerEntity)
     private readonly playerRepository: Repository<PlayerEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
   ) {}
 
   /**
@@ -17,6 +20,12 @@ export class PlayerService {
   async addPlayer(roomId: number, userId: number, isHost: boolean = false): Promise<PlayerEntity> {
     // 로그 추가
     console.log(`[PlayerService.addPlayer] roomId: ${roomId}, userId: ${userId}, isHost: ${isHost}`);
+
+    // 사용자 정보 조회 (nickname 가져오기)
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
 
     // 이미 참여 중인지 확인 (softDelete된 플레이어도 포함)
     const existingPlayer = await this.playerRepository.findOne({
@@ -38,6 +47,7 @@ export class PlayerService {
         existingPlayer.deletedAt = null;
         existingPlayer.isHost = isHost;
         existingPlayer.status = isHost ? PlayerStatus.READY : PlayerStatus.NOT_READY;
+        existingPlayer.nickname = user.nickname; // 최신 nickname으로 업데이트
         existingPlayer.lastActiveAt = dayjs().toDate();
         return await this.playerRepository.save(existingPlayer);
       } else {
@@ -58,6 +68,7 @@ export class PlayerService {
       roomId,
       userId,
       isHost,
+      nickname: user.nickname, // 사용자 닉네임 저장
       status: isHost ? PlayerStatus.READY : PlayerStatus.NOT_READY,
       joinOrder,
       lastActiveAt: dayjs().toDate(),

@@ -102,7 +102,7 @@ export default function JoinRoomByCode({ onClose }: JoinRoomByCodeProps) {
               setError(null)
             }}
             placeholder="ENTER ROOM CODE"
-            className="w-full font-mono text-sm text-center bg-arcade-black text-arcade-yellow border-4 border-arcade-blue px-4 py-4 focus:border-arcade-cyan focus:shadow-neon-cyan transition-all placeholder:text-arcade-blue placeholder:text-xs"
+            className="w-full font-pixel text-sm text-center bg-arcade-black text-arcade-yellow border-4 border-arcade-blue px-4 py-4 focus:border-arcade-cyan focus:shadow-neon-cyan transition-all placeholder:text-arcade-blue placeholder:text-xs uppercase tracking-wider"
           />
           <p className="text-xs text-arcade-cyan opacity-50 text-center mt-2" style={{ fontFamily: 'VT323, Galmuri11, monospace' }}>
             EX: df786457578e456e85fe577a8a9984a3

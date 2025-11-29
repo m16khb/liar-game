@@ -113,7 +113,9 @@ describe('DiscussionPhase', () => {
         />,
       )
 
-      expect(screen.getByText('Player1')).toBeInTheDocument()
+      // Player1이 여러 곳에 표시될 수 있으므로 getAllByText 사용
+      const player1Elements = screen.getAllByText('Player1')
+      expect(player1Elements.length).toBeGreaterThan(0)
     })
 
     it('다음 차례 플레이어를 표시해야 한다', () => {
@@ -224,7 +226,8 @@ describe('DiscussionPhase', () => {
         />,
       )
 
-      expect(screen.getByText('▶ 당신의 차례입니다!')).toBeInTheDocument()
+      // 수정된 UI 텍스트에 맞게 업데이트
+      expect(screen.getByText(/당신의 차례입니다/)).toBeInTheDocument()
       expect(screen.getByPlaceholderText(/발언을 입력하세요/)).toBeInTheDocument()
     })
 
@@ -248,7 +251,8 @@ describe('DiscussionPhase', () => {
         />,
       )
 
-      expect(screen.getByText(/Player2님의 발언을 기다리는 중/)).toBeInTheDocument()
+      // 수정된 UI 텍스트에 맞게 업데이트 (발언 중)
+      expect(screen.getByText(/Player2님이 발언 중/)).toBeInTheDocument()
     })
 
     it('발언을 입력하고 제출할 수 있어야 한다', async () => {

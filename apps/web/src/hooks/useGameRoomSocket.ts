@@ -174,10 +174,11 @@ export function useGameRoomSocket(roomCode: string | undefined): UseGameRoomSock
 
   // 액션: 준비 상태 토글
   const toggleReady = useCallback(() => {
-    if (socket && room?.status === 'waiting' && !isHost) {
+    if (socket && room?.status === 'waiting') {
+      console.log('[useGameRoomSocket] toggle-ready 이벤트 전송')
       socket.emit('toggle-ready')
     }
-  }, [socket, room, isHost])
+  }, [socket, room])
 
   // 액션: 게임 시작 (방장만)
   const startGame = useCallback(() => {

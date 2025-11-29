@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Logger, Unauthorize
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, IsNull } from 'typeorm';
 import { randomUUID } from 'crypto';
+import * as bcrypt from 'bcrypt';
 import { RoomEntity, RoomStatus } from './entities/room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { RoomResponseDto } from './dto/room-response.dto';
@@ -67,10 +68,18 @@ export class RoomService {
     // 방 코드 생성 (UUID에서 하이픈 제거)
     const code = await this.generateUniqueRoomCode();
 
+    // 비밀번호 해시화 (비공개 방인 경우)
+    let hashedPassword: string | undefined;
+    if (createRoomDto.isPrivate && createRoomDto.password) {
+      hashedPassword = await bcrypt.hash(createRoomDto.password, 10);
+      this.logger.log(`[createRoom] 비밀번호 해시화 완료 - roomCode: ${code}`);
+    }
+
     const room = this.roomRepository.create({
       ...createRoomDto,
       title: sanitizedTitle,
       description: sanitizedDescription,
+      password: hashedPassword, // 해시된 비밀번호 저장
       code,
       hostId,
       currentPlayers: 0,
@@ -231,11 +240,20 @@ export class RoomService {
       if (!password) {
         throw new BadRequestException('비공개 방은 비밀번호가 필요합니다.');
       }
-      // TODO: 비밀번호 해시 비교 구현 (현재는 평문 비교)
-      if (room.password !== password) {
+
+      // bcrypt를 사용한 비밀번호 검증
+      if (!room.password) {
+        this.logger.error(`[joinRoom] 비공개 방에 저장된 비밀번호가 없음 - roomId: ${room.id}`);
+        throw new BadRequestException('방 정보에 오류가 있습니다. 관리자에게 문의하세요.');
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, room.password);
+      if (!isPasswordValid) {
         this.logger.warn(`[joinRoom] 잘못된 비밀번호 시도 - roomId: ${room.id}, userId: ${userId}`);
         throw new BadRequestException('비밀번호가 일치하지 않습니다.');
       }
+
+      this.logger.log(`[joinRoom] 비밀번호 검증 성공 - roomId: ${room.id}, userId: ${userId}`);
     }
 
     // 재참가인 경우 인원 수 증가 없이 방 정보만 반환

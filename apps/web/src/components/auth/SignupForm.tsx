@@ -99,15 +99,15 @@ export default function SignupForm({ onSignupSuccess, onLoginClick }: SignupForm
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
-        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-8">
+      <div className="bg-arcade-dark border-4 border-arcade-cyan rounded-lg shadow-[0_0_40px_rgba(5,217,232,0.4)] p-8">
+        <h2 className="font-pixel text-pixel-xl text-arcade-yellow text-center mb-8">
           회원가입
         </h2>
 
         {/* 에러 메시지 */}
         {error && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-600 rounded-md">
-            <p className="text-sm text-red-800 dark:text-red-200">
+          <div className="mb-4 p-3 bg-arcade-pink/20 border-2 border-arcade-pink rounded">
+            <p className="font-retro text-retro-sm text-arcade-pink">
               {error}
             </p>
           </div>
@@ -116,8 +116,8 @@ export default function SignupForm({ onSignupSuccess, onLoginClick }: SignupForm
         {/* 회원가입 폼 */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              이메일 <span className="text-red-500">*</span>
+            <label htmlFor="email" className="block font-pixel text-pixel-xs text-arcade-cyan uppercase mb-2">
+              이메일 <span className="text-arcade-pink">*</span>
             </label>
             <input
               id="email"
@@ -128,23 +128,23 @@ export default function SignupForm({ onSignupSuccess, onLoginClick }: SignupForm
               value={formData.email}
               onChange={handleInputChange}
               disabled={loading}
-              className={`block w-full px-3 py-2 border ${
+              className={`w-full font-retro text-retro-base bg-arcade-black text-white border-3 px-4 py-3 focus:shadow-neon-yellow transition-all placeholder:text-arcade-cyan/50 disabled:opacity-50 ${
                 validationErrors.email
-                  ? 'border-red-300 dark:border-red-600'
-                  : 'border-gray-300 dark:border-gray-600'
-              } rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50`}
+                  ? 'border-arcade-pink focus:border-arcade-pink'
+                  : 'border-arcade-cyan focus:border-arcade-yellow'
+              }`}
               placeholder="your@email.com"
             />
             {validationErrors.email && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              <p className="mt-1 font-retro text-retro-sm text-arcade-pink">
                 {validationErrors.email}
               </p>
             )}
           </div>
 
           <div>
-            <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              닉네임 <span className="text-gray-400 text-xs">(선택사항)</span>
+            <label htmlFor="nickname" className="block font-pixel text-pixel-xs text-arcade-cyan uppercase mb-2">
+              닉네임 <span className="font-retro text-retro-sm text-arcade-cyan/50">(선택사항)</span>
             </label>
             <input
               id="nickname"
@@ -154,27 +154,27 @@ export default function SignupForm({ onSignupSuccess, onLoginClick }: SignupForm
               value={formData.nickname}
               onChange={handleInputChange}
               disabled={loading}
-              className={`block w-full px-3 py-2 border ${
+              className={`w-full font-retro text-retro-base bg-arcade-black text-white border-3 px-4 py-3 focus:shadow-neon-yellow transition-all placeholder:text-arcade-cyan/50 disabled:opacity-50 ${
                 validationErrors.nickname
-                  ? 'border-red-300 dark:border-red-600'
-                  : 'border-gray-300 dark:border-gray-600'
-              } rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50`}
+                  ? 'border-arcade-pink focus:border-arcade-pink'
+                  : 'border-arcade-cyan focus:border-arcade-yellow'
+              }`}
               placeholder="2-20자 (한글, 영문, 숫자, -, _)"
               maxLength={20}
             />
             {validationErrors.nickname && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              <p className="mt-1 font-retro text-retro-sm text-arcade-pink">
                 {validationErrors.nickname}
               </p>
             )}
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-1 font-retro text-retro-sm text-arcade-cyan/50">
               게임 내에서 사용될 닉네임입니다
             </p>
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              비밀번호 <span className="text-red-500">*</span>
+            <label htmlFor="password" className="block font-pixel text-pixel-xs text-arcade-cyan uppercase mb-2">
+              비밀번호 <span className="text-arcade-pink">*</span>
             </label>
             <input
               id="password"
@@ -185,23 +185,23 @@ export default function SignupForm({ onSignupSuccess, onLoginClick }: SignupForm
               value={formData.password}
               onChange={handleInputChange}
               disabled={loading}
-              className={`block w-full px-3 py-2 border ${
+              className={`w-full font-retro text-retro-base bg-arcade-black text-white border-3 px-4 py-3 focus:shadow-neon-yellow transition-all placeholder:text-arcade-cyan/50 disabled:opacity-50 ${
                 validationErrors.password
-                  ? 'border-red-300 dark:border-red-600'
-                  : 'border-gray-300 dark:border-gray-600'
-              } rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50`}
+                  ? 'border-arcade-pink focus:border-arcade-pink'
+                  : 'border-arcade-cyan focus:border-arcade-yellow'
+              }`}
               placeholder="최소 8자 이상"
             />
             {validationErrors.password && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              <p className="mt-1 font-retro text-retro-sm text-arcade-pink">
                 {validationErrors.password}
               </p>
             )}
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              비밀번호 확인 <span className="text-red-500">*</span>
+            <label htmlFor="confirmPassword" className="block font-pixel text-pixel-xs text-arcade-cyan uppercase mb-2">
+              비밀번호 확인 <span className="text-arcade-pink">*</span>
             </label>
             <input
               id="confirmPassword"
@@ -212,15 +212,15 @@ export default function SignupForm({ onSignupSuccess, onLoginClick }: SignupForm
               value={formData.confirmPassword}
               onChange={handleInputChange}
               disabled={loading}
-              className={`block w-full px-3 py-2 border ${
+              className={`w-full font-retro text-retro-base bg-arcade-black text-white border-3 px-4 py-3 focus:shadow-neon-yellow transition-all placeholder:text-arcade-cyan/50 disabled:opacity-50 ${
                 validationErrors.confirmPassword
-                  ? 'border-red-300 dark:border-red-600'
-                  : 'border-gray-300 dark:border-gray-600'
-              } rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50`}
+                  ? 'border-arcade-pink focus:border-arcade-pink'
+                  : 'border-arcade-cyan focus:border-arcade-yellow'
+              }`}
               placeholder="비밀번호 다시 입력"
             />
             {validationErrors.confirmPassword && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              <p className="mt-1 font-retro text-retro-sm text-arcade-pink">
                 {validationErrors.confirmPassword}
               </p>
             )}
@@ -229,21 +229,25 @@ export default function SignupForm({ onSignupSuccess, onLoginClick }: SignupForm
           <button
             type="submit"
             disabled={loading || isSubmitting}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-full font-pixel text-pixel-sm py-4 border-4 border-white transition-all ${
+              loading || isSubmitting
+                ? 'bg-arcade-cyan/30 text-arcade-cyan cursor-not-allowed opacity-50'
+                : 'bg-arcade-cyan text-arcade-black hover:translate-y-[-2px] hover:shadow-[0_6px_30px_rgba(5,217,232,0.5)] cursor-pointer'
+            }`}
           >
             {loading || isSubmitting ? '가입 중...' : '회원가입'}
           </button>
         </form>
 
         {/* 약관 동의 */}
-        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-md">
-          <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+        <div className="mt-6 p-4 bg-arcade-purple/20 border-2 border-arcade-purple rounded">
+          <p className="font-retro text-retro-sm text-arcade-cyan leading-relaxed">
             회원가입 시 라이어 게임의
-            <a href="#" className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+            <a href="#" className="text-arcade-yellow hover:text-arcade-pink transition-colors">
               서비스 약관
             </a>
             과
-            <a href="#" className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+            <a href="#" className="text-arcade-yellow hover:text-arcade-pink transition-colors">
               개인정보 처리방침
             </a>
             에 동의하는 것으로 간주합니다.
@@ -251,12 +255,12 @@ export default function SignupForm({ onSignupSuccess, onLoginClick }: SignupForm
         </div>
 
         {/* 링크 */}
-        <div className="mt-6 text-center text-sm">
-          <span className="text-gray-500 dark:text-gray-400">이미 계정이 있으신가요? </span>
+        <div className="mt-6 text-center font-retro text-retro-base">
+          <span className="text-arcade-cyan">이미 계정이 있으신가요? </span>
           <button
             type="button"
             onClick={onLoginClick}
-            className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 ml-1"
+            className="text-arcade-yellow hover:text-arcade-pink transition-colors ml-1"
           >
             로그인
           </button>

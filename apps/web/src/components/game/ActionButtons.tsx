@@ -48,19 +48,17 @@ export default function ActionButtons({
   return (
     <div className="bg-arcade-dark border-4 border-arcade-pink p-4 md:p-8 shadow-[0_0_30px_rgba(255,42,109,0.3)]">
       <div className="flex gap-4 md:gap-6 justify-center flex-wrap">
-        {/* 일반 플레이어: 준비 버튼 */}
-        {!isHost && (
-          <button
-            onClick={onToggleReady}
-            className={`font-pixel text-pixel-xs md:text-pixel-sm px-6 py-3 md:px-8 md:py-4 border-4 border-white transition-all cursor-pointer w-full sm:w-auto
-              ${isReady
-                ? 'bg-arcade-orange text-white hover:translate-y-[-4px] hover:shadow-[0_8px_30px_rgba(255,107,53,0.5)]'
-                : 'bg-arcade-cyan text-arcade-black hover:translate-y-[-4px] hover:shadow-[0_8px_30px_rgba(5,217,232,0.5)]'
-              }`}
-          >
-            {isReady ? 'CANCEL' : 'READY'}
-          </button>
-        )}
+        {/* 준비 버튼 (모든 플레이어) */}
+        <button
+          onClick={onToggleReady}
+          className={`font-pixel text-pixel-xs md:text-pixel-sm px-6 py-3 md:px-8 md:py-4 border-4 border-white transition-all cursor-pointer w-full sm:w-auto
+            ${isReady
+              ? 'bg-arcade-orange text-white hover:translate-y-[-4px] hover:shadow-[0_8px_30px_rgba(255,107,53,0.5)]'
+              : 'bg-arcade-cyan text-arcade-black hover:translate-y-[-4px] hover:shadow-[0_8px_30px_rgba(5,217,232,0.5)]'
+            }`}
+        >
+          {isReady ? 'CANCEL' : 'READY'}
+        </button>
 
         {/* 방장: 게임 시작 버튼 */}
         {isHost && (

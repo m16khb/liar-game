@@ -244,10 +244,14 @@ export function DiscussionPhase({
 
           {/* 발언 입력 영역 */}
           {isCurrentTurn ? (
-            <div className="bg-arcade-dark border-4 border-arcade-green p-4 shadow-[0_0_30px_rgba(0,255,65,0.3)]">
+            <div className="bg-arcade-dark border-4 border-arcade-green p-4 shadow-[0_0_40px_rgba(0,255,65,0.5)] animate-pulse-border">
+              {/* 본인 턴 강조 알림 */}
+              <div className="bg-arcade-green text-arcade-black font-pixel text-pixel-base py-3 px-4 mb-4 text-center shadow-[0_0_20px_rgba(0,255,65,0.7)] animate-pulse">
+                ▶▶▶ 당신의 차례입니다! 발언해주세요! ◀◀◀
+              </div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="font-retro text-retro-lg text-arcade-green animate-pulse">
-                  ▶ 당신의 차례입니다!
+                  ✍ 발언 입력
                 </span>
                 <span className="font-retro text-retro-sm text-arcade-yellow">
                   ({speechContent.length}/200)
@@ -260,7 +264,7 @@ export function DiscussionPhase({
                 onKeyDown={handleKeyDown}
                 placeholder="발언을 입력하세요 (최대 200자, Enter로 전송)"
                 maxLength={200}
-                className="w-full bg-arcade-black text-white font-retro text-retro-base border-2 border-arcade-green p-3 focus:border-arcade-yellow focus:outline-none resize-none h-24 placeholder:text-arcade-cyan/30"
+                className="w-full bg-arcade-black text-white font-retro text-retro-base border-4 border-arcade-green p-3 focus:border-arcade-yellow focus:shadow-[0_0_15px_rgba(249,240,2,0.5)] focus:outline-none resize-none h-24 placeholder:text-arcade-cyan/30 transition-all"
               />
               <button
                 onClick={handleSubmitSpeech}
@@ -274,11 +278,17 @@ export function DiscussionPhase({
               </button>
             </div>
           ) : (
-            <div className="bg-arcade-dark border-4 border-arcade-cyan/30 p-4 text-center">
-              <p className="font-retro text-retro-lg text-arcade-cyan/50">
-                {currentTurnPlayer?.id === userId
-                  ? '▶ 당신의 차례입니다 ◀'
-                  : `${currentTurnPlayer?.nickname}님의 발언을 기다리는 중...`}
+            <div className="bg-arcade-dark border-4 border-arcade-cyan/30 p-6 text-center">
+              <p className="font-pixel text-pixel-sm text-arcade-cyan/70 mb-2">
+                ⏳ 대기 중...
+              </p>
+              <p className="font-retro text-retro-lg text-arcade-cyan">
+                {currentTurnPlayer?.nickname}님이 발언 중
+              </p>
+              <p className="font-retro text-retro-sm text-arcade-yellow/50 mt-2">
+                {nextTurnPlayer?.id === userId
+                  ? '다음 차례는 당신입니다!'
+                  : `다음: ${nextTurnPlayer?.nickname}님`}
               </p>
             </div>
           )}

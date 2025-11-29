@@ -28,31 +28,31 @@ export const Notification: React.FC<NotificationProps> = ({
     switch (type) {
       case 'success':
         return {
-          backgroundColor: '#ecfdf5',
-          borderColor: '#10b981',
-          color: '#065f46',
-          icon: '✅'
+          borderColor: 'border-arcade-green',
+          bgColor: 'bg-arcade-green/20',
+          textColor: 'text-arcade-green',
+          icon: '✓'
         }
       case 'warning':
         return {
-          backgroundColor: '#fffbeb',
-          borderColor: '#f59e0b',
-          color: '#92400e',
-          icon: '⚠️'
+          borderColor: 'border-arcade-yellow',
+          bgColor: 'bg-arcade-yellow/20',
+          textColor: 'text-arcade-yellow',
+          icon: '⚠'
         }
       case 'error':
         return {
-          backgroundColor: '#fef2f2',
-          borderColor: '#ef4444',
-          color: '#991b1b',
-          icon: '❌'
+          borderColor: 'border-arcade-pink',
+          bgColor: 'bg-arcade-pink/20',
+          textColor: 'text-arcade-pink',
+          icon: '✕'
         }
       default:
         return {
-          backgroundColor: '#eff6ff',
-          borderColor: '#3b82f6',
-          color: '#1e40af',
-          icon: 'ℹ️'
+          borderColor: 'border-arcade-cyan',
+          bgColor: 'bg-arcade-cyan/20',
+          textColor: 'text-arcade-cyan',
+          icon: 'i'
         }
     }
   }
@@ -60,55 +60,7 @@ export const Notification: React.FC<NotificationProps> = ({
   const styles = getStyles()
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: '20px',
-        right: '20px',
-        padding: '12px 16px',
-        backgroundColor: styles.backgroundColor,
-        border: `1px solid ${styles.borderColor}`,
-        borderRadius: '8px',
-        color: styles.color,
-        fontSize: '14px',
-        fontWeight: '500',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-        zIndex: 1000,
-        animation: 'slideInRight 0.3s ease-out',
-        minWidth: '200px',
-        maxWidth: '400px'
-      }}
-    >
-      <span style={{ fontSize: '16px' }}>{styles.icon}</span>
-      <span>{message}</span>
-      {onClose && (
-        <button
-          onClick={onClose}
-          style={{
-            marginLeft: 'auto',
-            backgroundColor: 'transparent',
-            border: 'none',
-            color: styles.color,
-            cursor: 'pointer',
-            fontSize: '18px',
-            padding: '0',
-            lineHeight: '1',
-            opacity: 0.7
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.opacity = '1'
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.opacity = '0.7'
-          }}
-        >
-          ×
-        </button>
-      )}
-
+    <>
       <style>{`
         @keyframes slideInRight {
           from {
@@ -121,6 +73,21 @@ export const Notification: React.FC<NotificationProps> = ({
           }
         }
       `}</style>
-    </div>
+      <div
+        className={`fixed top-5 right-5 p-4 ${styles.bgColor} border-3 ${styles.borderColor} ${styles.textColor} font-retro text-retro-base flex items-center gap-3 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] z-[1000] min-w-[200px] max-w-[400px]`}
+        style={{ animation: 'slideInRight 0.3s ease-out' }}
+      >
+        <span className="font-pixel text-pixel-base">{styles.icon}</span>
+        <span>{message}</span>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className={`ml-auto bg-transparent border-none ${styles.textColor} cursor-pointer font-pixel text-pixel-base p-0 leading-none opacity-70 hover:opacity-100 transition-opacity`}
+          >
+            ✕
+          </button>
+        )}
+      </div>
+    </>
   )
 }

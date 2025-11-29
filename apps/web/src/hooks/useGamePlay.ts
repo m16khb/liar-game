@@ -4,14 +4,19 @@ import { useState, useCallback } from 'react';
  * 게임 진행 상태 인터페이스
  */
 export interface GamePlayState {
-  phase: 'DISCUSSION' | 'VOTING' | 'RESULT';
+  phase: 'DISCUSSION' | 'VOTING' | 'LIAR_GUESS' | 'RESULT';
   currentTurn: number | null;
   turnOrder: number[];
+  totalRounds: number; // 총 바퀴 수
+  currentRound: number; // 현재 바퀴
+  totalTurns: number; // 총 턴 수
+  currentTurnNumber: number; // 현재 턴 번호
   players: {
     id: number;
     nickname: string;
     role?: 'LIAR' | 'CIVILIAN';
     status: 'ACTIVE' | 'DISCONNECTED';
+    score?: number; // 플레이어 점수
   }[];
   speeches: {
     userId: number;
@@ -26,6 +31,30 @@ export interface GamePlayState {
   votes?: {
     voterId: number;
     voteStatus: 'VOTED' | 'PENDING';
+  }[];
+  // 라이어 키워드 맞추기 관련
+  liarGuess?: {
+    liarId: number;
+    category: string;
+    timeLimit: number;
+  };
+  // 게임 결과 관련
+  result?: {
+    winner: 'LIAR' | 'CIVILIAN';
+    liarId: number;
+    liarCaughtByVote: boolean;
+    liarGuessedKeyword: boolean;
+    keyword?: { word: string; category: string };
+    voteResults: { targetId: number; nickname: string; voteCount: number }[];
+  };
+  roleInfo?: { userId: number; nickname: string; role: string }[];
+  scoreChanges?: {
+    userId: number;
+    nickname: string;
+    previousScore: number;
+    scoreChange: number;
+    newScore: number;
+    reason: string;
   }[];
 }
 
@@ -47,6 +76,10 @@ export function useGamePlay() {
           phase: newState.phase || 'DISCUSSION',
           currentTurn: newState.currentTurn || null,
           turnOrder: newState.turnOrder || [],
+          totalRounds: newState.totalRounds || 1,
+          currentRound: newState.currentRound || 1,
+          totalTurns: newState.totalTurns || 0,
+          currentTurnNumber: newState.currentTurnNumber || 1,
           players: newState.players || [],
           speeches: newState.speeches || [],
           ...newState

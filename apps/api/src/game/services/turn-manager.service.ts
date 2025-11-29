@@ -9,11 +9,16 @@ export interface TurnManager {
   currentTurnIndex: number;
   turnDuration: number; // 초 단위
   startedAt: Date;
+  totalRounds: number; // 총 바퀴 수
+  currentRound: number; // 현재 바퀴
 
-  nextTurn(): void;
-  skipTurn(userId: number): void;
+  nextTurn(): boolean; // 모든 턴이 끝났으면 false 반환
+  skipTurn(userId: number): boolean;
   getCurrentPlayer(): number;
   getRemainingTime(): number;
+  isAllTurnsCompleted(): boolean;
+  getTotalTurns(): number;
+  getCurrentTurnNumber(): number;
 }
 
 /**
@@ -45,12 +50,14 @@ export class TurnManagerService {
    * @param roomId 방 ID
    * @param playerIds 플레이어 ID 배열
    * @param turnDuration 각 턴의 지속 시간 (초, 기본값: 30)
+   * @param totalRounds 총 바퀴 수 (기본값: 1)
    * @returns 턴 매니저
    */
   createTurnManager(
     roomId: number,
     playerIds: number[],
     turnDuration: number = 30,
+    totalRounds: number = 1,
   ): TurnManager {
     const turnOrder = this.generateTurnOrder(playerIds);
 
@@ -60,14 +67,29 @@ export class TurnManagerService {
       currentTurnIndex: 0,
       turnDuration,
       startedAt: new Date(),
+      totalRounds,
+      currentRound: 1,
 
       nextTurn() {
-        this.currentTurnIndex = (this.currentTurnIndex + 1) % this.turnOrder.length;
-        this.startedAt = new Date(); // 새로운 턴의 시작 시간 업데이트
+        // 다음 인덱스 계산
+        const nextIndex = this.currentTurnIndex + 1;
+
+        // 한 바퀴 완료 시 다음 라운드로
+        if (nextIndex >= this.turnOrder.length) {
+          this.currentRound++;
+          this.currentTurnIndex = 0;
+        } else {
+          this.currentTurnIndex = nextIndex;
+        }
+
+        this.startedAt = new Date();
+
+        // 모든 라운드가 끝났는지 확인
+        return !this.isAllTurnsCompleted();
       },
 
       skipTurn(userId: number) {
-        this.nextTurn();
+        return this.nextTurn();
       },
 
       getCurrentPlayer() {
@@ -78,6 +100,18 @@ export class TurnManagerService {
         const elapsed = (Date.now() - this.startedAt.getTime()) / 1000;
         const remaining = this.turnDuration - elapsed;
         return Math.max(0, remaining);
+      },
+
+      isAllTurnsCompleted() {
+        return this.currentRound > this.totalRounds;
+      },
+
+      getTotalTurns() {
+        return this.turnOrder.length * this.totalRounds;
+      },
+
+      getCurrentTurnNumber() {
+        return (this.currentRound - 1) * this.turnOrder.length + this.currentTurnIndex + 1;
       },
     };
 

@@ -1,17 +1,34 @@
 import { Injectable, Inject, Optional } from '@nestjs/common';
 
 /**
+ * 게임 데이터 인터페이스
+ */
+export interface GameData {
+  roomId: number;
+  liarId: number;
+  keyword: { word: string; category: string };
+  roles: Map<number, { type: 'LIAR' | 'CIVILIAN'; userId: number }>;
+  totalRounds: number;
+  currentRound: number;
+}
+
+/**
  * 게임 캐시 서비스
  * Redis를 사용하여 게임 상태를 캐싱합니다.
+ * Redis가 없을 경우 인메모리 캐시를 사용합니다.
  * - 게임 상태: game:state:{roomId}
  * - 역할 정보: game:roles:{roomId}
  * - 키워드 정보: game:keyword:{roomId}
  * - 투표 정보: game:votes:{roomId}
+ * - 게임 데이터: game:data:{roomId}
  * TTL: 1시간 (3600초)
  */
 @Injectable()
 export class GameCacheService {
   private readonly CACHE_TTL = 3600; // 1시간
+
+  // 인메모리 캐시 (Redis 없을 때 폴백)
+  private memoryCache: Map<string, { data: any; expireAt: number }> = new Map();
 
   constructor(
     @Optional()
@@ -20,21 +37,49 @@ export class GameCacheService {
   ) {}
 
   /**
+   * 인메모리 캐시 헬퍼 메서드
+   */
+  private memoryGet(key: string): any | null {
+    const cached = this.memoryCache.get(key);
+    if (!cached) return null;
+    if (Date.now() > cached.expireAt) {
+      this.memoryCache.delete(key);
+      return null;
+    }
+    return cached.data;
+  }
+
+  private memorySet(key: string, data: any): void {
+    this.memoryCache.set(key, {
+      data,
+      expireAt: Date.now() + this.CACHE_TTL * 1000,
+    });
+  }
+
+  private memoryDelete(key: string): void {
+    this.memoryCache.delete(key);
+  }
+
+  /**
    * 게임 상태를 조회합니다
    * @param roomId 방 ID
    * @returns 캐시된 게임 상태 또는 null
    */
   async getGameState(roomId: number): Promise<any | null> {
-    if (!this.redisClient) return null;
+    const key = `game:state:${roomId}`;
 
-    try {
-      const cached = await this.redisClient.get(`game:state:${roomId}`);
-      if (!cached) return null;
-      return JSON.parse(cached);
-    } catch (error) {
-      console.error(`Failed to get game state from cache: ${error}`);
-      return null;
+    if (this.redisClient) {
+      try {
+        const cached = await this.redisClient.get(key);
+        if (!cached) return null;
+        return JSON.parse(cached);
+      } catch (error) {
+        console.error(`Failed to get game state from cache: ${error}`);
+      }
     }
+
+    // 인메모리 폴백
+    return this.memoryGet(key);
   }
 
   /**
@@ -43,18 +88,19 @@ export class GameCacheService {
    * @param gameState 게임 상태
    */
   async setGameState(roomId: number, gameState: any): Promise<void> {
-    if (!this.redisClient) return;
+    const key = `game:state:${roomId}`;
 
-    try {
-      await this.redisClient.set(
-        `game:state:${roomId}`,
-        JSON.stringify(gameState),
-        'EX',
-        this.CACHE_TTL,
-      );
-    } catch (error) {
-      console.error(`Failed to set game state in cache: ${error}`);
+    if (this.redisClient) {
+      try {
+        await this.redisClient.set(key, JSON.stringify(gameState), 'EX', this.CACHE_TTL);
+        return;
+      } catch (error) {
+        console.error(`Failed to set game state in cache: ${error}`);
+      }
     }
+
+    // 인메모리 폴백
+    this.memorySet(key, gameState);
   }
 
   /**
@@ -62,13 +108,91 @@ export class GameCacheService {
    * @param roomId 방 ID
    */
   async deleteGameState(roomId: number): Promise<void> {
-    if (!this.redisClient) return;
+    const key = `game:state:${roomId}`;
 
-    try {
-      await this.redisClient.del(`game:state:${roomId}`);
-    } catch (error) {
-      console.error(`Failed to delete game state from cache: ${error}`);
+    if (this.redisClient) {
+      try {
+        await this.redisClient.del(key);
+        return;
+      } catch (error) {
+        console.error(`Failed to delete game state from cache: ${error}`);
+      }
     }
+
+    // 인메모리 폴백
+    this.memoryDelete(key);
+  }
+
+  /**
+   * 게임 데이터(라이어 ID, 키워드, 라운드 정보)를 저장합니다
+   * @param roomId 방 ID
+   * @param data 게임 데이터
+   */
+  async setGameData(roomId: number, data: Omit<GameData, 'roles'> & { roles: Array<[number, any]> }): Promise<void> {
+    const key = `game:data:${roomId}`;
+
+    if (this.redisClient) {
+      try {
+        await this.redisClient.set(key, JSON.stringify(data), 'EX', this.CACHE_TTL);
+        return;
+      } catch (error) {
+        console.error(`Failed to set game data in cache: ${error}`);
+      }
+    }
+
+    // 인메모리 폴백
+    this.memorySet(key, data);
+  }
+
+  /**
+   * 게임 데이터를 조회합니다
+   * @param roomId 방 ID
+   * @returns 게임 데이터 또는 null
+   */
+  async getGameData(roomId: number): Promise<(Omit<GameData, 'roles'> & { roles: Array<[number, any]> }) | null> {
+    const key = `game:data:${roomId}`;
+
+    if (this.redisClient) {
+      try {
+        const cached = await this.redisClient.get(key);
+        if (cached) return JSON.parse(cached);
+      } catch (error) {
+        console.error(`Failed to get game data from cache: ${error}`);
+      }
+    }
+
+    // 인메모리 폴백
+    return this.memoryGet(key);
+  }
+
+  /**
+   * 라이어 ID를 조회합니다
+   * @param roomId 방 ID
+   * @returns 라이어 ID 또는 null
+   */
+  async getLiarId(roomId: number): Promise<number | null> {
+    const data = await this.getGameData(roomId);
+    return data?.liarId ?? null;
+  }
+
+  /**
+   * 게임 데이터를 삭제합니다
+   * @param roomId 방 ID
+   */
+  async deleteGameData(roomId: number): Promise<void> {
+    const key = `game:data:${roomId}`;
+
+    if (this.redisClient) {
+      try {
+        await this.redisClient.del(key);
+        return;
+      } catch (error) {
+        console.error(`Failed to delete game data from cache: ${error}`);
+      }
+    }
+
+    // 인메모리 폴백
+    this.memoryDelete(key);
   }
 
   /**
@@ -77,19 +201,20 @@ export class GameCacheService {
    * @param roles 역할 정보 Map
    */
   async setRoles(roomId: number, roles: Map<number, any>): Promise<void> {
-    if (!this.redisClient) return;
+    const key = `game:roles:${roomId}`;
+    const serialized = Array.from(roles.entries());
 
-    try {
-      const serialized = JSON.stringify(Array.from(roles.entries()));
-      await this.redisClient.set(
-        `game:roles:${roomId}`,
-        serialized,
-        'EX',
-        this.CACHE_TTL,
-      );
-    } catch (error) {
-      console.error(`Failed to set roles in cache: ${error}`);
+    if (this.redisClient) {
+      try {
+        await this.redisClient.set(key, JSON.stringify(serialized), 'EX', this.CACHE_TTL);
+        return;
+      } catch (error) {
+        console.error(`Failed to set roles in cache: ${error}`);
+      }
     }
+
+    // 인메모리 폴백
+    this.memorySet(key, serialized);
   }
 
   /**
@@ -98,17 +223,24 @@ export class GameCacheService {
    * @returns 캐시된 역할 정보 또는 null
    */
   async getRoles(roomId: number): Promise<Map<number, any> | null> {
-    if (!this.redisClient) return null;
+    const key = `game:roles:${roomId}`;
 
-    try {
-      const cached = await this.redisClient.get(`game:roles:${roomId}`);
-      if (!cached) return null;
-      const entries = JSON.parse(cached);
-      return new Map(entries);
-    } catch (error) {
-      console.error(`Failed to get roles from cache: ${error}`);
-      return null;
+    if (this.redisClient) {
+      try {
+        const cached = await this.redisClient.get(key);
+        if (cached) {
+          const entries = JSON.parse(cached);
+          return new Map(entries);
+        }
+      } catch (error) {
+        console.error(`Failed to get roles from cache: ${error}`);
+      }
     }
+
+    // 인메모리 폴백
+    const entries = this.memoryGet(key);
+    if (entries) return new Map(entries);
+    return null;
   }
 
   /**
@@ -116,13 +248,19 @@ export class GameCacheService {
    * @param roomId 방 ID
    */
   async deleteRoles(roomId: number): Promise<void> {
-    if (!this.redisClient) return;
+    const key = `game:roles:${roomId}`;
 
-    try {
-      await this.redisClient.del(`game:roles:${roomId}`);
-    } catch (error) {
-      console.error(`Failed to delete roles from cache: ${error}`);
+    if (this.redisClient) {
+      try {
+        await this.redisClient.del(key);
+        return;
+      } catch (error) {
+        console.error(`Failed to delete roles from cache: ${error}`);
+      }
     }
+
+    // 인메모리 폴백
+    this.memoryDelete(key);
   }
 
   /**
@@ -131,18 +269,19 @@ export class GameCacheService {
    * @param keyword 키워드 정보
    */
   async setKeyword(roomId: number, keyword: any): Promise<void> {
-    if (!this.redisClient) return;
+    const key = `game:keyword:${roomId}`;
 
-    try {
-      await this.redisClient.set(
-        `game:keyword:${roomId}`,
-        JSON.stringify(keyword),
-        'EX',
-        this.CACHE_TTL,
-      );
-    } catch (error) {
-      console.error(`Failed to set keyword in cache: ${error}`);
+    if (this.redisClient) {
+      try {
+        await this.redisClient.set(key, JSON.stringify(keyword), 'EX', this.CACHE_TTL);
+        return;
+      } catch (error) {
+        console.error(`Failed to set keyword in cache: ${error}`);
+      }
     }
+
+    // 인메모리 폴백
+    this.memorySet(key, keyword);
   }
 
   /**
@@ -151,16 +290,19 @@ export class GameCacheService {
    * @returns 캐시된 키워드 정보 또는 null
    */
   async getKeyword(roomId: number): Promise<any | null> {
-    if (!this.redisClient) return null;
+    const key = `game:keyword:${roomId}`;
 
-    try {
-      const cached = await this.redisClient.get(`game:keyword:${roomId}`);
-      if (!cached) return null;
-      return JSON.parse(cached);
-    } catch (error) {
-      console.error(`Failed to get keyword from cache: ${error}`);
-      return null;
+    if (this.redisClient) {
+      try {
+        const cached = await this.redisClient.get(key);
+        if (cached) return JSON.parse(cached);
+      } catch (error) {
+        console.error(`Failed to get keyword from cache: ${error}`);
+      }
     }
+
+    // 인메모리 폴백
+    return this.memoryGet(key);
   }
 
   /**
@@ -168,13 +310,19 @@ export class GameCacheService {
    * @param roomId 방 ID
    */
   async deleteKeyword(roomId: number): Promise<void> {
-    if (!this.redisClient) return;
+    const key = `game:keyword:${roomId}`;
 
-    try {
-      await this.redisClient.del(`game:keyword:${roomId}`);
-    } catch (error) {
-      console.error(`Failed to delete keyword from cache: ${error}`);
+    if (this.redisClient) {
+      try {
+        await this.redisClient.del(key);
+        return;
+      } catch (error) {
+        console.error(`Failed to delete keyword from cache: ${error}`);
+      }
     }
+
+    // 인메모리 폴백
+    this.memoryDelete(key);
   }
 
   /**
@@ -183,19 +331,20 @@ export class GameCacheService {
    * @param votes 투표 정보 Map (voterId -> targetId)
    */
   async setVotes(roomId: number, votes: Map<number, number>): Promise<void> {
-    if (!this.redisClient) return;
+    const key = `game:votes:${roomId}`;
+    const serialized = Array.from(votes.entries());
 
-    try {
-      const serialized = JSON.stringify(Array.from(votes.entries()));
-      await this.redisClient.set(
-        `game:votes:${roomId}`,
-        serialized,
-        'EX',
-        this.CACHE_TTL,
-      );
-    } catch (error) {
-      console.error(`Failed to set votes in cache: ${error}`);
+    if (this.redisClient) {
+      try {
+        await this.redisClient.set(key, JSON.stringify(serialized), 'EX', this.CACHE_TTL);
+        return;
+      } catch (error) {
+        console.error(`Failed to set votes in cache: ${error}`);
+      }
     }
+
+    // 인메모리 폴백
+    this.memorySet(key, serialized);
   }
 
   /**
@@ -204,17 +353,24 @@ export class GameCacheService {
    * @returns 캐시된 투표 정보 또는 null
    */
   async getVotes(roomId: number): Promise<Map<number, number> | null> {
-    if (!this.redisClient) return null;
+    const key = `game:votes:${roomId}`;
 
-    try {
-      const cached = await this.redisClient.get(`game:votes:${roomId}`);
-      if (!cached) return null;
-      const entries = JSON.parse(cached);
-      return new Map(entries);
-    } catch (error) {
-      console.error(`Failed to get votes from cache: ${error}`);
-      return null;
+    if (this.redisClient) {
+      try {
+        const cached = await this.redisClient.get(key);
+        if (cached) {
+          const entries = JSON.parse(cached);
+          return new Map(entries);
+        }
+      } catch (error) {
+        console.error(`Failed to get votes from cache: ${error}`);
+      }
     }
+
+    // 인메모리 폴백
+    const entries = this.memoryGet(key);
+    if (entries) return new Map(entries);
+    return null;
   }
 
   /**
@@ -222,13 +378,19 @@ export class GameCacheService {
    * @param roomId 방 ID
    */
   async deleteVotes(roomId: number): Promise<void> {
-    if (!this.redisClient) return;
+    const key = `game:votes:${roomId}`;
 
-    try {
-      await this.redisClient.del(`game:votes:${roomId}`);
-    } catch (error) {
-      console.error(`Failed to delete votes from cache: ${error}`);
+    if (this.redisClient) {
+      try {
+        await this.redisClient.del(key);
+        return;
+      } catch (error) {
+        console.error(`Failed to delete votes from cache: ${error}`);
+      }
     }
+
+    // 인메모리 폴백
+    this.memoryDelete(key);
   }
 
   /**
@@ -236,18 +398,25 @@ export class GameCacheService {
    * @param roomId 방 ID
    */
   async clearGameCache(roomId: number): Promise<void> {
-    if (!this.redisClient) return;
+    const keys = [
+      `game:state:${roomId}`,
+      `game:roles:${roomId}`,
+      `game:keyword:${roomId}`,
+      `game:votes:${roomId}`,
+      `game:data:${roomId}`,
+    ];
 
-    try {
-      await this.redisClient.del([
-        `game:state:${roomId}`,
-        `game:roles:${roomId}`,
-        `game:keyword:${roomId}`,
-        `game:votes:${roomId}`,
-      ]);
-    } catch (error) {
-      console.error(`Failed to clear game cache: ${error}`);
+    if (this.redisClient) {
+      try {
+        await this.redisClient.del(keys);
+        return;
+      } catch (error) {
+        console.error(`Failed to clear game cache: ${error}`);
+      }
     }
+
+    // 인메모리 폴백
+    keys.forEach(key => this.memoryDelete(key));
   }
 
   /**
@@ -256,14 +425,18 @@ export class GameCacheService {
    * @returns 존재 여부
    */
   async existsGameState(roomId: number): Promise<boolean> {
-    if (!this.redisClient) return false;
+    const key = `game:state:${roomId}`;
 
-    try {
-      const exists = await this.redisClient.exists(`game:state:${roomId}`);
-      return exists === 1;
-    } catch (error) {
-      console.error(`Failed to check game state existence: ${error}`);
-      return false;
+    if (this.redisClient) {
+      try {
+        const exists = await this.redisClient.exists(key);
+        return exists === 1;
+      } catch (error) {
+        console.error(`Failed to check game state existence: ${error}`);
+      }
     }
+
+    // 인메모리 폴백
+    return this.memoryGet(key) !== null;
   }
 }

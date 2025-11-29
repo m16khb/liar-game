@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GamePlayState } from '@/hooks/useGamePlay';
 
 interface VotingPhaseProps {
@@ -29,11 +29,43 @@ export function VotingPhase({
    * 투표 제출
    */
   const handleSubmitVote = () => {
-    if (!selectedVoteTarget) return;
+    if (!selectedVoteTarget || hasVoted) return;
+
+    console.log('[VotingPhase] 투표 제출:', {
+      targetUserId: selectedVoteTarget,
+      currentUserId: userId,
+      timestamp: new Date().toISOString(),
+    });
 
     onVote(selectedVoteTarget);
     setHasVoted(true);
   };
+
+  /**
+   * 투표 타임아웃 감지 (시간 초과 시 경고)
+   */
+  useEffect(() => {
+    // 시간이 10초 이하로 남았을 때 경고
+    if (remainingTime <= 10 && remainingTime > 0 && !hasVoted) {
+      console.warn('[VotingPhase] 투표 시간이 얼마 남지 않았습니다:', remainingTime, '초');
+    }
+
+    // 시간 초과 시 자동으로 다음 단계로 전환되어야 함 (서버에서 처리)
+    if (remainingTime <= 0 && !hasVoted) {
+      console.error('[VotingPhase] 투표 시간 초과! 투표를 하지 않았습니다.');
+    }
+  }, [remainingTime, hasVoted]);
+
+  /**
+   * gameState.votes에서 본인의 투표 상태 확인
+   * 서버에서 투표 완료 이벤트가 오면 hasVoted 업데이트
+   */
+  useEffect(() => {
+    const myVote = gameState.votes?.find((v) => v.voterId === userId);
+    if (myVote && myVote.voteStatus === 'VOTED') {
+      setHasVoted(true);
+    }
+  }, [gameState.votes, userId]);
 
   // 자신을 제외한 투표 가능한 플레이어들
   const votablePlayers = gameState.players.filter(
@@ -111,11 +143,24 @@ export function VotingPhase({
 
         {/* 투표 상태 안내 */}
         {!hasVoted && (
-          <div className="bg-arcade-purple border-4 border-arcade-cyan p-6 shadow-[0_0_30px_rgba(5,217,232,0.3)] animate-pulse">
-            <p className="font-pixel text-pixel-sm text-center text-arcade-cyan">
-              ▼ 라이어로 의심되는 플레이어를 선택하세요 ▼
-            </p>
-          </div>
+          <>
+            {remainingTime <= 10 && remainingTime > 0 ? (
+              <div className="bg-arcade-pink border-4 border-white p-6 shadow-[0_0_40px_rgba(255,42,109,0.6)] animate-pulse">
+                <p className="font-pixel text-pixel-base text-center text-white mb-2">
+                  ⚠️ 시간이 얼마 남지 않았습니다! ⚠️
+                </p>
+                <p className="font-retro text-retro-lg text-center text-arcade-yellow">
+                  남은 시간: {formatTime(remainingTime)}
+                </p>
+              </div>
+            ) : (
+              <div className="bg-arcade-purple border-4 border-arcade-cyan p-6 shadow-[0_0_30px_rgba(5,217,232,0.3)] animate-pulse">
+                <p className="font-pixel text-pixel-sm text-center text-arcade-cyan">
+                  ▼ 라이어로 의심되는 플레이어를 선택하세요 ▼
+                </p>
+              </div>
+            )}
+          </>
         )}
 
         {/* 플레이어 선택 그리드 */}
@@ -204,16 +249,18 @@ export function VotingPhase({
               {/* 투표 제출 버튼 */}
               <button
                 onClick={handleSubmitVote}
-                disabled={!selectedVoteTarget}
+                disabled={!selectedVoteTarget || hasVoted}
                 className="w-full font-pixel text-pixel-sm md:text-pixel-base py-4 md:py-5 border-4 border-white transition-all
                   enabled:bg-arcade-pink enabled:text-white enabled:cursor-pointer
                   enabled:hover:translate-y-[-4px] enabled:hover:shadow-[0_8px_40px_rgba(255,42,109,0.7)]
                   disabled:bg-arcade-dark disabled:text-arcade-cyan/30 disabled:border-arcade-cyan/30
                   disabled:cursor-not-allowed"
               >
-                {selectedVoteTarget
-                  ? `${selectedPlayer?.nickname}에게 투표하기`
-                  : '플레이어를 선택하세요'}
+                {hasVoted
+                  ? '이미 투표하셨습니다'
+                  : selectedVoteTarget
+                    ? `${selectedPlayer?.nickname}에게 투표하기`
+                    : '플레이어를 선택하세요'}
               </button>
             </div>
           ) : (

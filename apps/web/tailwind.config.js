@@ -20,7 +20,9 @@ export default {
         }
       },
       fontFamily: {
-        pixel: ['"Press Start 2P"', 'cursive'],
+        // 기본 폰트를 레트로로 설정
+        sans: ['VT323', 'Galmuri11', 'monospace'],
+        pixel: ['"Press Start 2P"', 'Galmuri11', 'cursive'],
         retro: ['VT323', 'Galmuri11', 'monospace'],
       },
       fontSize: {
@@ -50,6 +52,7 @@ export default {
         'blink': 'blink 1s step-end infinite',
         'float': 'float 3s ease-in-out infinite',
         'pulse-badge': 'pulse-badge 0.5s ease-in-out infinite alternate',
+        'pulse-border': 'pulse-border 1.5s ease-in-out infinite',
         'rainbow': 'rainbow 3s linear infinite',
         'flicker': 'flicker 5s infinite',
       },
@@ -65,6 +68,16 @@ export default {
         'pulse-badge': {
           from: { transform: 'scale(1)' },
           to: { transform: 'scale(1.1)' },
+        },
+        'pulse-border': {
+          '0%, 100%': {
+            boxShadow: '0 0 40px rgba(0, 255, 65, 0.5)',
+            borderColor: 'rgba(0, 255, 65, 1)',
+          },
+          '50%': {
+            boxShadow: '0 0 60px rgba(0, 255, 65, 0.8)',
+            borderColor: 'rgba(0, 255, 65, 0.7)',
+          },
         },
         rainbow: {
           '0%': { backgroundColor: '#ff2a6d' },

@@ -19,81 +19,70 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 }) => {
   const percentage = Math.min((value / max) * 100, 100)
 
-  const getSizeStyles = () => {
+  const getSizeClasses = () => {
     switch (size) {
       case 'small':
-        return { height: 4, fontSize: '12px' }
+        return { height: 'h-1', fontSize: 'text-pixel-xs' }
       case 'medium':
-        return { height: 6, fontSize: '13px' }
+        return { height: 'h-2', fontSize: 'text-pixel-sm' }
       case 'large':
-        return { height: 8, fontSize: '14px' }
+        return { height: 'h-3', fontSize: 'text-pixel-base' }
       default:
-        return { height: 6, fontSize: '13px' }
+        return { height: 'h-2', fontSize: 'text-pixel-sm' }
     }
   }
 
-  const getColorStyles = () => {
+  const getColorClasses = () => {
     switch (type) {
       case 'success':
         return {
-          backgroundColor: '#ecfdf5',
-          fillColor: '#10b981',
-          fillGradient: 'linear-gradient(90deg, #10b981, #059669)'
+          bgColor: 'bg-arcade-black',
+          borderColor: 'border-arcade-green',
+          fillColor: 'bg-arcade-green',
+          textColor: 'text-arcade-green'
         }
       case 'warning':
         return {
-          backgroundColor: '#fffbeb',
-          fillColor: '#f59e0b',
-          fillGradient: 'linear-gradient(90deg, #f59e0b, #d97706)'
+          bgColor: 'bg-arcade-black',
+          borderColor: 'border-arcade-yellow',
+          fillColor: 'bg-arcade-yellow',
+          textColor: 'text-arcade-yellow'
         }
       case 'error':
         return {
-          backgroundColor: '#fef2f2',
-          fillColor: '#ef4444',
-          fillGradient: 'linear-gradient(90deg, #ef4444, #dc2626)'
+          bgColor: 'bg-arcade-black',
+          borderColor: 'border-arcade-pink',
+          fillColor: 'bg-arcade-pink',
+          textColor: 'text-arcade-pink'
         }
       default:
         return {
-          backgroundColor: '#eff6ff',
-          fillColor: '#3b82f6',
-          fillGradient: 'linear-gradient(90deg, #3b82f6, #2563eb)'
+          bgColor: 'bg-arcade-black',
+          borderColor: 'border-arcade-cyan',
+          fillColor: 'bg-arcade-cyan',
+          textColor: 'text-arcade-cyan'
         }
     }
   }
 
-  const sizeStyles = getSizeStyles()
-  const colorStyles = getColorStyles()
+  const sizeClasses = getSizeClasses()
+  const colorClasses = getColorClasses()
 
   return (
-    <div style={{ width: '100%' }}>
+    <div className="w-full">
       {showPercentage && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: '4px',
-          fontSize: sizeStyles.fontSize,
-          color: '#6b7280'
-        }}>
+        <div className={`flex justify-between mb-1 font-pixel ${sizeClasses.fontSize} ${colorClasses.textColor}`}>
           <span>진행률</span>
           <span>{Math.round(percentage)}%</span>
         </div>
       )}
-      <div style={{
-        width: '100%',
-        height: sizeStyles.height,
-        backgroundColor: colorStyles.backgroundColor,
-        borderRadius: sizeStyles.height / 2,
-        overflow: 'hidden',
-        border: '1px solid #e5e7eb'
-      }}>
-        <div style={{
-          width: `${percentage}%`,
-          height: '100%',
-          background: colorStyles.fillGradient,
-          borderRadius: sizeStyles.height / 2,
-          transition: animated ? 'width 0.3s ease-out' : 'none',
-          boxShadow: percentage > 0 ? `0 0 10px ${colorStyles.fillColor}40` : 'none'
-        }} />
+      <div className={`w-full ${sizeClasses.height} ${colorClasses.bgColor} border-2 ${colorClasses.borderColor} overflow-hidden relative`}>
+        <div
+          className={`${sizeClasses.height} ${colorClasses.fillColor} ${animated ? 'transition-all duration-300' : ''}`}
+          style={{ width: `${percentage}%` }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-flicker" />
+        </div>
       </div>
     </div>
   )

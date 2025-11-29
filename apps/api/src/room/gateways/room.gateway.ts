@@ -25,9 +25,12 @@ import { TurnManagerService } from '../../game/services/turn-manager.service';
 import { VotingService } from '../../game/services/voting.service';
 import { ResultCalculatorService } from '../../game/services/result-calculator.service';
 import { ScoreUpdateService } from '../../game/services/score-update.service';
+import { GameCacheService } from '../../game/services/game-cache.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Speech } from '../../game/entities/speech.entity';
+import { UserEntity } from '../../user/entities/user.entity';
+import { GamePhase } from '../entities/room.entity';
 
 interface AuthenticatedSocket extends Socket {
   userId?: number;
@@ -65,8 +68,11 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private readonly votingService: VotingService,
     private readonly resultCalculatorService: ResultCalculatorService,
     private readonly scoreUpdateService: ScoreUpdateService,
+    private readonly gameCacheService: GameCacheService,
     @InjectRepository(Speech)
     private readonly speechRepository: Repository<Speech>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
   ) {
     this.supabaseJwtStrategy = new SupabaseJwtStrategy(this.configService);
   }
@@ -666,10 +672,14 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   }
 
   @SubscribeMessage('start-game')
-  async handleStartGame(@ConnectedSocket() client: AuthenticatedSocket) {
+  async handleStartGame(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data?: { totalRounds?: number },
+  ) {
     this.logger.log(`User ${client.userId} is attempting to start the game`);
     try {
       const userId = client.userId;
+      const totalRounds = data?.totalRounds ?? 1; // 기본값 1바퀴
 
       if (!userId) {
         client.emit('error', { message: '인증이 필요합니다.' });
@@ -716,6 +726,15 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       const roles = this.roleAssignmentService.assignRoles(playerIds, 1); // 라이어 1명
       this.logger.log(`Roles assigned for room ${player.room.code}: ${playerIds.length} players`);
 
+      // 라이어 ID 찾기
+      let liarId = 0;
+      for (const [uid, role] of roles.entries()) {
+        if (role.type === 'LIAR') {
+          liarId = uid;
+          break;
+        }
+      }
+
       // 2. 키워드 선택
       const difficultyMap: Record<string, 'EASY' | 'NORMAL' | 'HARD'> = {
         'easy': 'EASY',
@@ -727,24 +746,42 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       );
       this.logger.log(`Keyword selected for room ${player.room.code}: ${keyword.category}`);
 
-      // 3. 턴 매니저 생성 (토론 단계용)
+      // 3. 게임 데이터 캐시에 저장 (라이어 ID, 키워드, 역할 정보)
+      await this.gameCacheService.setGameData(player.roomId, {
+        roomId: player.roomId,
+        liarId,
+        keyword: { word: keyword.word, category: keyword.category },
+        roles: Array.from(roles.entries()),
+        totalRounds,
+        currentRound: 1,
+      });
+      await this.gameCacheService.setRoles(player.roomId, roles);
+      await this.gameCacheService.setKeyword(player.roomId, keyword);
+      this.logger.log(`Game data cached for room ${player.room.code}: liarId=${liarId}`);
+
+      // 4. 턴 매니저 생성 (토론 단계용, 바퀴 수 지정)
       const turnManager = this.turnManagerService.createTurnManager(
         player.roomId,
         playerIds,
         30, // 각 턴당 30초
+        totalRounds, // 총 바퀴 수
       );
-      this.logger.log(`Turn manager created for room ${player.room.code}: ${turnManager.turnOrder.length} players`);
+      this.logger.log(`Turn manager created for room ${player.room.code}: ${turnManager.turnOrder.length} players, ${totalRounds} rounds`);
 
-      // 4. 방에 있는 모든 사람에게 게임 시작 알림
+      // 5. 방에 있는 모든 사람에게 게임 시작 알림
       this.server.to(player.room.code).emit('game-started', {
         room,
         players: updatedPlayers,
         turnOrder: turnManager.turnOrder,
         currentPlayer: turnManager.getCurrentPlayer(),
         turnDuration: turnManager.turnDuration,
+        totalRounds,
+        currentRound: 1,
+        totalTurns: turnManager.getTotalTurns(),
+        currentTurnNumber: 1,
       });
 
-      // 5. 각 플레이어에게 역할 및 키워드 정보 전송
+      // 6. 각 플레이어에게 역할 및 키워드 정보 전송
       for (const p of updatedPlayers) {
         const role = roles.get(p.userId);
         if (!role) continue;
@@ -815,31 +852,50 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         roomId: player.roomId,
         userId,
         content: data.content,
-        turnNumber: turnManager.currentTurnIndex,
+        turnNumber: turnManager.getCurrentTurnNumber(),
       });
       await this.speechRepository.save(speech);
 
-      this.logger.log(`Speech saved: user ${userId}, turn ${turnManager.currentTurnIndex}`);
+      this.logger.log(`Speech saved: user ${userId}, turn ${turnManager.getCurrentTurnNumber()}/${turnManager.getTotalTurns()}`);
 
       // 방에 있는 모든 사람에게 발언 알림
       this.server.to(player.room.code).emit('speech-submitted', {
         userId,
         content: data.content,
-        turnNumber: turnManager.currentTurnIndex,
+        turnNumber: turnManager.getCurrentTurnNumber(),
+        totalTurns: turnManager.getTotalTurns(),
       });
 
       // 다음 턴으로 전환
-      turnManager.nextTurn();
-      const nextPlayer = turnManager.getCurrentPlayer();
+      const hasMoreTurns = turnManager.nextTurn();
 
-      // 턴 변경 알림
-      this.server.to(player.room.code).emit('turn-changed', {
-        currentPlayer: nextPlayer,
-        turnNumber: turnManager.currentTurnIndex,
-        remainingTime: turnManager.getRemainingTime(),
-      });
+      if (hasMoreTurns && !turnManager.isAllTurnsCompleted()) {
+        // 아직 턴이 남아있음 - 다음 플레이어로 전환
+        const nextPlayer = turnManager.getCurrentPlayer();
 
-      this.logger.log(`Turn changed to user ${nextPlayer} in room ${player.room.code}`);
+        // 턴 변경 알림
+        this.server.to(player.room.code).emit('turn-changed', {
+          currentPlayer: nextPlayer,
+          turnNumber: turnManager.getCurrentTurnNumber(),
+          totalTurns: turnManager.getTotalTurns(),
+          currentRound: turnManager.currentRound,
+          totalRounds: turnManager.totalRounds,
+          remainingTime: turnManager.getRemainingTime(),
+        });
+
+        this.logger.log(`Turn changed to user ${nextPlayer} in room ${player.room.code} (${turnManager.getCurrentTurnNumber()}/${turnManager.getTotalTurns()})`);
+      } else {
+        // 모든 턴 완료 - 투표 단계로 전환
+        this.logger.log(`All discussion turns completed in room ${player.room.code}. Transitioning to voting phase.`);
+
+        // 투표 단계 시작 알림
+        this.server.to(player.room.code).emit('phase-changed', {
+          phase: 'VOTING',
+          message: '토론이 종료되었습니다. 투표를 시작합니다.',
+        });
+
+        this.logger.log(`Voting phase started in room ${player.room.code}`);
+      }
     } catch (error) {
       this.logger.error(`Failed to submit speech: ${error instanceof Error ? error.message : error}`);
       client.emit('error', { message: '발언 제출에 실패했습니다.' });
@@ -889,11 +945,9 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       this.logger.log(`Vote progress: ${votedCount}/${players.length}`);
 
       if (votedCount >= players.length) {
-        // 모든 플레이어가 투표 완료
-        this.logger.log(`All players voted in room ${player.room.code}. Calculating results...`);
-
-        // 결과 계산
-        await this.handleGameEnd(player.roomId);
+        // 모든 플레이어가 투표 완료 - 투표 결과 확인
+        this.logger.log(`All players voted in room ${player.room.code}. Checking vote results...`);
+        await this.handleVoteComplete(player.roomId, player.room.code);
       }
     } catch (error) {
       this.logger.error(`Failed to submit vote: ${error instanceof Error ? error.message : error}`);
@@ -902,9 +956,159 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   }
 
   /**
-   * 게임 종료 처리
+   * 투표 완료 처리 - 라이어 지목 여부 확인
    */
-  private async handleGameEnd(roomId: number) {
+  private async handleVoteComplete(roomId: number, roomCode: string) {
+    try {
+      // 캐시에서 게임 데이터 조회
+      const gameData = await this.gameCacheService.getGameData(roomId);
+      if (!gameData) {
+        this.logger.error(`Game data not found for room ${roomId}`);
+        return;
+      }
+
+      const liarId = gameData.liarId;
+      const players = await this.playerService.getPlayers(roomId);
+
+      // 최다 득표자 조회
+      const votes = await this.votingService.getAllVotes(roomId);
+      const voteCount = new Map<number, number>();
+      votes.forEach(vote => {
+        const count = voteCount.get(vote.targetId) ?? 0;
+        voteCount.set(vote.targetId, count + 1);
+      });
+
+      let mostVotedPlayerId = 0;
+      let maxVotes = 0;
+      for (const [targetId, count] of voteCount.entries()) {
+        if (count > maxVotes) {
+          maxVotes = count;
+          mostVotedPlayerId = targetId;
+        }
+      }
+
+      // 투표 결과 브로드캐스트
+      const nicknameMap = new Map<number, string>();
+      players.forEach(p => {
+        nicknameMap.set(p.userId, p.nickname || p.user?.email || `Player ${p.userId}`);
+      });
+
+      const voteResults = Array.from(voteCount.entries()).map(([targetId, count]) => ({
+        targetId,
+        nickname: nicknameMap.get(targetId) ?? `Player ${targetId}`,
+        voteCount: count,
+      }));
+
+      // 라이어가 지목되었는지 확인
+      const liarCaught = mostVotedPlayerId === liarId;
+
+      this.server.to(roomCode).emit('vote-result', {
+        mostVotedPlayerId,
+        mostVotedPlayerNickname: nicknameMap.get(mostVotedPlayerId) ?? `Player ${mostVotedPlayerId}`,
+        liarCaught,
+        liarId,
+        liarNickname: nicknameMap.get(liarId) ?? `Player ${liarId}`,
+        voteResults,
+      });
+
+      if (liarCaught) {
+        // 라이어가 지목됨 → 라이어에게 키워드 맞추기 기회 제공
+        this.logger.log(`Liar (${liarId}) was caught in room ${roomCode}. Giving keyword guess chance.`);
+
+        this.server.to(roomCode).emit('phase-changed', {
+          phase: 'LIAR_GUESS',
+          message: '라이어가 지목되었습니다! 라이어에게 키워드를 맞출 기회가 주어집니다.',
+          liarId,
+          category: gameData.keyword.category,
+          timeLimit: 30, // 30초 내에 맞춰야 함
+        });
+
+        // 30초 타이머 설정 (라이어가 답하지 않으면 시민 승리)
+        setTimeout(async () => {
+          // 이미 게임이 끝났는지 확인
+          const currentGameData = await this.gameCacheService.getGameData(roomId);
+          if (currentGameData) {
+            // 아직 게임이 진행 중이면 시간 초과로 시민 승리
+            this.logger.log(`Liar keyword guess timeout in room ${roomCode}`);
+            await this.handleGameEnd(roomId, false); // liarGuessedKeyword = false
+          }
+        }, 30000);
+      } else {
+        // 라이어가 지목되지 않음 → 라이어 승리
+        this.logger.log(`Liar was not caught in room ${roomCode}. Liar wins!`);
+        await this.handleGameEnd(roomId, false);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to handle vote complete: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  /**
+   * 라이어 키워드 맞추기 처리
+   */
+  @SubscribeMessage('liar-guess-keyword')
+  async handleLiarGuessKeyword(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { keyword: string },
+  ) {
+    this.logger.log(`User ${client.userId} is attempting to guess keyword: ${data.keyword}`);
+    try {
+      const userId = client.userId;
+
+      if (!userId) {
+        client.emit('error', { message: '인증이 필요합니다.' });
+        return;
+      }
+
+      const player = await this.playerService.findActivePlayer(userId);
+
+      if (!player) {
+        client.emit('error', { message: '방에 참여하지 않았습니다.' });
+        return;
+      }
+
+      // 캐시에서 게임 데이터 조회
+      const gameData = await this.gameCacheService.getGameData(player.roomId);
+      if (!gameData) {
+        client.emit('error', { message: '게임 데이터를 찾을 수 없습니다.' });
+        return;
+      }
+
+      // 라이어만 키워드를 맞출 수 있음
+      if (userId !== gameData.liarId) {
+        client.emit('error', { message: '라이어만 키워드를 맞출 수 있습니다.' });
+        return;
+      }
+
+      // 키워드 비교 (대소문자 무시, 공백 제거)
+      const normalizedGuess = data.keyword.trim().toLowerCase();
+      const normalizedKeyword = gameData.keyword.word.trim().toLowerCase();
+      const isCorrect = normalizedGuess === normalizedKeyword;
+
+      this.logger.log(`Liar keyword guess: "${data.keyword}" vs "${gameData.keyword.word}" = ${isCorrect}`);
+
+      // 키워드 맞추기 결과 브로드캐스트
+      this.server.to(player.room.code).emit('liar-guess-result', {
+        liarId: userId,
+        guessedKeyword: data.keyword,
+        correctKeyword: gameData.keyword.word,
+        isCorrect,
+      });
+
+      // 게임 종료 처리
+      await this.handleGameEnd(player.roomId, isCorrect);
+    } catch (error) {
+      this.logger.error(`Failed to handle liar keyword guess: ${error instanceof Error ? error.message : error}`);
+      client.emit('error', { message: '키워드 맞추기에 실패했습니다.' });
+    }
+  }
+
+  /**
+   * 게임 종료 처리
+   * @param roomId 방 ID
+   * @param liarGuessedKeyword 라이어가 키워드를 맞췄는지 여부
+   */
+  private async handleGameEnd(roomId: number, liarGuessedKeyword: boolean = false) {
     try {
       const room = await this.roomService.findById(roomId);
       if (!room) {
@@ -914,44 +1118,60 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       const players = await this.playerService.getPlayers(roomId);
 
-      // 라이어 찾기 (실제 게임에서는 역할이 캐시에 저장되어 있어야 함)
-      // 임시로 역할 정보를 가져오는 로직 필요
-      // 여기서는 투표 결과만 계산
-      const liarId = 0; // TODO: 실제 라이어 ID 가져오기 (GameCacheService 사용)
+      // 캐시에서 게임 데이터 조회
+      const gameData = await this.gameCacheService.getGameData(roomId);
+      const liarId = gameData?.liarId ?? 0;
 
       // 플레이어 닉네임 맵 생성
       const nicknameMap = new Map<number, string>();
       players.forEach(p => {
-        nicknameMap.set(p.userId, p.user?.email || `Player ${p.userId}`);
+        nicknameMap.set(p.userId, p.nickname || p.user?.email || `Player ${p.userId}`);
       });
+
+      // 플레이어 현재 점수 맵 생성
+      const scoreMap = new Map<number, number>();
+      for (const p of players) {
+        const user = await this.userRepository.findOne({ where: { id: p.userId } });
+        scoreMap.set(p.userId, user?.score ?? 0);
+      }
 
       // 결과 계산
       const result = await this.resultCalculatorService.calculateResult(
         roomId,
         liarId,
         nicknameMap,
+        scoreMap,
+        liarGuessedKeyword,
       );
 
-      this.logger.log(`Game result: winner=${result.winner}, liar=${result.liarId}`);
+      this.logger.log(`Game result: winner=${result.winner}, liar=${result.liarId}, liarCaught=${result.liarCaughtByVote}, keywordGuessed=${result.liarGuessedKeyword}`);
 
-      // 점수 업데이트 (간단한 버전)
-      const scoreUpdates = players.map(p => ({
-        userId: p.userId,
-        nickname: nicknameMap.get(p.userId) || `Player ${p.userId}`,
-        previousScore: 0, // TODO: 실제 점수 가져오기
-        scoreChange: p.userId === result.liarId
-          ? (result.winner === 'LIAR' ? 10 : -5)
-          : (result.winner === 'CIVILIAN' ? 5 : 0),
-        newScore: 0, // TODO: 계산된 점수
-        reason: result.winner === 'CIVILIAN' ? 'CIVILIAN_WIN' : 'LIAR_WIN',
+      // 실제 점수 업데이트
+      for (const scoreChange of result.scoreChanges) {
+        await this.userRepository.increment(
+          { id: scoreChange.userId },
+          'score',
+          scoreChange.scoreChange,
+        );
+        this.logger.log(`Score updated: user ${scoreChange.userId} +${scoreChange.scoreChange}`);
+      }
+
+      // 역할 정보 추가
+      const roles = gameData?.roles ?? [];
+      const roleInfo = roles.map(([userId, role]) => ({
+        userId,
+        nickname: nicknameMap.get(userId) ?? `Player ${userId}`,
+        role: role.type,
       }));
-
-      // await this.scoreUpdateService.bulkUpdateScores(scoreUpdates);
 
       // 게임 종료 이벤트 방송
       this.server.to(room.code).emit('game-ended', {
-        result,
-        scoreUpdates,
+        result: {
+          ...result,
+          keyword: gameData?.keyword,
+        },
+        roleInfo,
+        scoreChanges: result.scoreChanges,
       });
 
       // 10초 후 방 대기실로 복귀
@@ -969,14 +1189,28 @@ export class RoomGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
           // 턴 매니저 삭제
           this.turnManagerService.deleteTurnManager(roomId);
 
-          // 업데이트된 플레이어 정보 조회
+          // 게임 캐시 삭제
+          await this.gameCacheService.clearGameCache(roomId);
+
+          // 업데이트된 플레이어 정보 조회 (점수 포함)
           const updatedPlayers = await this.playerService.getPlayers(roomId);
           const updatedRoom = await this.roomService.findById(roomId);
+
+          // 각 플레이어의 최신 점수 조회
+          const playersWithScores = await Promise.all(
+            updatedPlayers.map(async (p) => {
+              const user = await this.userRepository.findOne({ where: { id: p.userId } });
+              return {
+                ...p,
+                score: user?.score ?? 0,
+              };
+            })
+          );
 
           // 방 업데이트 알림
           this.server.to(room.code).emit('room-updated', {
             room: updatedRoom,
-            players: updatedPlayers,
+            players: playersWithScores,
           });
 
           this.logger.log(`Room ${room.code} returned to waiting state`);

@@ -46,6 +46,9 @@ export class PlayerEntity {
   @Column({ type: 'boolean', default: false, comment: '방장 여부' })
   isHost: boolean;
 
+  @Column({ type: 'varchar', length: 50, nullable: true, comment: '플레이어 닉네임 (user.nickname 캐시)' })
+  nickname: string | null;
+
   // 게임 관련 필드
   @Column({
     type: 'enum',

@@ -67,13 +67,15 @@ function LoginPage() {
   }
 
   const handleSignupClick = () => {
-    // TODO: 회원가입 페이지로 이동
-    console.log('회원가입 페이지로 이동')
+    // Supabase Auth 소셜 로그인을 사용하므로 별도 회원가입 페이지 없음
+    // 구글/카카오/네이버 로그인으로 자동 회원가입됨
+    console.log('소셜 로그인을 이용해주세요')
   }
 
   const handlePasswordResetClick = () => {
-    // TODO: 비밀번호 재설정 페이지로 이동
-    console.log('비밀번호 재설정 페이지로 이동')
+    // Supabase Auth에서 비밀번호 재설정 처리
+    // 별도 페이지 구현 없이 Supabase UI에서 처리됨
+    console.log('소셜 로그인을 이용해주세요')
   }
 
   return (
@@ -131,7 +133,7 @@ function SetPasswordPage() {
   }
 
   const handleSuccess = () => {
-    // TODO: 비밀번호 설정 성공 후 로그인 페이지로 이동
+    // 비밀번호 설정 완료 후 로그인 페이지로 이동
     window.location.href = '/'
   }
 

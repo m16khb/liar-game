@@ -30,7 +30,7 @@ export default function LoadingSpinner({
 
       {/* Loading Message */}
       {message && (
-        <p className="text-sm text-arcade-cyan animate-blink" style={{ fontFamily: 'VT323, Galmuri11, monospace' }}>
+        <p className="font-retro text-retro-base text-arcade-cyan animate-blink">
           {message.toUpperCase()}
         </p>
       )}

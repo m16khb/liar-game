@@ -4,6 +4,7 @@ import { useGameTimer } from '@/hooks/useGameTimer';
 import { useSocket } from '@/hooks/useSocket';
 import { DiscussionPhase } from './DiscussionPhase';
 import { VotingPhase } from './VotingPhase';
+import { LiarGuessPhase } from './LiarGuessPhase';
 import { ResultPhase } from './ResultPhase';
 
 interface GamePlayProps {
@@ -53,14 +54,27 @@ export function GamePlay({
     console.log('[GamePlay] WebSocket 리스너 설정 시작')
 
     // game-started 이벤트 리스너
-    const handleGameStarted = (data: { room: any; players: any[] }) => {
+    const handleGameStarted = (data: {
+      room: any;
+      players: any[];
+      turnOrder?: number[];
+      currentPlayer?: number;
+      totalRounds?: number;
+      totalTurns?: number;
+    }) => {
       console.log('[GamePlay] game-started 이벤트 수신:', data)
 
-      // TODO: 백엔드에서 turnOrder, currentTurn을 보내지 않으면 임시로 설정
+      // 백엔드에서 보내는 currentPlayer 사용 (없으면 turnOrder 첫 번째)
+      const currentTurnPlayer = data.currentPlayer || data.turnOrder?.[0] || data.players[0]?.userId;
+
       updateGameState({
         phase: 'DISCUSSION',
-        currentTurn: data.players[0]?.userId || userId,
-        turnOrder: data.players.map(p => p.userId),
+        currentTurn: currentTurnPlayer,
+        turnOrder: data.turnOrder || data.players.map(p => p.userId),
+        totalRounds: data.totalRounds || 1,
+        totalTurns: data.totalTurns || data.players.length,
+        currentTurnNumber: 1,
+        currentRound: 1,
         players: data.players.map(p => ({
           id: p.userId,
           nickname: p.nickname,
@@ -76,24 +90,14 @@ export function GamePlay({
 
     console.log('[GamePlay] 리스너 등록 완료')
 
-    // 백엔드에서 이벤트를 이미 보냈을 경우 대비: 3초 후에도 gameState가 없으면 임시 설정
+    // 백엔드에서 이벤트를 이미 보냈을 경우 대비: 5초 후에도 gameState가 없으면 로딩만 해제
     const timeout = setTimeout(() => {
       if (!gameState) {
-        console.log('[GamePlay] game-started 이벤트 없음 - 임시 게임 상태 설정')
-        updateGameState({
-          phase: 'DISCUSSION',
-          currentTurn: userId,
-          turnOrder: [userId],
-          players: [{
-            id: userId,
-            nickname: userNickname,
-            status: 'ACTIVE' as const
-          }],
-          speeches: []
-        });
+        console.warn('[GamePlay] game-started 이벤트를 5초 내에 받지 못함 - 게임 시작 대기 중')
+        // 임시 상태 설정하지 않음 - 실제 이벤트를 기다림
         setIsLoading(false);
       }
-    }, 3000);
+    }, 5000);
 
     // 클린업
     return () => {
@@ -163,11 +167,21 @@ export function GamePlay({
   useEffect(() => {
     if (!socket) return;
 
-    const handleTurnChanged = (data: { currentPlayer: number; turnOrder: number[] }) => {
+    const handleTurnChanged = (data: {
+      currentPlayer: number;
+      turnNumber: number;
+      totalTurns: number;
+      currentRound: number;
+      totalRounds: number;
+      remainingTime: number;
+    }) => {
       console.log('[GamePlay] turn-changed 이벤트 수신:', data);
       updateGameState({
         currentTurn: data.currentPlayer,
-        turnOrder: data.turnOrder,
+        currentTurnNumber: data.turnNumber,
+        totalTurns: data.totalTurns,
+        currentRound: data.currentRound,
+        totalRounds: data.totalRounds,
       });
     };
 
@@ -179,20 +193,85 @@ export function GamePlay({
   }, [socket, updateGameState]);
 
   /**
+   * 단계 변경 이벤트 처리 (토론→투표, 투표→라이어 맞추기)
+   */
+  useEffect(() => {
+    if (!socket) return;
+
+    const handlePhaseChanged = (data: {
+      phase: string;
+      message: string;
+      liarId?: number;
+      category?: string;
+      timeLimit?: number;
+    }) => {
+      console.log('[GamePlay] phase-changed 이벤트 수신:', data);
+
+      if (data.phase === 'VOTING') {
+        updateGameState({ phase: 'VOTING' });
+      } else if (data.phase === 'LIAR_GUESS') {
+        updateGameState({
+          phase: 'LIAR_GUESS',
+          liarGuess: {
+            liarId: data.liarId!,
+            category: data.category!,
+            timeLimit: data.timeLimit!,
+          },
+        });
+      }
+    };
+
+    socket.on('phase-changed', handlePhaseChanged);
+
+    return () => {
+      socket.off('phase-changed', handlePhaseChanged);
+    };
+  }, [socket, updateGameState]);
+
+  /**
+   * 라이어 키워드 맞추기 결과 이벤트 처리
+   */
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleLiarGuessResult = (data: {
+      liarId: number;
+      guessedKeyword: string;
+      correctKeyword: string;
+      isCorrect: boolean;
+    }) => {
+      console.log('[GamePlay] liar-guess-result 이벤트 수신:', data);
+      // 결과는 game-ended에서 처리
+    };
+
+    socket.on('liar-guess-result', handleLiarGuessResult);
+
+    return () => {
+      socket.off('liar-guess-result', handleLiarGuessResult);
+    };
+  }, [socket]);
+
+  /**
    * 투표 제출 이벤트 처리
    */
   useEffect(() => {
     if (!socket) return;
 
-    const handleVoteSubmitted = (data: { voterId: number; totalVotes: number; requiredVotes: number }) => {
+    const handleVoteSubmitted = (data: { voterId: number }) => {
       console.log('[GamePlay] vote-submitted 이벤트 수신:', data);
-      // 투표 진행률 업데이트
-      updateGameState({
-        votes: Array.from({ length: data.totalVotes }, (_, i) => ({
-          voterId: i + 1,
-          voteStatus: 'VOTED' as const,
-        })),
-      });
+
+      // 기존 votes 배열에 새 투표 추가 (중복 방지)
+      const currentVotes = gameState?.votes || [];
+      const alreadyVoted = currentVotes.some((v) => v.voterId === data.voterId);
+
+      if (!alreadyVoted) {
+        updateGameState({
+          votes: [
+            ...currentVotes,
+            { voterId: data.voterId, voteStatus: 'VOTED' as const },
+          ],
+        });
+      }
     };
 
     socket.on('vote-submitted', handleVoteSubmitted);
@@ -200,7 +279,7 @@ export function GamePlay({
     return () => {
       socket.off('vote-submitted', handleVoteSubmitted);
     };
-  }, [socket, updateGameState]);
+  }, [socket, gameState?.votes, updateGameState]);
 
   /**
    * 게임 종료 이벤트 처리
@@ -209,15 +288,32 @@ export function GamePlay({
     if (!socket) return;
 
     const handleGameEnded = (data: {
-      winner: 'LIAR' | 'CIVILIAN';
-      mostVotedPlayerId: number;
-      roles: { userId: number; nickname: string; role: string }[];
-      voteResults: { userId: number; nickname: string; votes: number }[];
+      result: {
+        winner: 'LIAR' | 'CIVILIAN';
+        liarId: number;
+        liarCaughtByVote: boolean;
+        liarGuessedKeyword: boolean;
+        mostVotedPlayerId: number;
+        voteResults: { targetId: number; nickname: string; voteCount: number }[];
+        keyword?: { word: string; category: string };
+      };
+      roleInfo: { userId: number; nickname: string; role: string }[];
+      scoreChanges: {
+        userId: number;
+        nickname: string;
+        previousScore: number;
+        scoreChange: number;
+        newScore: number;
+        reason: string;
+      }[];
     }) => {
       console.log('[GamePlay] game-ended 이벤트 수신:', data);
 
       updateGameState({
         phase: 'RESULT',
+        result: data.result,
+        roleInfo: data.roleInfo,
+        scoreChanges: data.scoreChanges,
       });
 
       // 10초 후 대기실로 복귀
@@ -288,6 +384,17 @@ export function GamePlay({
 
     console.log('[GamePlay] 투표 제출:', targetUserId);
     socket.emit('submit-vote', { targetUserId });
+  };
+
+  // 라이어 키워드 맞추기 핸들러
+  const handleLiarGuessKeyword = (keyword: string) => {
+    if (!socket) {
+      console.error('[GamePlay] socket이 없습니다');
+      return;
+    }
+
+    console.log('[GamePlay] 라이어 키워드 맞추기:', keyword);
+    socket.emit('liar-guess-keyword', { keyword });
   };
 
   return (
@@ -369,6 +476,15 @@ export function GamePlay({
             progress={progress}
             formatTime={formatTime}
             onVote={handleSubmitVote}
+          />
+        )}
+
+        {gameState.phase === 'LIAR_GUESS' && (
+          <LiarGuessPhase
+            gameState={gameState}
+            userId={userId}
+            userRole={userRole}
+            onGuessKeyword={handleLiarGuessKeyword}
           />
         )}
 

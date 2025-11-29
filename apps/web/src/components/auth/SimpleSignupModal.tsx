@@ -96,28 +96,26 @@ export default function SimpleSignupModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 relative">
+      <div className="bg-arcade-dark border-4 border-arcade-cyan rounded-lg max-w-md w-full p-6 relative shadow-[0_0_40px_rgba(5,217,232,0.4)]">
         <button
           onClick={handleClose}
           disabled={isSubmitting}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
+          className="absolute top-4 right-4 font-pixel text-pixel-sm text-arcade-cyan hover:text-arcade-yellow transition-colors disabled:opacity-50"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          ✕
         </button>
 
         <div className="text-center">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="font-pixel text-pixel-lg text-arcade-yellow mb-2">
             회원가입
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+          <p className="font-retro text-retro-base text-arcade-cyan mb-6">
             간단하게 가입하고 바로 시작하세요
           </p>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-600 rounded-md">
-              <p className="text-sm text-red-800 dark:text-red-200">
+            <div className="mb-4 p-3 bg-arcade-pink/20 border-2 border-arcade-pink rounded">
+              <p className="font-retro text-retro-sm text-arcade-pink">
                 {error}
               </p>
             </div>
@@ -131,7 +129,7 @@ export default function SimpleSignupModal({
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                 placeholder="이메일 주소"
                 disabled={isSubmitting}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50"
+                className="w-full font-retro text-retro-base bg-arcade-black text-white border-3 border-arcade-cyan px-4 py-3 focus:border-arcade-yellow focus:shadow-neon-yellow transition-all placeholder:text-arcade-cyan/50 disabled:opacity-50"
                 required
               />
             </div>
@@ -143,7 +141,7 @@ export default function SimpleSignupModal({
                 onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                 placeholder="비밀번호 (최소 6자)"
                 disabled={isSubmitting}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50"
+                className="w-full font-retro text-retro-base bg-arcade-black text-white border-3 border-arcade-cyan px-4 py-3 focus:border-arcade-yellow focus:shadow-neon-yellow transition-all placeholder:text-arcade-cyan/50 disabled:opacity-50"
                 required
                 minLength={6}
               />
@@ -156,7 +154,7 @@ export default function SimpleSignupModal({
                 onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                 placeholder="비밀번호 확인"
                 disabled={isSubmitting}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50"
+                className="w-full font-retro text-retro-base bg-arcade-black text-white border-3 border-arcade-cyan px-4 py-3 focus:border-arcade-yellow focus:shadow-neon-yellow transition-all placeholder:text-arcade-cyan/50 disabled:opacity-50"
                 required
                 minLength={6}
               />
@@ -165,13 +163,17 @@ export default function SimpleSignupModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`w-full font-pixel text-pixel-sm py-4 border-4 border-white transition-all ${
+                isSubmitting
+                  ? 'bg-arcade-cyan/30 text-arcade-cyan cursor-not-allowed opacity-50'
+                  : 'bg-arcade-cyan text-arcade-black hover:translate-y-[-2px] hover:shadow-[0_6px_30px_rgba(5,217,232,0.5)] cursor-pointer'
+              }`}
             >
               {isSubmitting ? '가입 중...' : '가입하기'}
             </button>
           </form>
 
-          <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+          <p className="mt-4 font-retro text-retro-sm text-arcade-cyan/50">
             가입하면 바로 로그인됩니다.
           </p>
         </div>

@@ -59,7 +59,7 @@ export default function PlayerList({ players, currentUserId, onContextMenu }: Pl
                 {emoji}
                 {/* 준비 완료 체크 */}
                 {player.status === 'ready' && (
-                  <span className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 bg-arcade-green text-arcade-black text-xs flex items-center justify-center font-bold">
+                  <span className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 bg-arcade-green text-arcade-black text-xs flex items-center justify-center font-pixel">
                     ✓
                   </span>
                 )}

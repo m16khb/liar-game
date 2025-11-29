@@ -357,7 +357,7 @@ describe('GameCacheService', () => {
       it('게임 관련 모든 캐시를 삭제해야 한다', async () => {
         const roomId = 1;
 
-        redisMock.del.mockResolvedValue(4);
+        redisMock.del.mockResolvedValue(5);
 
         await service.clearGameCache(roomId);
 
@@ -366,6 +366,7 @@ describe('GameCacheService', () => {
           `game:roles:${roomId}`,
           `game:keyword:${roomId}`,
           `game:votes:${roomId}`,
+          `game:data:${roomId}`,
         ]);
       });
 
